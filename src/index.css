@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body { margin: 0; font-family: Figtree, system-ui, sans-serif; background: #fff; color: #181D27; -webkit-font-smoothing: antialiased; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
+img { background: #F4F2F0; }
