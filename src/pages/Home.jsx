@@ -3,8 +3,9 @@ import { ArrowRight } from "lucide-react";
 
 const PAGES = [
   ["/ib", "1 · Hotels in IB today", "A copy of how a seller sees a hotel in the Itinerary Builder now: the form row, hotel cards, room groups, rate rows and the Price Details box."],
-  ["/universal", "2 · Universal hotel page", "One hotel record that joins IB's rates with the app's photos, reviews, honest bit, amenities, location and policies. Seller and couple views side by side."],
-  ["/options", "3 · Design options", "Every UI element with 3 to 5 ways it could look. Pick one per element, then preview the full page with your picks."],
+  ["/universal", "2 · Universal hotel page", "The full IB selection screen (city stepper, filters, tier groups, price details, bookings) with the joined hotel page, and the couple's phone view beside it."],
+  ["/options", "3 · Design options", "Every element of the selection screen and the hotel page, with 3 to 5 versions each. Pick, hide parts, set your own colour and tags, save your own presets."],
+  ["/final", "4 · Final page", "My recommended combination, with the reason for each pick. Load it into Options to change anything."],
 ];
 
 export default function Home() {

@@ -57,6 +57,8 @@ export const IB_SEARCH_RESULTS = [
     reviews: "9.2",
     contracted: true,
     recommended: true,
+    tier: "gold",
+    inclusions: ["Breakfast", "Welcome drink", "Free WiFi", "Express check-in", "Early check-in", "Pool access", "Honeymoon set-up"],
     private_sic: "Private",
     pricing: { selling_price: 13866 },
     // master-list columns that IB has but never shows
@@ -111,6 +113,8 @@ export const IB_SEARCH_RESULTS = [
     reviews: "9.0",
     contracted: false,
     recommended: true,
+    tier: "gold",
+    inclusions: ["Breakfast", "Free WiFi", "Welcome drink", "Fitness centre", "Beach club access"],
     private_sic: "Private",
     pricing: { selling_price: 17999 },
     master: { address: "Jl. Petitenget, Seminyak, Bali", b_city: "Seminyak", distance_from_centre_km: 1.2, g_rating: 4.5, number_of_reviews: 4210, beachfront: true },
@@ -128,6 +132,8 @@ export const IB_SEARCH_RESULTS = [
     reviews: "9.4",
     contracted: false,
     recommended: null,
+    tier: "silver",
+    inclusions: ["Breakfast", "Coffee and tea", "Free WiFi", "Drinking water", "Pool access"],
     private_sic: "SIC",
     pricing: { selling_price: 21200 },
     master: { address: "Jl. Petitenget No.51B, Seminyak", b_city: "Seminyak", distance_from_centre_km: 1.6, g_rating: 4.7, number_of_reviews: 980 },
@@ -145,12 +151,53 @@ export const IB_SEARCH_RESULTS = [
     reviews: "8.4",
     contracted: false,
     recommended: false,
+    tier: "bronze",
+    inclusions: ["Parking", "Free WiFi", "Drinking water", "Rooftop access"],
     private_sic: "Private",
     pricing: { selling_price: 9800 },
     master: { address: "Double Six Beach, Seminyak", b_city: "Seminyak", distance_from_centre_km: 0.9, g_rating: 4.4, number_of_reviews: 2650, beachfront: true },
     image: U("1564501049412-61c2a3083791"),
     room_details: {
       room_401: { std_room_id: "401", name: "Deluxe Ocean View", room_rates: [rate("r-401-ro", "Deluxe Ocean", "Room only", "RO", false, 8400, 9800, "TBO")] },
+    },
+  },
+  {
+    hotel_code: "61022417",
+    tbo_code: "1402288",
+    hotel: "The Haven Seminyak",
+    hotel_image: "",
+    star_rating: "4",
+    reviews: "8.6",
+    contracted: true,
+    recommended: true,
+    tier: "silver",
+    inclusions: ["Breakfast", "Late check-in", "Parking", "Welcome drink", "Free WiFi", "Drinking water", "Pool access"],
+    private_sic: "SIC",
+    pricing: { selling_price: 7440 },
+    master: { address: "Jl. Raya Seminyak No.500, Seminyak", b_city: "Seminyak", distance_from_centre_km: 0.6, g_rating: 4.5, number_of_reviews: 969 },
+    image: U("1520250497591-112f2f40a3f4"),
+    room_details: {
+      room_501: { std_room_id: "501", name: "Superior Double Room", room_rates: [rate("r-501-bb", "Superior Double", "Breakfast included", "BB", false, 6400, 7440, "TBO"), rate("r-501-bbr", "Superior Double", "Breakfast included", "BB", true, 6550, 7601, "Travclan")] },
+      room_502: { std_room_id: "502", name: "Executive King Room", room_rates: [rate("r-502-bb", "Executive King", "Breakfast included", "BB", true, 6890, 7998, "TBO", { hold: true })] },
+    },
+  },
+  {
+    hotel_code: "70033120",
+    tbo_code: "1500771",
+    hotel: "Grandmas Plus Seminyak",
+    hotel_image: "",
+    star_rating: "3",
+    reviews: "8.1",
+    contracted: false,
+    recommended: null,
+    tier: "bronze",
+    inclusions: ["Breakfast", "Parking", "Free WiFi", "Drinking water"],
+    private_sic: "SIC",
+    pricing: { selling_price: 4392 },
+    master: { address: "Jl. Kunti, Seminyak", b_city: "Seminyak", distance_from_centre_km: 1.1, g_rating: 4.2, number_of_reviews: 1380 },
+    image: U("1551882547-ff40c63fe5fa"),
+    room_details: {
+      room_601: { std_room_id: "601", name: "Deluxe Double Room", room_rates: [rate("r-601-ro", "Deluxe Double", "Room only", "RO", false, 3800, 4392, "TBO"), rate("r-601-bb", "Deluxe Double", "Breakfast included", "BB", true, 4300, 4999, "TBO", { pan: true })] },
     },
   },
 ];
@@ -181,6 +228,14 @@ export const IB_SAVED_STAY = [
   }, // [7] extras
 ];
 
+// The whole trip, one stay per city (the stepper in the IB top bar).
+export const TRIP_STAYS = [
+  { city: "Seminyak", nights: 3, from: "20 Jun", to: "23 Jun", demo: true },
+  { city: "Ubud", nights: 2, from: "23 Jun", to: "25 Jun", booked: { hotel: "Komaneka at Bisma", room: "Deluxe Room", price: 9200 } },
+  { city: "Nusa Penida", nights: 1, from: "25 Jun", to: "26 Jun" },
+];
+export const TRIP_PRICES = { addOns: 0, flights: 105156, activities: 86016, gstRate: 0.05, tcsRate: 0.02 };
+
 export const IB_STAY_META = { city: "Seminyak", checkIn: "20 Jun 2026", nights: 3, adults: 2, deal: "Riya & Kabir · Bali honeymoon", phone: "+91 98•••• 4410" };
 
 // ─── Join IB + app into one hotel the whole page reads from ───
@@ -204,6 +259,7 @@ export function toUniversal(ib) {
     ...base,
     id: ib.hotel_code,
     name: ib.hotel,
+    type: isAlila ? base.type : "Hotel",
     stars: Number(ib.star_rating),
     neighbourhood: isAlila ? base.neighbourhood : similar?.area || ib.master?.b_city,
     address: ib.master?.address || base.address,
@@ -222,6 +278,8 @@ export function toUniversal(ib) {
       contracted: ib.contracted,
       recommended: ib.recommended,
       private_sic: ib.private_sic,
+      tier: ib.tier,
+      inclusions: ib.inclusions || [],
       fromPrice: ib.pricing.selling_price,
       master: ib.master,
     },
@@ -249,5 +307,7 @@ export const FIELD_SOURCES = [
   { block: "Check-in / check-out, early / late", ib: "earlyCheckin, lateCheckout (slot [7])", app: "stayBasics", status: "both" },
   { block: "Policies, legal info, FAQs", ib: "—", app: "policies, legal, faqs", status: "app" },
   { block: "Similar hotels", ib: "other search results in the same tab", app: "similar[]", status: "both" },
+  { block: "Tier (30 Sundays Gold / Silver / Bronze)", ib: "collection tier (new IB listing)", app: "—", status: "ib" },
+  { block: "Inclusions line (late check-in, breakfast, parking...)", ib: "rate inclusions (new IB listing)", app: "facilityTop (partly)", status: "both" },
   { block: "Hotel brochure PDF", ib: "pdf_link", app: "—", status: "ib" },
 ];

@@ -17,6 +17,7 @@ export const GLOBALS = [
       { id: "teal", label: "IB teal", value: { accent: "#00A898", soft: "#E6F7F5", ink: "#00857A" }, note: "IB --primary-color" },
       { id: "forest", label: "Tropical forest", value: { accent: "#254342", soft: "#E8EFEE", ink: "#254342" }, note: "Brand board" },
       { id: "ink", label: "Midnight ink", value: { accent: "#181E4C", soft: "#ECEDF6", ink: "#181E4C" }, note: "Home screen ink" },
+      { id: "custom", label: "My colour", value: null, note: "Pick any colour below" },
     ],
   },
   {
@@ -70,18 +71,126 @@ export const GLOBALS = [
   },
 ];
 
-export const BLOCKS = [
+// ─── The hotel selection screen around the page (IB listing) ───
+export const SCREEN = [
+  {
+    key: "topBar",
+    title: "Top bar and city stepper",
+    where: "IB listing: Back, Wishlist, city tabs, Modify, Continue",
+    variants: [
+      { id: "stepper", label: "Arrow stepper", note: "IB today: cities as arrow segments, done ones ticked, active one filled" },
+      { id: "pills", label: "Pill tabs", note: "Cities as rounded pills with nights and dates" },
+      { id: "timeline", label: "Trip timeline", note: "Dots on a line, one per city, progress shown" },
+      { id: "compact", label: "Compact dropdown", note: "One 'Seminyak · 3N ▾' switcher, most space for the list" },
+    ],
+  },
+  {
+    key: "filters",
+    title: "Filters",
+    where: "IB listing: left column",
+    variants: [
+      { id: "column", label: "Left column", note: "IB today: Hotel type, Room type, Star rating, Price range with slider" },
+      { id: "chips", label: "Chip bar on top", note: "One row of quick chips above the list, More filters opens the rest" },
+      { id: "drawer", label: "Filter button + drawer", note: "A single Filters button with a count; the full list slides in" },
+    ],
+  },
+  {
+    key: "toolbar",
+    title: "Count, search, sort, booked by guest",
+    where: "IB listing: above the list",
+    variants: [
+      { id: "row", label: "One row", note: "IB today: '96 hotels', search box, Sort by, Booked by Guest" },
+      { id: "search", label: "Search first", note: "Big search on its own line, sort and count under it" },
+      { id: "minimal", label: "Minimal", note: "Count and sort only, search behind an icon" },
+    ],
+  },
+  {
+    key: "notice",
+    title: "Indicative-rates note",
+    where: "IB listing: info line",
+    variants: [
+      { id: "line", label: "Info line", note: "IB today: grey line with an ⓘ under the toolbar" },
+      { id: "callout", label: "Yellow callout", note: "Hard to miss, for new sellers" },
+      { id: "price", label: "On the price only", note: "'Indicative' next to each price with the note on hover" },
+      { id: "off", label: "Hide", note: "" },
+    ],
+  },
+  {
+    key: "grouping",
+    title: "Grouping by tier",
+    where: "IB listing: 30 Sundays Gold / Silver / Bronze Hotels",
+    variants: [
+      { id: "headers", label: "Tier headers", note: "IB today: medallion + '30 Sundays Silver Hotels' band per tier" },
+      { id: "tabs", label: "Tier tabs", note: "Gold / Silver / Bronze tabs with counts, one tier at a time" },
+      { id: "flat", label: "One list", note: "No grouping, sorted; the tier shows only as a tag" },
+    ],
+  },
   {
     key: "listCard",
     title: "Hotel card in the results list",
-    where: "IB search results · App change-hotel list",
+    where: "IB listing row · App change-hotel list",
     variants: [
+      { id: "ibrow", label: "IB listing row", note: "IB today: photo, name + stars + heart, room, inclusions, links; tags, reviews, ₹/night, total, Select / Show rooms" },
+      { id: "row", label: "Seller row", note: "Photo left, dense facts right, from-price. Narrower" },
       { id: "reel", label: "App listing card", note: "Swipe photos, stars, score chip, area, inclusions, price delta" },
-      { id: "row", label: "Seller row", note: "Photo left, dense facts right, rate from price. Fits 48rem IB column" },
       { id: "stay", label: "App stay card", note: "The itinerary HotelStayCard: one photo, star line, name, room, cancellation" },
-      { id: "ib", label: "IB classic", note: "Today's IB card: name, ₹, Booking / Star rating text, Show Rooms" },
+      { id: "ib", label: "IB classic", note: "Old IB card: name, ₹, Booking / Star rating text, Show Rooms" },
     ],
   },
+  {
+    key: "tags",
+    title: "Tags up front",
+    where: "Tier, SIC / Private, Refundable, Contracted, Recommended",
+    variants: [
+      { id: "pills", label: "Pills top-right", note: "IB today: SILVER and SIC pills above the score" },
+      { id: "photo", label: "On the photo", note: "Tags sit on the photo corner, price side stays clean" },
+      { id: "inline", label: "Under the name", note: "A tag row right below the hotel name" },
+      { id: "text", label: "Plain text", note: "'Silver · SIC · Refundable' as one quiet line" },
+    ],
+  },
+  {
+    key: "detail",
+    title: "How a hotel opens",
+    where: "Show rooms / tap a hotel",
+    variants: [
+      { id: "drawer", label: "Side drawer", note: "The full hotel page slides in from the right, list stays behind" },
+      { id: "inline", label: "Expand in the list", note: "IB today: Show rooms opens rooms under the card; full page below them" },
+      { id: "modal", label: "Centre modal", note: "Large modal over the list" },
+    ],
+  },
+  {
+    key: "rail",
+    title: "Price details",
+    where: "IB listing: right column",
+    variants: [
+      { id: "box", label: "Yellow box", note: "IB today: Hotels, Add Ons, Flights, Activities, GST, TCS, Total" },
+      { id: "card", label: "White card + delta", note: "Same lines, white card, shows the change this hotel makes" },
+      { id: "bar", label: "Bottom bar", note: "Total in a sticky bar under the list, details on click" },
+    ],
+  },
+  {
+    key: "bookings",
+    title: "Hotel bookings per city",
+    where: "IB listing: right column",
+    variants: [
+      { id: "cards", label: "City cards", note: "IB today: one card per city, ticked when a room is chosen" },
+      { id: "checklist", label: "Checklist", note: "Compact list: city, hotel, ✓ or 'No room selected'" },
+      { id: "stepper", label: "In the stepper only", note: "No panel; the city tabs carry the tick and hotel name" },
+    ],
+  },
+  {
+    key: "support",
+    title: "Support button",
+    where: "IB listing: floating headset",
+    variants: [
+      { id: "fab", label: "Floating button", note: "IB today: round navy headset bottom-right" },
+      { id: "link", label: "Link in the top bar", note: "'Need help?' next to Modify" },
+      { id: "off", label: "Hide", note: "" },
+    ],
+  },
+];
+
+export const BLOCKS = [
   {
     key: "media",
     title: "Photos and video header",
@@ -251,15 +360,16 @@ export const BLOCKS = [
   },
 ];
 
-const ALL = [...GLOBALS, ...BLOCKS];
+export const ALL = [...GLOBALS, ...SCREEN, ...BLOCKS];
 export const DEFAULTS = Object.fromEntries(ALL.map((o) => [o.key, o.variants[0].id]));
 
 export const PRESETS = [
-  { id: "app", label: "Same as the app", picks: {} },
+  { id: "app", label: "Defaults", picks: {} },
+  { id: "final", label: "My recommendation", picks: null },
   {
     id: "ib",
     label: "Close to today's IB",
-    picks: { accent: "teal", font: "inter", radius: "tight", shadow: "ib", density: "compact", surface: "grey", listCard: "ib", rooms: "ib", cta: "box", honest: "off", why: "off", nav: "off", seller: "strip" },
+    picks: { accent: "teal", font: "inter", radius: "tight", shadow: "ib", density: "compact", surface: "grey", listCard: "ibrow", rail: "box", rooms: "ib", cta: "box", honest: "off", why: "off", nav: "off", seller: "strip" },
   },
   {
     id: "dense",
@@ -277,9 +387,33 @@ export function option(key) {
   return ALL.find((o) => o.key === key);
 }
 
-function resolveTokens(picks) {
+// ─── Your own settings, beyond the fixed variants ───
+export const CARD_PARTS = [
+  ["photo", "Photo"], ["wishlist", "Wishlist heart"], ["stars", "Stars"], ["room", "Room name"], ["inclusions", "Inclusions line"],
+  ["links", "Show images / Show on map"], ["tags", "Tags"], ["reviews", "Reviews + score"], ["perNight", "₹ per night"],
+  ["total", "Total for the stay"], ["indicative", "'Indicative' note"], ["actions", "Select / Show rooms"],
+];
+export const TAG_KINDS = [
+  ["tier", "Tier (Gold / Silver / Bronze)"], ["transfer", "SIC / Private"], ["refund", "Refundable"],
+  ["pick", "Sundays pick"], ["contracted", "Contracted © (seller only)"], ["recommended", "Recommended 👍 (seller only)"],
+];
+export const CUSTOM_DEFAULTS = {
+  accent: "#7F56D9",
+  hiddenParts: [],
+  tags: ["tier", "transfer", "refund", "contracted", "recommended"],
+  notes: {},
+};
+
+function mix(hex, to, amt) {
+  const n = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+  const [a, b] = [n(hex), n(to)];
+  return `#${a.map((x, i) => Math.round(x + (b[i] - x) * amt).toString(16).padStart(2, "0")).join("")}`;
+}
+
+function resolveTokens(picks, custom = CUSTOM_DEFAULTS) {
   const val = (k) => option(k).variants.find((v) => v.id === picks[k])?.value ?? option(k).variants[0].value;
-  const accent = val("accent");
+  const c = custom.accent || CUSTOM_DEFAULTS.accent;
+  const accent = picks.accent === "custom" ? { accent: c, soft: mix(c, "#ffffff", 0.88), ink: mix(c, "#000000", 0.25) } : val("accent");
   const font = val("font");
   const radius = val("radius");
   const density = val("density");
@@ -308,62 +442,86 @@ export function cssVars(t) {
   };
 }
 
-const KEY = "hotel-revamp:design:v2";
+const KEY = "hotel-revamp:design:v3";
+const CKEY = "hotel-revamp:custom:v1";
+const PKEY = "hotel-revamp:presets:v1";
 
 function fromUrl() {
   try {
     const d = new URLSearchParams(window.location.search).get("d");
-    return d ? JSON.parse(atob(d)) : null;
+    if (!d) return null;
+    const o = JSON.parse(decodeURIComponent(escape(atob(d))));
+    return o.p || o.c ? o : { p: o };
   } catch {
     return null;
   }
 }
 
-function fromStore() {
+function load(key) {
   try {
-    return JSON.parse(localStorage.getItem(KEY) || "null");
+    return JSON.parse(localStorage.getItem(key) || "null");
   } catch {
     return null;
+  }
+}
+function save(key, v) {
+  try {
+    localStorage.setItem(key, JSON.stringify(v));
+  } catch {
+    /* private window: just won't persist */
   }
 }
 
 const Ctx = createContext(null);
 
 export function DesignProvider({ children }) {
-  const [picks, setPicks] = useState(() => ({ ...DEFAULTS, ...(fromStore() || {}), ...(fromUrl() || {}) }));
-  useEffect(() => {
-    try {
-      localStorage.setItem(KEY, JSON.stringify(picks));
-    } catch {
-      /* private window: picks just won't persist */
-    }
-  }, [picks]);
+  const url = useMemo(fromUrl, []);
+  const [picks, setPicks] = useState(() => ({ ...DEFAULTS, ...(load(KEY) || {}), ...(url?.p || {}) }));
+  const [custom, setCustom] = useState(() => ({ ...CUSTOM_DEFAULTS, ...(load(CKEY) || {}), ...(url?.c || {}) }));
+  const [mine, setMine] = useState(() => load(PKEY) || []);
+  useEffect(() => save(KEY, picks), [picks]);
+  useEffect(() => save(CKEY, custom), [custom]);
+  useEffect(() => save(PKEY, mine), [mine]);
   const value = useMemo(() => {
-    const t = resolveTokens(picks);
+    const t = resolveTokens(picks, custom);
     return {
       picks,
+      custom,
       t,
       vars: cssVars(t),
       pick: (key, id) => setPicks((p) => ({ ...p, [key]: id })),
-      apply: (obj) => setPicks({ ...DEFAULTS, ...obj }),
-      reset: () => setPicks(DEFAULTS),
+      apply: (obj, c) => {
+        setPicks({ ...DEFAULTS, ...obj });
+        if (c) setCustom({ ...CUSTOM_DEFAULTS, ...c });
+      },
+      reset: () => {
+        setPicks(DEFAULTS);
+        setCustom(CUSTOM_DEFAULTS);
+      },
+      setCustom: (patch) => setCustom((c) => ({ ...c, ...patch })),
+      myPresets: mine,
+      savePreset: (name) => setMine((m) => [...m.filter((x) => x.name !== name), { name, picks, custom }]),
+      deletePreset: (name) => setMine((m) => m.filter((x) => x.name !== name)),
       shareQuery: () => {
-        const diff = Object.fromEntries(Object.entries(picks).filter(([k, v]) => DEFAULTS[k] !== v));
-        return Object.keys(diff).length ? `?d=${btoa(JSON.stringify(diff))}` : "";
+        const p = Object.fromEntries(Object.entries(picks).filter(([k, v]) => DEFAULTS[k] !== v));
+        const c = JSON.stringify(custom) === JSON.stringify(CUSTOM_DEFAULTS) ? undefined : custom;
+        if (!Object.keys(p).length && !c) return "";
+        return `?d=${btoa(unescape(encodeURIComponent(JSON.stringify({ p, c }))))}`;
       },
     };
-  }, [picks]);
+  }, [picks, custom, mine]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
-// Re-theme a subtree with some picks swapped (used by /options previews).
-export function DesignOverride({ o, children }) {
+// Re-theme a subtree with some picks swapped (used by /options previews and /final).
+export function DesignOverride({ o, c, children, replace }) {
   const parent = useContext(Ctx);
   const value = useMemo(() => {
-    const picks = { ...parent.picks, ...o };
-    const t = resolveTokens(picks);
-    return { ...parent, picks, t, vars: cssVars(t) };
-  }, [parent, o]);
+    const picks = replace ? { ...DEFAULTS, ...o } : { ...parent.picks, ...o };
+    const custom = c ? { ...parent.custom, ...c } : parent.custom;
+    const t = resolveTokens(picks, custom);
+    return { ...parent, picks, custom, t, vars: cssVars(t) };
+  }, [parent, o, c, replace]);
   return (
     <Ctx.Provider value={value}>
       <div style={value.vars}>{children}</div>
@@ -374,3 +532,36 @@ export function DesignOverride({ o, children }) {
 export function useDesign() {
   return useContext(Ctx);
 }
+
+// ─── My recommended final page ───
+// One pick per element, with the reason. /final renders exactly this.
+export const FINAL = {
+  picks: {
+    accent: "fuchsia", font: "figtree", radius: "soft", shadow: "soft", density: "compact", surface: "white",
+    topBar: "stepper", filters: "column", toolbar: "row", notice: "price", grouping: "headers", listCard: "ibrow",
+    tags: "pills", detail: "drawer", rail: "card", bookings: "cards", support: "fab",
+    media: "mosaic", title: "inline", scores: "strip", stay: "columns", rooms: "grid", about: "clamp",
+    amenities: "list", honest: "postcard", why: "chips", location: "tabs", reviews: "carousel",
+    policies: "accordion", similar: "list", nav: "tabs", cta: "bar", seller: "strip",
+  },
+  why: {
+    topBar: "Sellers already know the arrow stepper; ticks show which cities are done at a glance.",
+    filters: "A left column keeps every filter visible while sellers compare; it is how they work today.",
+    toolbar: "Count, search, sort and Booked by Guest on one row saves vertical space for hotels.",
+    notice: "The note matters at the price, not as a banner people stop reading after day one.",
+    grouping: "Tier bands mirror how 30 Sundays sells (Gold / Silver / Bronze) and stop sellers mixing tiers.",
+    listCard: "The wide IB row shows the most per hotel: room, inclusions, tags, reviews and both prices.",
+    tags: "Tier and SIC / Private sit top-right next to the price, the first thing sellers check.",
+    detail: "A drawer keeps the list and price panel in view, so comparing hotels is one click each.",
+    rail: "White card with the change this hotel makes, so the total never surprises the seller.",
+    bookings: "City cards make it obvious which stays still need a room before Continue.",
+    media: "Hero plus mosaic fits a desktop drawer better than the phone strip.",
+    stay: "Big check-in / check-out times are the thing couples ask about most.",
+    rooms: "The rate-card grid you liked: one card per rate, supplier and total visible.",
+    honest: "The postcard is the most 30 Sundays thing on the page; couples remember it.",
+    why: "Chips keep the Indian-couple reasons short since the honest bit already sits above.",
+    policies: "One accordion for policies, legal and FAQs avoids three separate long lists.",
+    similar: "A compact list; the full list is already on the left for sellers.",
+    cta: "The replace bar shows old and new totals, which is what the couple needs to say yes.",
+  },
+};

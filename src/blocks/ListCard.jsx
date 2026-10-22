@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { Images, MapPin, Utensils, Car, RotateCcw, Ban, LogIn, ChevronRight, ThumbsUp, Star, ArrowLeftRight } from "lucide-react";
+import { Heart, Image as ImageIco, ChevronDown as Down, Check as Tick } from "lucide-react";
 import { Stars, BookingB, inr, scoreColor, SellerNote } from "../kit";
+import { useDesign } from "../design";
+import { Tags, NOTE } from "./screen";
 
 const MEAL = { BB: "Breakfast included", RO: "Room only", HB: "Breakfast + Dinner" };
 
@@ -22,8 +25,9 @@ function Delta({ d }) {
   );
 }
 
-export function ListCard({ h, v, ctx, active, onOpen }) {
-  const r0 = h.rooms[0].rates[0];
+export function ListCard({ h, v, ctx, active, onOpen, wished, onWish, expanded, onToggleRooms, onSelect }) {
+  const { picks, custom } = useDesign();
+  const r0 = h.rooms.flatMap((r) => r.rates).sort((a, b) => a.pricing.selling_price - b.pricing.selling_price)[0];
   const d = (h.ib.fromPrice - ctx.baseNightly) * ctx.nights;
   const isCurrent = h.id === ctx.currentId;
   const seller = [["Supplier", r0.supplier], ["Cost", inr(r0.pricing.cost_price)], ["Contracted", h.ib.contracted ? "©" : "No"], ["Transfers", h.ib.private_sic]];
@@ -33,6 +37,9 @@ export function ListCard({ h, v, ctx, active, onOpen }) {
     outline: active ? "2px solid var(--accent)" : "none",
     outlineOffset: 1,
   };
+
+  if (v === "ibrow")
+    return <IBRow {...{ h, ctx, active, onOpen, wished, onWish, expanded, onToggleRooms, onSelect, r0, isCurrent, seller, picks, custom }} />;
 
   if (v === "ib")
     return (
@@ -61,6 +68,7 @@ export function ListCard({ h, v, ctx, active, onOpen }) {
           <img src={h.photos[0].url} className="w-full h-[150px] object-cover" />
           <span className="absolute top-2 left-2 bg-white text-[11px] font-bold px-2 py-0.5 rounded-full">{ctx.dayRange}</span>
           {isCurrent && <span className="absolute bottom-2 left-2 text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: "#FFE4E8", color: "#C00840" }}>In itinerary</span>}
+          <Tags h={h} v="pills" className="absolute top-2 right-2 justify-end" />
         </div>
         <div className="p-3">
           <div className="flex items-center gap-1.5 text-[13px]">
@@ -95,6 +103,7 @@ export function ListCard({ h, v, ctx, active, onOpen }) {
             {isCurrent && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0" style={{ background: "var(--accent-soft)", color: "var(--accent-ink)" }}>CURRENT</span>}
           </div>
           <div className="flex items-center gap-1.5 mt-1"><Stars n={h.stars} size={12} color="#E8940B" /><ScoreChip s={h.ratings.booking.score} /><span className="text-[11.5px] text-sub">G {h.ratings.google.score}</span></div>
+          <Tags h={h} v={picks.tags === "text" ? "text" : "pills"} className="mt-1" />
           <div className="text-[12px] text-sub mt-1 truncate">{h.neighbourhood} · {h.distanceFromCenter} km from centre</div>
           <div className="text-[11.5px] text-sub mt-0.5">{h.rooms.length} room types · {h.rooms.reduce((n, r) => n + r.rates.length, 0)} rates</div>
           <div className="flex justify-between items-end mt-1">
@@ -123,6 +132,7 @@ function ReelCard({ h, d, isCurrent, frame, onOpen, r0, seller }) {
         <button className="absolute inset-y-0 right-0 w-1/4" onClick={() => setI(Math.min(photos.length - 1, i + 1))} />
         <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1">{photos.map((_, k) => <span key={k} className="w-1.5 h-1.5 rounded-full bg-white" style={{ opacity: k === i ? 1 : 0.5 }} />)}</div>
         <span className="absolute bottom-2 right-2 text-[11px] text-white bg-black/60 px-2 py-0.5 rounded-full flex items-center gap-1"><Images size={11} /> {h.photos.length} photos</span>
+        <Tags h={h} v="pills" className="absolute top-2 left-2" />
       </div>
       <button onClick={onOpen} className="w-full text-left p-3">
         <div className="text-[14.5px] font-bold">{h.name}</div>
@@ -140,6 +150,88 @@ function ReelCard({ h, d, isCurrent, frame, onOpen, r0, seller }) {
         </div>
         <SellerNote items={seller} />
       </button>
+    </div>
+  );
+}
+
+// ─── The new IB listing row ───
+function IBRow({ h, ctx, active, onOpen, wished, onWish, expanded, onToggleRooms, onSelect, r0: cheapest, isCurrent, seller: _seller, picks, custom }) {
+  let r0 = cheapest;
+  let seller = _seller;
+  const show = (k) => !custom.hiddenParts.includes(k);
+  const tv = picks.tags;
+  const refundable = h.rooms.some((r) => r.rates.some((x) => x.is_refundable));
+  // The hotel already on the itinerary shows its saved rate, others their cheapest.
+  if (isCurrent && ctx.selOf) {
+    const sel = ctx.selOf(h);
+    r0 = h.rooms.flatMap((r) => r.rates).find((x) => x.rate_id === sel.rateId) || r0;
+  }
+  const room = h.rooms.find((r) => r.rates.includes(r0)) || h.rooms[0];
+  seller = [["Supplier", r0.supplier], ["Cost", inr(r0.pricing.cost_price)], ["Contracted", h.ib.contracted ? "©" : "No"], ["Transfers", h.ib.private_sic]];
+  const link = "text-[13px] font-medium flex items-center gap-1";
+  return (
+    <div className="bg-white p-4" style={{ borderRadius: "var(--r)", boxShadow: "var(--shadow)", outline: active ? "2px solid var(--accent)" : "none", outlineOffset: 1 }}>
+      <div className="flex gap-4 flex-wrap">
+        {show("photo") && (
+          <button onClick={onOpen} className="relative shrink-0">
+            <img src={h.photos[0].url} className="w-[200px] h-[156px] object-cover" style={{ borderRadius: "var(--rw)" }} />
+            {show("tags") && tv === "photo" && <Tags h={h} v="pills" className="absolute top-2 left-2 right-2" />}
+          </button>
+        )}
+        <div className="flex-1 min-w-[240px]">
+          <div className="flex items-center gap-2 flex-wrap">
+            <button onClick={onOpen} className="text-[19px] font-bold text-left hover:underline" style={{ fontFamily: "var(--head-font)" }}>{h.name}</button>
+            {show("stars") && <span className="text-[15px] font-semibold flex items-center gap-0.5">{h.stars}<Stars n={1} size={16} color="#FDB022" /></span>}
+            {show("wishlist") && (
+              <button onClick={onWish} className="w-8 h-8 rounded-full border border-divider flex items-center justify-center" title="Wishlist">
+                <Heart size={15} fill={wished ? "var(--accent)" : "none"} color={wished ? "var(--accent)" : "#98A2B3"} />
+              </button>
+            )}
+          </div>
+          {show("tags") && (tv === "inline" || tv === "text") && <Tags h={h} v={tv === "text" ? "text" : "pills"} className="mt-1.5" />}
+          {show("room") && <div className="text-[15px] font-medium mt-2">{room.name}</div>}
+          {show("inclusions") && (
+            <div className="text-[13px] text-sub mt-1 leading-relaxed">
+              {h.ib.inclusions.join(", ")}{h.ib.inclusions.length ? " • " : ""}{refundable ? "Refundable" : "Non-refundable"}
+            </div>
+          )}
+          {show("links") && (
+            <div className="flex items-center gap-3 mt-2.5" style={{ color: "var(--accent)" }}>
+              <button onClick={onOpen} className={link}><ImageIco size={13} /> Show Images</button><span className="text-inact">|</span>
+              <button onClick={onOpen} className={link}><MapPin size={13} /> Show on Map</button>
+            </div>
+          )}
+          <SellerNote items={seller} />
+        </div>
+        <div className="flex flex-col items-end text-right ml-auto min-w-[190px]">
+          {show("tags") && tv === "pills" && <Tags h={h} v="pills" className="justify-end mb-2" />}
+          {show("reviews") && (
+            <div className="flex items-center gap-2">
+              <div className="text-[13px] leading-tight text-sub">{h.ratings.booking.count.toLocaleString("en-IN")}+<br /><b className="text-[15px] text-head">Reviews</b></div>
+              <span className="w-10 h-10 text-white text-[15px] font-bold flex items-center justify-center" style={{ background: "#003580", borderRadius: "8px 8px 8px 0" }}>{h.ratings.booking.score.toFixed(1)}</span>
+            </div>
+          )}
+          {show("perNight") && <div className="text-[13.5px] text-sub mt-2">{inr(r0.pricing.selling_price)}/Night</div>}
+          {show("total") && (
+            <div className="text-[20px] font-extrabold leading-tight" title={picks.notice === "price" ? NOTE : undefined}>
+              {inr(r0.pricing.selling_price * ctx.nights)} ({ctx.nights} Nights){picks.notice === "price" && <span className="text-[11px] align-super text-sub ml-0.5 cursor-help">ⓘ</span>}
+            </div>
+          )}
+          {show("indicative") && <div className="text-[12.5px] text-sub mt-0.5"><b className="text-head">Indicative</b> · exact on Show rooms</div>}
+          <div className="flex-1" />
+          {show("actions") && (
+            <div className="flex gap-2 mt-3">
+              <button onClick={onSelect} className="px-4 py-1.5 text-[13.5px] font-semibold border inline-flex items-center gap-1"
+                style={isCurrent ? { borderRadius: "var(--rp)", background: "var(--accent)", borderColor: "var(--accent)", color: "#fff" } : { borderRadius: "var(--rp)", background: "#F2F4F7", borderColor: "#F2F4F7", color: "#667085" }}>
+                {isCurrent ? <><Tick size={13} strokeWidth={3} /> Selected</> : "Select"}
+              </button>
+              <button onClick={onToggleRooms} className="px-4 py-1.5 text-[13.5px] font-semibold border border-divider inline-flex items-center gap-1.5" style={{ borderRadius: "var(--rp)", color: "#535862" }}>
+                <Down size={14} className={expanded ? "rotate-180" : ""} /> {expanded ? "Hide rooms" : "Show rooms"}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

@@ -398,7 +398,7 @@ export function Cta({ h, v, ctx }) {
     return (
       <div className={`${wrap} flex items-center gap-3`}>
         <div className="flex-1 text-[14px]"><DeltaText d={d} nights={ctx.nights} /><div className="text-[11.5px] text-sub truncate">{room.name} · {MEAL[rate.board_basis.type]}</div></div>
-        <Btn>{label}</Btn>
+        <Btn onClick={() => ctx.book?.(h, rate.rate_id)}>{label}</Btn>
       </div>
     );
   if (v === "box") {
@@ -412,7 +412,7 @@ export function Cta({ h, v, ctx }) {
           <div className="flex justify-between font-bold text-[14px] mt-1 pt-1 border-t border-black/10"><span>Total</span><span style={{ color: "#FD3472" }}>{inr(newTotal + tax)}</span></div>
           {mode === "seller" && <div className="flex justify-between text-[11.5px] mt-1 text-[#6B4E16]"><span>Cost {inr(rate.pricing.cost_price * ctx.nights)} · {rate.supplier}</span><span>Profit {inr((rate.pricing.selling_price - rate.pricing.cost_price) * ctx.nights)}</span></div>}
         </div>
-        <Btn className="w-full mt-2">{label}</Btn>
+        <Btn className="w-full mt-2" onClick={() => ctx.book?.(h, rate.rate_id)}>{label}</Btn>
       </div>
     );
   }
@@ -425,7 +425,7 @@ export function Cta({ h, v, ctx }) {
           <div className="text-[18px] font-extrabold leading-tight">{inr(newTotal)} <span className="text-[12px] font-semibold" style={{ color: d > 0 ? "#B42318" : "#027A48" }}>{d === 0 ? "" : `${d > 0 ? "+" : "−"}${inr(d)}`}</span></div>
           <div className="text-[11px] text-sub">for {ctx.nights} nights · {ctx.adults} travellers</div>
         </div>
-        <Btn>{label}</Btn>
+        <Btn onClick={() => ctx.book?.(h, rate.rate_id)}>{label}</Btn>
       </div>
     </div>
   );

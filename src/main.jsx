@@ -6,6 +6,7 @@ import Home from "./pages/Home";
 import Universal from "./pages/Universal";
 import Options from "./pages/Options";
 import IBCurrent from "./pages/IBCurrent";
+import Final from "./pages/Final";
 import "./index.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
@@ -17,6 +18,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
           <Route path="/universal" element={<Universal />} />
           <Route path="/options" element={<Options />} />
           <Route path="/ib" element={<IBCurrent />} />
+          <Route path="/final" element={<Final />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </DesignProvider>

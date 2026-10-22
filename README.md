@@ -6,15 +6,16 @@ Live on Vercel: https://hotel-revamp.vercel.app
 
 | Route | Link | What it is |
 |---|---|---|
-| `/ib` | [hotel-revamp.vercel.app/ib](https://hotel-revamp.vercel.app/ib) | How a hotel looks in IB today, recreated from `atul491/IB-repo-copy` (`HotelSectionWithTwoButton`, `SearchedHotelList`, `GroupedRoomCard`, Price Details). |
-| `/universal` | [hotel-revamp.vercel.app/universal](https://hotel-revamp.vercel.app/universal) | The joined hotel page. IB rates and seller data plus every app block (photos, honest bit, why Indian couples, about, amenities, location, reviews, rooms, policies, FAQs, similar). Seller and couple views side by side, with data-source tags and an IB ↔ App field map. |
-| `/options` | [hotel-revamp.vercel.app/options](https://hotel-revamp.vercel.app/options) | Design options. Every UI element with 3 to 5 variants rendered with real data. Pick one per element (or a preset), then **Preview full page** opens `/universal` with those picks. Picks persist in the browser and can be shared as a `?d=` link. |
+| `/ib` | [hotel-revamp.vercel.app/ib](https://hotel-revamp.vercel.app/ib) | How a hotel looks in IB today, recreated from `atul491/IB-repo-copy`. |
+| `/universal` | [hotel-revamp.vercel.app/universal](https://hotel-revamp.vercel.app/universal) | The full IB selection screen: city stepper, filters, toolbar, tier groups, hotel rows with tags up front, price details, hotel bookings, support. Opening a hotel shows the joined hotel page; the couple's phone view sits beside it. |
+| `/options` | [hotel-revamp.vercel.app/options](https://hotel-revamp.vercel.app/options) | Every element (6 global, 11 selection-screen, 16 hotel-page) with 3 to 5 versions. **Make your own**: any colour, which card parts and tags show (and their order), a note per element, saved presets. Share link carries all of it. |
+| `/final` | [hotel-revamp.vercel.app/final](https://hotel-revamp.vercel.app/final) | My recommended combination with the reason for each pick. "Edit from here" loads it into /options. |
 
 ## Data
 
 - `src/data/hotelDetailData.js`: the app's fully written hotel (Alila Seminyak), copied from `kashyaptibrewal0103/30sundays-app`.
 - `src/data/ibHotels.js`: the same hotels in IB's shapes (search API hotel, `room_details` → `room_rates`, the 8-slot saved stay), plus `toUniversal()` which joins them, and `FIELD_SOURCES`, which records which block comes from where.
-- `src/design.jsx`: the list of options and variants. Add a variant there and render it in the matching block under `src/blocks/`.
+- `src/design.jsx`: every option and variant (`GLOBALS`, `SCREEN`, `BLOCKS`), the custom settings, and `FINAL`. Add a variant there and render it in the matching block under `src/blocks/` (`screen.jsx` for the selection screen).
 
 ## Run
 

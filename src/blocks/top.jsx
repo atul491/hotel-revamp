@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { ChevronLeft, Share2, Images, Play, MapPin, CalendarDays, Users, LogIn, LogOut, Moon } from "lucide-react";
 import { Stars, BookingB, SourceLogo, SOURCE_NAME, DataSource, SellerNote } from "../kit";
+import { Tags } from "./screen";
+import { useDesign } from "../design";
 
 // ─── Media ───
 export function Media({ h, v }) {
@@ -118,6 +120,8 @@ function SundaysPick() {
 }
 
 export function Title({ h, v }) {
+  const { picks } = useDesign();
+  const tags = <Tags h={h} v={picks.tags === "text" ? "text" : "pills"} className={v === "center" ? "justify-center mt-2" : "mt-2"} />;
   const type = h.type === "Resort" ? "resort" : "hotel";
   const seller = [
     ["TravClan", h.ib?.travclan_id],
@@ -132,6 +136,7 @@ export function Title({ h, v }) {
         <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-sub">{h.neighbourhood}</div>
         <h1 className="mt-1" style={{ fontFamily: "var(--head-font)", fontSize: 28, fontWeight: 700, letterSpacing: -0.5, lineHeight: 1.1 }}>{h.name}</h1>
         <div className="mt-2 flex justify-center items-center gap-2"><Stars n={h.stars} size={14} /> {h.sundaysPick && <SundaysPick />}</div>
+        {tags}
         <DataSource s="both" />
         <SellerNote items={seller} />
       </div>
@@ -145,6 +150,7 @@ export function Title({ h, v }) {
           <span className="inline-flex items-center gap-1 text-[12px] font-bold text-[#B54708] bg-[#FFF4E0] px-2 py-0.5" style={{ borderRadius: "var(--rp)" }}>{h.stars} star {type}</span>
           {h.sundaysPick && <SundaysPick />}
         </div>
+        {tags}
         <SellerNote items={seller} />
       </div>
     );
@@ -156,6 +162,7 @@ export function Title({ h, v }) {
       <div className="mt-1.5 flex items-center gap-1.5 text-[13px] text-sub">
         <Stars n={h.stars} /> {h.stars} star {type} · {h.neighbourhood}
       </div>
+      {tags}
       <SellerNote items={seller} />
     </div>
   );
