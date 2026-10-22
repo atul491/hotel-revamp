@@ -136,7 +136,7 @@ export function About({ h, v }) {
   const full = [h.aboutShort, ...h.aboutSections.map((s) => s.body)].join("\n\n");
   return (
     <section>{title}
-      <p className={`text-[13.5px] text-sub leading-relaxed whitespace-pre-line ${open ? "" : "line-clamp-5"}`}>{full}</p>
+      <p className={`text-[13.5px] text-sub leading-relaxed whitespace-pre-line ${open ? "" : "line-clamp-3"}`}>{full}</p>
       <button onClick={() => setOpen(!open)} className="text-[13px] font-bold mt-1.5 underline" style={{ color: "var(--accent)" }}>{open ? "Read less" : "Read more"}</button>
     </section>
   );
@@ -321,21 +321,6 @@ export function Reviews({ h, v }) {
   return (
     <section className="-mx-[var(--pad)] px-[var(--pad)] py-4" style={{ background: "var(--band)" }}>
       {title}
-      <div className="bg-white border border-divider mb-3" style={{ borderRadius: "var(--r)" }}>
-        <div className="px-3 py-2.5 flex items-center gap-2 border-b border-divider text-[13px]">
-          <SourceLogo s="sundays" size={20} /><b>30 Sundays</b><span className="text-sub">· {h.ratings.sundays.count} ratings</span>
-          <span className="ml-auto font-bold text-[#2E8B60]">{h.ratings.sundays.score}/5</span>
-        </div>
-        <div className="grid grid-cols-3 divide-x divide-divider">
-          {["booking", "google", "tripadvisor"].map((k) => (
-            <div key={k} className="p-2.5 text-center">
-              <div className="flex justify-center"><SourceLogo s={k} size={16} /></div>
-              <div className="text-[15px] font-extrabold mt-1">{h.ratings[k].score}<span className="text-[11px] text-inact">/{h.ratings[k].outOf}</span></div>
-              <div className="text-[10.5px] text-sub">{h.ratings[k].count.toLocaleString("en-IN")} ratings</div>
-            </div>
-          ))}
-        </div>
-      </div>
       {ai}
       <div className="flex gap-2 overflow-x-auto no-scrollbar mt-3">{h.reviews.map((r) => <ReviewCard key={r.id} r={r} />)}</div>
       <button className="mt-3 text-[13px] font-bold" style={{ color: "var(--accent)" }}>Read all reviews</button>

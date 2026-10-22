@@ -15,7 +15,7 @@ export default function HotelPage({ h, ctx, scrollRef }) {
   const local = useRef(null);
   const root = scrollRef || local;
   const on = (k) => picks[k] !== "off";
-  const ids = ["honest", "about", "amenities", "location", "reviews", "rooms", "policies", "similar"].filter(
+  const ids = ["rooms", "about", "amenities", "honest", "location", "reviews", "policies", "similar"].filter(
     (k) => !["honest", "similar"].includes(k) || on(k),
   );
   const scrollTo = (id) => {
@@ -38,13 +38,13 @@ export default function HotelPage({ h, ctx, scrollRef }) {
         </div>
         <Nav v={picks.nav} ids={ids} scrollTo={scrollTo} />
         <div className="flex flex-col pt-5" style={{ gap: "var(--gap)" }}>
-          {on("honest") && <Sec id="honest"><Honest h={h} v={picks.honest} /></Sec>}
-          {on("why") && <Why h={h} v={picks.why} />}
+          <Sec id="rooms"><Rooms h={h} v={picks.rooms} ctx={ctx} /></Sec>
           <Sec id="about"><About h={h} v={picks.about} /></Sec>
           <Sec id="amenities"><Amenities h={h} v={picks.amenities} /></Sec>
+          {on("honest") && <Sec id="honest"><Honest h={h} v={picks.honest} /></Sec>}
+          {on("why") && <Why h={h} v={picks.why} />}
           <Sec id="location"><Location h={h} v={picks.location} /></Sec>
           <Sec id="reviews"><Reviews h={h} v={picks.reviews} /></Sec>
-          <Sec id="rooms"><Rooms h={h} v={picks.rooms} ctx={ctx} /></Sec>
           <Sec id="policies"><Policies h={h} v={picks.policies} /></Sec>
           {on("similar") && <Sec id="similar"><Similar h={h} v={picks.similar} ctx={ctx} /></Sec>}
         </div>

@@ -125,25 +125,14 @@ export const BLOCKS = [
     ],
   },
   {
-    key: "honest",
-    title: "The honest bit",
-    where: "App HonestBit",
+    key: "rooms",
+    title: "Rooms and rates",
+    where: "App 'Select your room' · IB GroupedRoomCard",
     variants: [
-      { id: "postcard", label: "Postcard", note: "App: cream postcard, Caveat handwriting, stamp, ✓ / ✗ lines" },
-      { id: "split", label: "Loved / Know before", note: "Two columns, good on the left, heads-up on the right" },
-      { id: "cards", label: "Swipe cards", note: "One card per point with the full explanation" },
-      { id: "off", label: "Hide", note: "" },
-    ],
-  },
-  {
-    key: "why",
-    title: "Why Indian couples say yes",
-    where: "App whyIndians",
-    variants: [
-      { id: "list", label: "Icon list", note: "One line each with an icon well" },
-      { id: "chips", label: "Chips", note: "Short chips, wraps" },
-      { id: "highlight", label: "Highlight box", note: "Pink-gold gradient box, 2 columns" },
-      { id: "off", label: "Hide", note: "" },
+      { id: "hybrid", label: "Room card + rate rows", note: "App room card with IB rate rows under it (meal, refund, hold, PAN). Same for both" },
+      { id: "app", label: "App room cards", note: "Photo, tags, meal, cancellation, + ₹ delta, Select pill" },
+      { id: "table", label: "Comparison table", note: "Rooms as columns: size, beds, view, meals, price" },
+      { id: "ib", label: "IB rate list", note: "Today's IB: room name left, Lowest Price and radio rate rows right" },
     ],
   },
   {
@@ -168,6 +157,28 @@ export const BLOCKS = [
     ],
   },
   {
+    key: "honest",
+    title: "The honest bit",
+    where: "App HonestBit",
+    variants: [
+      { id: "postcard", label: "Postcard", note: "App: cream postcard, Caveat handwriting, stamp, ✓ / ✗ lines" },
+      { id: "split", label: "Loved / Know before", note: "Two columns, good on the left, heads-up on the right" },
+      { id: "cards", label: "Swipe cards", note: "One card per point with the full explanation" },
+      { id: "off", label: "Hide", note: "" },
+    ],
+  },
+  {
+    key: "why",
+    title: "Why Indian couples say yes",
+    where: "App whyIndians",
+    variants: [
+      { id: "list", label: "Icon list", note: "One line each with an icon well" },
+      { id: "chips", label: "Chips", note: "Short chips, wraps" },
+      { id: "highlight", label: "Highlight box", note: "Pink-gold gradient box, 2 columns" },
+      { id: "off", label: "Hide", note: "" },
+    ],
+  },
+  {
     key: "location",
     title: "Location",
     where: "App 'Where you'll be' · IB master distance fields",
@@ -185,17 +196,6 @@ export const BLOCKS = [
       { id: "carousel", label: "AI summary + carousel", note: "App: lavender AI box then swipe review cards" },
       { id: "bars", label: "Breakdown bars + list", note: "Category bars (Cleanliness, Staff...) and stacked reviews" },
       { id: "summary", label: "Summary only", note: "AI summary and one top review" },
-    ],
-  },
-  {
-    key: "rooms",
-    title: "Rooms and rates",
-    where: "App 'Select your room' · IB GroupedRoomCard",
-    variants: [
-      { id: "hybrid", label: "Room card + rate rows", note: "App room card with IB rate rows under it (meal, refund, hold, PAN). Same for both" },
-      { id: "app", label: "App room cards", note: "Photo, tags, meal, cancellation, + ₹ delta, Select pill" },
-      { id: "table", label: "Comparison table", note: "Rooms as columns: size, beds, view, meals, price" },
-      { id: "ib", label: "IB rate list", note: "Today's IB: room name left, Lowest Price and radio rate rows right" },
     ],
   },
   {

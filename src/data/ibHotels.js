@@ -10,7 +10,28 @@
 // 30 Sundays app (hotelDetailData.js). `toUniversal` below joins the two so the
 // seller and the couple read the same hotel.
 
-import { HOTEL } from "./hotelDetailData";
+import { HOTEL as RAW } from "./hotelDetailData";
+
+// ─── Say each thing once ───
+// The app's hotel repeats facts across blocks (breakfast in rooms, amenities,
+// FAQs and About; "sea not swimmable" in the honest bit, About and FAQs...).
+// Each fact keeps the one block where it belongs and is dropped elsewhere.
+const drop = (list, test) => list.filter((x) => !test(x));
+export const HOTEL = {
+  ...RAW,
+  // Honest bit owns "Good to know"; rooms own meal plans; Stay owns check-in times.
+  aboutSections: drop(RAW.aboutSections, (s) => s.title === "Good to know"),
+  facilityTop: drop(RAW.facilityTop, (f) => ["Breakfast included", "Adults only"].includes(f.label)),
+  facilityGroups: RAW.facilityGroups.map((g) => ({ ...g, items: drop(g.items, (i) => /^Breakfast included|^Adults only/.test(i.label)) })),
+  policies: drop(RAW.policies, (p) => p.key === "checkin"),
+  faqs: drop(RAW.faqs, (f) => /swimmable|breakfast|airport/i.test(f.q)),
+  // Honest bit has the building work; Payment policy has the tax; Children policy has age 16.
+  legal: drop(RAW.legal, (l) => /^Construction|tax of 11|16 or older/.test(l)),
+  // Location shows Indian restaurants; reviews show how many couples stayed.
+  whyIndians: drop(RAW.whyIndians, (w) => ["footprints", "heart"].includes(w.icon)),
+  // The video tile already shows the first photo as its poster.
+  photos: RAW.photos.filter((p, i, a) => a.findIndex((q) => q.url === p.url) === i),
+};
 
 const U = (id, w = 900) => `https://images.unsplash.com/photo-${id}?w=${w}&q=80&auto=format&fit=crop`;
 

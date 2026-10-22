@@ -39,8 +39,10 @@ export function Media({ h, v }) {
   }
 
   // strip (app default)
+  const poster = h.video?.poster?.split("?")[0];
+  const rest = photos.filter((p) => p.url.split("?")[0] !== poster);
   const pairs = [];
-  for (let i = 0; i < photos.length; i += 2) pairs.push(photos.slice(i, i + 2));
+  for (let i = 0; i < rest.length; i += 2) pairs.push(rest.slice(i, i + 2));
   return (
     <div className="relative">
       <div className="flex gap-1 overflow-x-auto no-scrollbar h-[288px]">

@@ -307,8 +307,8 @@ export function Similar({ h, v, ctx }) {
 
 // ─── Section nav ───
 export const SECTIONS = [
-  ["honest", "Honest bit"], ["about", "About"], ["amenities", "Amenities"], ["location", "Location"],
-  ["reviews", "Reviews"], ["rooms", "Rooms"], ["policies", "Policies"], ["similar", "Similar"],
+  ["rooms", "Rooms"], ["about", "About"], ["amenities", "Amenities"], ["honest", "Honest bit"],
+  ["location", "Location"], ["reviews", "Reviews"], ["policies", "Policies"], ["similar", "Similar"],
 ];
 export function Nav({ v, ids, scrollTo }) {
   const [act, setAct] = useState(ids[0]);
@@ -367,7 +367,7 @@ export function Cta({ h, v, ctx }) {
       {!isCurrent && <div className="text-[11.5px] text-sub flex items-center gap-1 mb-1"><ArrowLeftRight size={12} /> Replacing {ctx.currentName}</div>}
       <div className="flex items-center gap-3">
         <div className="flex-1">
-          <div className="text-[12px] text-inact line-through">{inr(oldTotal)}</div>
+          {d !== 0 && <div className="text-[12px] text-inact line-through">{inr(oldTotal)}</div>}
           <div className="text-[18px] font-extrabold leading-tight">{inr(newTotal)} <span className="text-[12px] font-semibold" style={{ color: d > 0 ? "#B42318" : "#027A48" }}>{d === 0 ? "" : `${d > 0 ? "+" : "−"}${inr(d)}`}</span></div>
           <div className="text-[11px] text-sub">for {ctx.nights} nights · {ctx.adults} travellers</div>
         </div>
