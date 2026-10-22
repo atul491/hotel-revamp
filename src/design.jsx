@@ -129,6 +129,7 @@ export const BLOCKS = [
     title: "Rooms and rates",
     where: "App 'Select your room' · IB GroupedRoomCard",
     variants: [
+      { id: "grid", label: "Rate cards grid", note: "One card per rate, cheapest first: room name, meal + refundable pill, supplier /night box, total, Select. Live-price check line on top" },
       { id: "hybrid", label: "Room card + rate rows", note: "App room card with IB rate rows under it (meal, refund, hold, PAN). Same for both" },
       { id: "app", label: "App room cards", note: "Photo, tags, meal, cancellation, + ₹ delta, Select pill" },
       { id: "table", label: "Comparison table", note: "Rooms as columns: size, beds, view, meals, price" },
@@ -307,7 +308,7 @@ export function cssVars(t) {
   };
 }
 
-const KEY = "hotel-revamp:design";
+const KEY = "hotel-revamp:design:v2";
 
 function fromUrl() {
   try {

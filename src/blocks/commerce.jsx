@@ -41,6 +41,60 @@ export function Rooms({ h, v, ctx }) {
   const { sel, setSel, nights } = ctx;
   const title = <H2 sub={`${h.rooms.length} room types. Any extra cost is for all ${nights} nights.`}>Select your room<DataSource s="both" /></H2>;
 
+  if (v === "grid") {
+    // One card per rate, cheapest first, the way IB's live-price screen lays them out.
+    const short = { BB: "Breakfast", RO: "Room only", HB: "Breakfast + Dinner", FB: "Full board", AI: "All inclusive" };
+    const cards = h.rooms
+      .flatMap((room) => room.rates.map((r) => ({ room, r })))
+      .sort((a, b) => a.r.pricing.selling_price - b.r.pricing.selling_price);
+    const suppliers = [...new Set(cards.map((c) => c.r.supplier))].filter((x) => x !== "Contracted");
+    const eyebrow = "text-[11px] font-semibold uppercase tracking-[0.6px] text-[#7A86A8]";
+    return (
+      <section>{title}
+        <div className="flex items-center gap-2.5 text-[13px] text-[#343C6A] mb-3">
+          <span className="w-5 h-5 rounded-full border-2 border-[#E9EAEB] animate-spin" style={{ borderTopColor: "var(--accent)" }} />
+          {mode === "seller" ? `Checking ${suppliers.map((x) => x.toUpperCase()).join(", ") || "suppliers"}...` : "Checking live prices..."} · prices may still change
+        </div>
+        <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))" }}>
+          {cards.map(({ room, r }) => {
+            const on = sel.rateId === r.rate_id;
+            return (
+              <div key={r.rate_id} className="flex flex-col border p-4 text-[#1B2559]"
+                style={{ borderRadius: "var(--r)", boxShadow: "var(--shadow)", borderColor: on ? "#F5A3B7" : "#E9EAEB", borderWidth: on ? 2 : 1, background: on ? "#F9FAFB" : "#fff" }}>
+                <div className="text-[17px] font-bold leading-snug" style={{ fontFamily: "var(--head-font)" }}>{room.name}</div>
+                <div className={`${eyebrow} mt-2.5`}>Room features</div>
+                <div className="flex items-center justify-between gap-2 mt-1 text-[13.5px]">
+                  <span>{short[r.board_basis.type] || r.board_basis.description}</span>
+                  {r.is_refundable
+                    ? <span className="text-[12.5px] font-semibold px-2 py-0.5 text-[#2E9E5B] bg-[#ECFDF3]" style={{ borderRadius: "var(--rp)" }}>Refundable</span>
+                    : <span className="text-[12.5px] font-semibold px-2 py-0.5 text-[#E31B53] bg-[#FFF1F3]" style={{ borderRadius: "var(--rp)" }}>Non Refundable</span>}
+                </div>
+                <div className={`${eyebrow} mt-3`}>Pricing</div>
+                <div className="mt-1.5 border border-[#1B2559] px-3 py-2 flex items-center justify-between text-[13px]" style={{ borderRadius: "var(--rw)" }}>
+                  <span>{mode === "seller" ? r.supplier.toUpperCase() : "Per night"}</span>
+                  <b className="text-[15px]">{inr(r.pricing.selling_price)} <span className="font-semibold">/night</span></b>
+                </div>
+                <div className="flex items-center justify-between mt-3 text-[13px]">
+                  <span>Total ({nights} nights):</span>
+                  <b className="text-[19px]">{inr(r.pricing.selling_price * nights)}</b>
+                </div>
+                <SellerNote items={rateSeller(r)} />
+                <div className="flex-1" />
+                <div className="flex justify-end mt-3">
+                  <button onClick={() => setSel({ roomId: room.id, rateId: r.rate_id })}
+                    className="px-4 py-1.5 text-[13.5px] font-bold border-[1.5px] inline-flex items-center gap-1"
+                    style={{ borderRadius: "var(--rp)", borderColor: "var(--accent)", background: on ? "var(--accent)" : "#fff", color: on ? "#fff" : "var(--accent)" }}>
+                    {on ? <><Check size={13} strokeWidth={3} /> Selected</> : "Select"}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+    );
+  }
+
   if (v === "ib")
     return (
       <section>{title}
