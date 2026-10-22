@@ -5,6 +5,7 @@ import {
 import { inr, useView } from "../kit";
 import { useDesign } from "../design";
 import { TRIP_STAYS } from "../data/ibHotels";
+import { usePickedUser, UserVariantView } from "../user";
 
 // ─── Tier look (30 Sundays Gold / Silver / Bronze) ───
 export const TIER = {
@@ -30,7 +31,9 @@ export function tagList(h, custom, mode) {
 export function Tags({ h, v, className = "" }) {
   const { custom } = useDesign();
   const { mode } = useView();
+  const mine = usePickedUser("tags");
   const list = tagList(h, custom, mode);
+  if (mine) return <div className={className}><UserVariantView v={mine} data={{ tags: list.map((t) => ({ kind: t.k, text: t.t })) }} minHeight={20} /></div>;
   if (!list.length) return null;
   if (v === "text")
     return <div className={`text-[12px] text-sub font-semibold ${className}`}>{list.map((x) => x.t).join(" · ")}</div>;

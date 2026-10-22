@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Check, Copy, RotateCcw, ExternalLink, Shuffle, Monitor, Smartphone, Save, Trash2, MessageSquarePlus, Award, Headphones, PanelRight, Rows3 } from "lucide-react";
+import { Check, Copy, RotateCcw, ExternalLink, Shuffle, Save, Trash2, MessageSquarePlus, Award, Headphones, PanelRight, Rows3 } from "lucide-react";
 import { GLOBALS, SCREEN, BLOCKS, PRESETS, DEFAULTS, FINAL, CARD_PARTS, TAG_KINDS, useDesign, DesignOverride } from "../design";
 import { ViewCtx } from "../kit";
 import { Media, Title, Scores, Stay } from "../blocks/top";
@@ -9,6 +9,7 @@ import { Rooms, Policies, Similar, Nav, Cta, SellerPanel, SECTIONS } from "../bl
 import { ListCard } from "../blocks/ListCard";
 import { TopBar, Filters, Toolbar, Notice, TierHeader, PriceDetails, Bookings, Tags, TIER } from "../blocks/screen";
 import { useStay } from "../stay";
+import { useUserVariants, UserVariantView, CreateOption, UserCardActions, elementData } from "../user";
 
 const SCREEN_KEYS = SCREEN.map((o) => o.key);
 const GLOBAL_KEYS = GLOBALS.map((g) => g.key);
@@ -68,7 +69,8 @@ function preview(key, v, s) {
 export default function Options() {
   const { picks, pick, apply, reset, shareQuery, custom, setCustom, myPresets, savePreset, deletePreset } = useDesign();
   const stay = useStay();
-  const [as, setAs] = useState("seller");
+  const as = "seller";
+  const u = useUserVariants();
   const [copied, setCopied] = useState(false);
   const all = [...GLOBALS, ...SCREEN, ...BLOCKS];
   const changed = useMemo(() => Object.keys(picks).filter((k) => picks[k] !== DEFAULTS[k]).length, [picks]);
@@ -90,11 +92,6 @@ export default function Options() {
           <span className="text-[13px] text-sub">/ Design options</span>
           <span className="text-[12px] font-semibold bg-surface px-2 py-0.5 rounded-full">{changed} changed</span>
           <div className="ml-auto flex items-center gap-1.5 flex-wrap">
-            <div className="flex bg-surface rounded-md p-0.5 mr-1">
-              {[["seller", "As seller", Monitor], ["customer", "As couple", Smartphone]].map(([k, l, I]) => (
-                <button key={k} onClick={() => setAs(k)} className={`px-2.5 py-1 text-[12px] font-semibold rounded flex items-center gap-1 ${as === k ? "bg-white shadow" : "text-sub"}`}><I size={13} /> {l}</button>
-              ))}
-            </div>
             {PRESETS.map((pr) => (
               <button key={pr.id} onClick={() => apply(pr.picks || FINAL.picks)} className="text-[12px] font-semibold border border-divider bg-white rounded-md px-2.5 py-1 hover:border-head">{pr.label}</button>
             ))}
@@ -120,7 +117,7 @@ export default function Options() {
                 <button key={o.key} onClick={() => jump(o.key)} className="w-full text-left px-4 py-1.5 hover:bg-surface">
                   <div className="text-[13px] font-semibold leading-tight">{o.title}</div>
                   <div className={`text-[11.5px] ${picks[o.key] !== DEFAULTS[o.key] ? "text-fuchsia font-semibold" : "text-sub"}`}>
-                    {o.variants.find((v) => v.id === picks[o.key])?.label}{custom.notes[o.key] ? " · ✎ note" : ""}
+                    {o.variants.find((v) => v.id === picks[o.key])?.label || (u.find(o.key, picks[o.key])?.label ? `★ ${u.find(o.key, picks[o.key]).label}` : o.variants[0].label)}{u.list(o.key).length ? ` · ${u.list(o.key).length} yours` : ""}
                   </div>
                 </button>
               ))}
@@ -132,7 +129,7 @@ export default function Options() {
           <div className="max-w-[920px]">
             <h1 className="text-[26px] font-extrabold tracking-tight">Build the hotel selection screen, one element at a time</h1>
             <p className="text-[14px] text-sub mt-1 leading-relaxed">
-              The screen is broken into <b>{GLOBALS.length} global settings</b>, <b>{SCREEN.length} selection-screen elements</b> (top bar, filters, list, tags, price panel...) and <b>{BLOCKS.length} hotel-page blocks</b>. Every card is the real element with real data; click one to use it. Under <b>Make your own</b> you can set any colour, choose which card parts and tags show, and save your mix as a preset. Each element also takes a note for a version you want that isn't here. <b>Preview full screen</b> opens /universal with your picks; <b>Final</b> is my recommendation.
+              The screen is broken into <b>{GLOBALS.length} global settings</b>, <b>{SCREEN.length} selection-screen elements</b> (top bar, filters, list, tags, price panel...) and <b>{BLOCKS.length} hotel-page blocks</b>. Every card is the real element with real data; click one to use it. At the end of each row, <b>Create my own version</b>: write what you want and/or add a screenshot, and it becomes a new option you can pick. Under <b>Make your own</b> you can set any colour, choose which card parts and tags show, and save your mix as a preset. Each element also takes a note for a version you want that isn't here. <b>Preview full screen</b> opens /universal with your picks; <b>Final</b> is my recommendation.
             </p>
           </div>
 
@@ -154,6 +151,7 @@ export default function Options() {
                         {o.hint && <p className="text-[12.5px] text-sub">{o.hint}</p>}
                       </div>
                       <div className="flex gap-4 overflow-x-auto pb-2 items-start">
+                        {!GLOBAL_KEYS.includes(o.key) && <CreateOption o={o} data={elementData(o.key, { ...stay, custom })} onCreated={(id) => pick(o.key, id)} />}
                         {o.variants.map((v) => {
                           const on = picks[o.key] === v.id;
                           const isGlobal = GLOBAL_KEYS.includes(o.key);
@@ -183,8 +181,31 @@ export default function Options() {
                             </div>
                           );
                         })}
+                        {!GLOBAL_KEYS.includes(o.key) && u.list(o.key).map((v) => {
+                          const on = picks[o.key] === v.id;
+                          const data = elementData(o.key, { ...stay, custom });
+                          return (
+                            <div key={v.id} className={`shrink-0 ${wide ? "w-[660px]" : "w-[390px]"}`}>
+                              <button onClick={() => pick(o.key, v.id)} className="w-full text-left mb-2 flex items-start gap-2">
+                                <span className={`w-5 h-5 mt-0.5 rounded-full border-2 flex items-center justify-center shrink-0 ${on ? "bg-fuchsia border-fuchsia" : "border-[#D5D7DA] bg-white"}`}>{on && <Check size={12} color="#fff" strokeWidth={3} />}</span>
+                                <span>
+                                  <span className="text-[14px] font-bold">{v.label}</span>
+                                  <span className="ml-1.5 text-[10px] font-bold text-white bg-fuchsia rounded px-1">YOURS</span>
+                                  {v.status === "building" && <span className="ml-1.5 text-[10px] font-bold text-sub">building...</span>}
+                                  {v.note && <span className="block text-[12px] text-sub leading-snug">{v.note}</span>}
+                                </span>
+                              </button>
+                              <div onClick={() => pick(o.key, v.id)} className={`cursor-pointer bg-white rounded-xl overflow-hidden border-2 transition ${on ? "border-fuchsia shadow-lg" : "border-transparent hover:border-[#D5D7DA]"}`}>
+                                <div className="max-h-[560px] overflow-y-auto overflow-x-hidden p-[var(--pad)]" style={{ "--pad": "12px" }}>
+                                  <UserVariantView v={v} data={data} />
+                                </div>
+                              </div>
+                              <UserCardActions o={o} v={v} data={data} />
+                            </div>
+                          );
+                        })}
                       </div>
-                      <Note k={o.key} custom={custom} setCustom={setCustom} />
+                      {GLOBAL_KEYS.includes(o.key) && <Note k={o.key} custom={custom} setCustom={setCustom} />}
                     </section>
                   );
                 })}
@@ -299,7 +320,7 @@ function Summary({ picks, all, custom }) {
             {all.map((o) => (
               <tr key={o.key} className="border-b border-divider last:border-0 align-top">
                 <td className="px-3 py-2 text-sub w-1/3">{o.title}</td>
-                <td className={`px-3 py-2 font-semibold ${picks[o.key] !== DEFAULTS[o.key] ? "text-fuchsia" : ""}`}>{o.variants.find((v) => v.id === picks[o.key])?.label}</td>
+                <td className={`px-3 py-2 font-semibold ${picks[o.key] !== DEFAULTS[o.key] ? "text-fuchsia" : ""}`}>{o.variants.find((v) => v.id === picks[o.key])?.label || "★ Your own version"}</td>
                 <td className="px-3 py-2 text-[12px] text-sub">{custom.notes[o.key]}</td>
               </tr>
             ))}

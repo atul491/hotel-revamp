@@ -1,28 +1,17 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { SlidersHorizontal, Database, Smartphone, Monitor, Columns2, X, Award } from "lucide-react";
+import { SlidersHorizontal, Database, X, Award } from "lucide-react";
 import { useDesign } from "../design";
-import { ViewCtx } from "../kit";
-import HotelPage from "../HotelPage";
 import Screen from "../Screen";
 import { useStay } from "../stay";
 import { FIELD_SOURCES } from "../data/ibHotels";
 
-const MODES = [
-  ["seller", "Seller screen", Monitor],
-  ["both", "Seller + couple", Columns2],
-  ["customer", "Couple phone", Smartphone],
-];
-
-// The page /universal and /final share: the IB screen, plus the couple's phone.
-export function Workspace({ title = "Universal", right }) {
-  const { vars, shareQuery } = useDesign();
+// The page /universal and /final share: the IB seller screen.
+export function Workspace({ title = "Seller screen", right }) {
+  const { shareQuery } = useDesign();
   const stay = useStay();
-  const [mode, setMode] = useState("both");
   const [sources, setSources] = useState(false);
   const [legend, setLegend] = useState(false);
-  const phoneRef = useRef(null);
-  const { h, ctx, hotels, openId, setOpenId } = stay;
 
   return (
     <div className="h-screen flex flex-col font-inter bg-[#EEF0F4] text-[#343C6A]">
@@ -30,13 +19,6 @@ export function Workspace({ title = "Universal", right }) {
         <Link to="/" className="font-bold text-[14px]">Hotel Revamp</Link>
         <span className="opacity-60">/ {title}</span>
         <div className="ml-auto flex items-center gap-2 flex-wrap">
-          <div className="flex bg-white/10 rounded p-0.5">
-            {MODES.map(([k, l, I]) => (
-              <button key={k} onClick={() => setMode(k)} className={`px-2.5 py-1 font-semibold rounded flex items-center gap-1 ${mode === k ? "bg-white text-[#101828]" : "text-white/70"}`}>
-                <I size={13} /> {l}
-              </button>
-            ))}
-          </div>
           <label className="flex items-center gap-1.5 cursor-pointer text-white/80"><input type="checkbox" checked={sources} onChange={(e) => setSources(e.target.checked)} /> Data source tags</label>
           <button onClick={() => setLegend(true)} className="font-semibold border border-white/25 rounded px-2.5 py-1 flex items-center gap-1"><Database size={13} /> IB ↔ App fields</button>
           {right}
@@ -44,30 +26,10 @@ export function Workspace({ title = "Universal", right }) {
           <Link to="/final" className="font-semibold border border-white/25 rounded px-2.5 py-1 flex items-center gap-1"><Award size={13} /> Final</Link>
         </div>
       </header>
-
-      <div className="flex-1 min-h-0 flex gap-3 p-3">
-        {mode !== "customer" && (
-          <div className="flex-1 min-w-0 rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white">
-            <Screen stay={stay} sources={sources} fixedSupport={false} onOpenHotel={() => phoneRef.current?.scrollTo({ top: 0 })} />
-          </div>
-        )}
-        {mode !== "seller" && (
-          <div className={`flex flex-col min-h-0 ${mode === "customer" ? "mx-auto" : ""}`} style={{ width: 390 }}>
-            <div className="text-[11.5px] font-bold uppercase tracking-wide text-ib-muted mb-1.5 flex items-center gap-1.5"><Smartphone size={13} /> Couple sees (30 Sundays app)</div>
-            {mode === "customer" && (
-              <div className="flex gap-1.5 overflow-x-auto no-scrollbar mb-2">
-                {hotels.map((x) => (
-                  <button key={x.id} onClick={() => setOpenId(x.id)} className={`shrink-0 text-[12px] font-semibold px-3 py-1 rounded-full border ${x.id === openId ? "bg-[#101828] text-white border-[#101828]" : "bg-white border-gray-200"}`}>{x.name}</button>
-                ))}
-              </div>
-            )}
-            <div ref={phoneRef} className="flex-1 min-h-0 overflow-y-auto bg-white rounded-[30px] border-[7px] border-[#1F2937]">
-              <ViewCtx.Provider value={{ mode: "customer", sources }}>
-                <div style={vars}><HotelPage h={h} ctx={ctx} scrollRef={phoneRef} /></div>
-              </ViewCtx.Provider>
-            </div>
-          </div>
-        )}
+      <div className="flex-1 min-h-0 p-3">
+        <div className="h-full rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white">
+          <Screen stay={stay} sources={sources} fixedSupport={false} />
+        </div>
       </div>
       {legend && <Legend onClose={() => setLegend(false)} />}
     </div>

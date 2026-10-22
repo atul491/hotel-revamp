@@ -6,6 +6,7 @@ import { ListCard } from "./blocks/ListCard";
 import { Rooms } from "./blocks/commerce";
 import { TopBar, Filters, Toolbar, Notice, TierHeader, PriceDetails, Bookings, Support, TIER } from "./blocks/screen";
 import HotelPage from "./HotelPage";
+import { Slot, usePickedUser } from "./user";
 import { TRIP_STAYS } from "./data/ibHotels";
 
 // ─── The IB hotel selection screen, every part switchable from /options ───
@@ -15,6 +16,8 @@ export default function Screen({ stay, onOpenHotel, sources = false, fixedSuppor
   const [expanded, setExpanded] = useState({});
   const [drawer, setDrawer] = useState(false);
   const [tierTab, setTierTab] = useState("gold");
+  const userGrouping = usePickedUser("grouping");
+  const S = stay;
 
   const setF = (f) => {
     if (f.byGuest !== filters.byGuest) setBooking({ ...booking, byGuest: f.byGuest });
@@ -34,6 +37,7 @@ export default function Screen({ stay, onOpenHotel, sources = false, fixedSuppor
 
   const card = (x) => (
     <div key={x.id}>
+      <Slot k="listCard" s={{ ...S, h: x }}>
       <ListCard
         h={x}
         v={picks.listCard}
@@ -46,6 +50,7 @@ export default function Screen({ stay, onOpenHotel, sources = false, fixedSuppor
         onToggleRooms={() => { setOpenId(x.id); setExpanded((e) => ({ ...e, [x.id]: e[x.id] ? false : "rooms" })); }}
         onSelect={() => ctx.book(x)}
       />
+      </Slot>
       {expanded[x.id] && (
         <div className="bg-white border border-divider border-t-0 px-4 pb-4 -mt-2 pt-4" style={{ borderRadius: "0 0 var(--r) var(--r)" }}>
           {expanded[x.id] === "full" ? (
@@ -106,23 +111,25 @@ export default function Screen({ stay, onOpenHotel, sources = false, fixedSuppor
     );
   } else body = <div className="space-y-3">{list.map(card)}</div>;
 
+  if (userGrouping && city === 0) body = <Slot k="grouping" s={S} />;
+
   const showRail = picks.rail !== "bar" || picks.bookings !== "stepper";
   const toolbarPanel = (
     <div className="p-3 space-y-2.5" style={{ background: "var(--band)", borderRadius: "var(--r)" }}>
-      {picks.filters !== "column" && <Filters v={picks.filters} f={filters} set={setF} range={priceRange} />}
-      <Toolbar v={picks.toolbar} count={list.length} f={filters} set={setF} />
-      <Notice v={picks.notice} />
+      {picks.filters !== "column" && <Slot k="filters" s={S}><Filters v={picks.filters} f={filters} set={setF} range={priceRange} /></Slot>}
+      <Slot k="toolbar" s={S}><Toolbar v={picks.toolbar} count={list.length} f={filters} set={setF} /></Slot>
+      <Slot k="notice" s={S}><Notice v={picks.notice} /></Slot>
     </div>
   );
 
   return (
     <ViewCtx.Provider value={{ mode: "seller", sources }}>
       <div className="relative h-full flex flex-col min-h-0" style={{ ...vars, background: "var(--page)" }}>
-        <TopBar v={picks.topBar} city={city} setCity={setCity} booked={booked} support={picks.support} />
+        <Slot k="topBar" s={S}><TopBar v={picks.topBar} city={city} setCity={setCity} booked={booked} support={picks.support} /></Slot>
         <div className="flex-1 min-h-0 overflow-y-auto">
           <div className="flex gap-4 p-4 items-start">
             {picks.filters === "column" && (
-              <div className="w-[240px] shrink-0 sticky top-4 hidden md:block"><Filters v="column" f={filters} set={setF} range={priceRange} /></div>
+              <div className="w-[240px] shrink-0 sticky top-4 hidden md:block"><Slot k="filters" s={S}><Filters v="column" f={filters} set={setF} range={priceRange} /></Slot></div>
             )}
             <div className="flex-1 min-w-0 space-y-3">
               {toolbarPanel}
@@ -135,14 +142,14 @@ export default function Screen({ stay, onOpenHotel, sources = false, fixedSuppor
             </div>
             {showRail && (
               <div className="w-[270px] shrink-0 space-y-3 sticky top-4 hidden lg:block">
-                {picks.rail !== "bar" && <PriceDetails v={picks.rail} trip={trip} delta={h.id !== ctx.currentId ? openedDelta : null} />}
-                <Bookings v={picks.bookings} booked={booked} bookedRate={bookedRate} byGuest={booking.byGuest} city={city} setCity={setCity} />
+                {picks.rail !== "bar" && <Slot k="rail" s={S}><PriceDetails v={picks.rail} trip={trip} delta={h.id !== ctx.currentId ? openedDelta : null} /></Slot>}
+                <Slot k="bookings" s={S}><Bookings v={picks.bookings} booked={booked} bookedRate={bookedRate} byGuest={booking.byGuest} city={city} setCity={setCity} /></Slot>
               </div>
             )}
           </div>
         </div>
         {picks.rail === "bar" && <PriceDetails v="bar" trip={trip} />}
-        <Support v={picks.support} absolute={!fixedSupport} />
+        <Slot k="support" s={S}><Support v={picks.support} absolute={!fixedSupport} /></Slot>
 
         {drawer && picks.detail !== "inline" && (
           <div className={`absolute inset-0 z-40 bg-black/35 flex ${picks.detail === "modal" ? "items-center justify-center p-6" : "justify-end"}`} onClick={() => setDrawer(false)}>
