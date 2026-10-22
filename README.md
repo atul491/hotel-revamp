@@ -2,11 +2,13 @@
 
 One hotel record for both sides of a 30 Sundays booking: the seller picking a hotel in the Itinerary Builder (IB) and the couple reading it in the app.
 
-| Route | What it is |
-|---|---|
-| `/ib` | How a hotel looks in IB today, recreated from `atul491/IB-repo-copy` (`HotelSectionWithTwoButton`, `SearchedHotelList`, `GroupedRoomCard`, Price Details). |
-| `/universal` | The joined hotel page. IB rates and seller data plus every app block (photos, honest bit, why Indian couples, about, amenities, location, reviews, rooms, policies, FAQs, similar). Seller and couple views side by side, with data-source tags and an IB ↔ App field map. |
-| `/options` | Design options. Every UI element with 3 to 5 variants rendered with real data. Pick one per element (or a preset), then **Preview full page** opens `/universal` with those picks. Picks persist in the browser and can be shared as a `?d=` link. |
+Live on Vercel: https://hotel-revamp.vercel.app
+
+| Route | Link | What it is |
+|---|---|---|
+| `/ib` | [hotel-revamp.vercel.app/ib](https://hotel-revamp.vercel.app/ib) | How a hotel looks in IB today, recreated from `atul491/IB-repo-copy` (`HotelSectionWithTwoButton`, `SearchedHotelList`, `GroupedRoomCard`, Price Details). |
+| `/universal` | [hotel-revamp.vercel.app/universal](https://hotel-revamp.vercel.app/universal) | The joined hotel page. IB rates and seller data plus every app block (photos, honest bit, why Indian couples, about, amenities, location, reviews, rooms, policies, FAQs, similar). Seller and couple views side by side, with data-source tags and an IB ↔ App field map. |
+| `/options` | [hotel-revamp.vercel.app/options](https://hotel-revamp.vercel.app/options) | Design options. Every UI element with 3 to 5 variants rendered with real data. Pick one per element (or a preset), then **Preview full page** opens `/universal` with those picks. Picks persist in the browser and can be shared as a `?d=` link. |
 
 ## Data
 
