@@ -199,7 +199,10 @@ export function Amenities({ h, v }) {
 
 // ─── Location ───
 export function Location({ h, v }) {
-  const [tab, setTab] = useState(Object.keys(h.nearby)[0]);
+  // Nearby tabs in the order sellers asked for; any extra group goes last.
+  const ORDER = ["Transport", "Attractions", "Essentials", "Food and drink"];
+  const groups = [...ORDER.filter((k) => h.nearby[k]), ...Object.keys(h.nearby).filter((k) => !ORDER.includes(k))];
+  const [tab, setTab] = useState(groups[0]);
   const m = h.ib?.master || {};
   const title = <H2>Where you'll be<DataSource s="both" /></H2>;
   const seller = <SellerNote items={[["Region", m.region || "—"], ["Beachfront", m.beachfront ? "Yes" : "No"], ["Beach", m.distance_from_beach_km != null ? `${m.distance_from_beach_km} km` : "—"]]} />;
@@ -231,7 +234,7 @@ export function Location({ h, v }) {
         </div>
         <div className="mt-3">{address}</div>
         <div className="grid grid-cols-2 gap-2 mt-3">
-          {Object.entries(h.nearby).map(([g, list]) => (
+          {groups.map((g) => [g, h.nearby[g]]).map(([g, list]) => (
             <div key={g} className="text-[12px] bg-surface p-2" style={{ borderRadius: "var(--rw)" }}><b>{g}</b><div className="text-sub">{list[0].name} · {list[0].distance}</div></div>
           ))}
         </div>{seller}
@@ -240,7 +243,7 @@ export function Location({ h, v }) {
   return (
     <section>{title}{address}
       <div className="flex gap-4 border-b border-divider mt-3 text-[13px] overflow-x-auto no-scrollbar">
-        {Object.keys(h.nearby).map((k) => (
+        {groups.map((k) => (
           <button key={k} onClick={() => setTab(k)} className="pb-2 font-semibold whitespace-nowrap" style={{ color: tab === k ? "var(--accent)" : "#535862", borderBottom: tab === k ? "2px solid var(--accent)" : "2px solid transparent" }}>{k}</button>
         ))}
       </div>

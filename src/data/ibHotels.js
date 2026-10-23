@@ -282,6 +282,11 @@ export function toUniversal(ib) {
       private_sic: ib.private_sic,
       tier: ib.tier,
       inclusions: ib.inclusions || [],
+      // Same field the live IB reads (hotel.__rawHotel.google_map_link); when a
+      // hotel has none, fall back to a Google Maps search like the app does.
+      google_map_link:
+        ib.google_map_link ||
+        `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${ib.hotel}, ${ib.master?.address || base.address}`)}`,
       fromPrice: ib.pricing.selling_price,
       master: ib.master,
     },

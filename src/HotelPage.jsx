@@ -3,7 +3,7 @@ import { X } from "lucide-react";
 import { DetailLinks } from "./kit";
 import { useDesign } from "./design";
 import { Media, Title, Scores } from "./blocks/top";
-import { Honest, Why, About, Amenities, Location, Reviews } from "./blocks/content";
+import { Honest, About, Amenities, Location, Reviews } from "./blocks/content";
 import { Policies, Nav, Cta, SellerPanel } from "./blocks/commerce";
 import { Slot } from "./user";
 
@@ -63,7 +63,7 @@ export default function HotelPage({ h, ctx, scrollRef, jumpTo }) {
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jumpTo, h.id]);
-  const links = <DetailLinks onImages={() => setGallery(true)} onMap={() => scrollTo("location")} />;
+  const links = <DetailLinks onImages={() => setGallery(true)} mapUrl={h.ib?.google_map_link} />;
 
   return (
     <div ref={local} style={{ fontSize: 14 }}>
@@ -81,7 +81,6 @@ export default function HotelPage({ h, ctx, scrollRef, jumpTo }) {
           <Sec id="about"><Slot k="about" s={S}><About h={h} v={picks.about} /></Slot></Sec>
           <Sec id="amenities"><Slot k="amenities" s={S}><Amenities h={h} v={picks.amenities} /></Slot></Sec>
           {on("honest") && <Sec id="honest"><Slot k="honest" s={S}><Honest h={h} v={picks.honest} /></Slot></Sec>}
-          {on("why") && <Slot k="why" s={S}><Why h={h} v={picks.why} /></Slot>}
           <Sec id="location"><Slot k="location" s={S}><Location h={h} v={picks.location} /></Slot></Sec>
           <Sec id="reviews"><Slot k="reviews" s={S}><Reviews h={h} v={picks.reviews} /></Slot></Sec>
           <Sec id="policies"><Slot k="policies" s={S}><Policies h={h} v={picks.policies} /></Slot></Sec>

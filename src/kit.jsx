@@ -229,13 +229,20 @@ export function ContractedBadge() {
 }
 
 // ─── Show Images | Show on Map, at the right of the name line on the detail page ───
-export function DetailLinks({ onImages, onMap }) {
+export function DetailLinks({ onImages, mapUrl }) {
   const cls = "text-[14px] font-medium flex items-center gap-1.5 hover:underline whitespace-nowrap";
   return (
     <div className="flex items-center gap-3 shrink-0" style={{ color: "#E31B53" }}>
       <button type="button" onClick={onImages} className={cls}><ImageIcon size={15} /> Show Images</button>
-      <span className="text-[#414651]">|</span>
-      <button type="button" onClick={onMap} className={cls}><MapPin size={15} /> Show on Map</button>
+      {mapUrl && (
+        <>
+          <span className="text-[#414651]">|</span>
+          {/* Opens Google Maps in a new tab, as the live IB does. */}
+          <a href={mapUrl} target="_blank" rel="noopener noreferrer" className={cls} onClick={(e) => e.stopPropagation()}>
+            <MapPin size={15} /> Show on Map
+          </a>
+        </>
+      )}
     </div>
   );
 }

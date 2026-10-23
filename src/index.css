@@ -6,3 +6,6 @@ body { margin: 0; font-family: Figtree, system-ui, sans-serif; background: #fff;
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { scrollbar-width: none; }
 img { background: #F4F2F0; }
+
+/* No focus box after a mouse click; keyboard focus still shows a ring. */
+button:focus:not(:focus-visible), a:focus:not(:focus-visible) { outline: none; }

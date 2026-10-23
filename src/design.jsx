@@ -264,17 +264,6 @@ export const BLOCKS = [
     ],
   },
   {
-    key: "why",
-    title: "Why Indian couples say yes",
-    where: "App whyIndians",
-    variants: [
-      { id: "list", label: "Icon list", note: "One line each with an icon well" },
-      { id: "chips", label: "Chips", note: "Short chips, wraps" },
-      { id: "highlight", label: "Highlight box", note: "Pink-gold gradient box, 2 columns" },
-      { id: "off", label: "Hide", note: "" },
-    ],
-  },
-  {
     key: "location",
     title: "Location",
     where: "App 'Where you'll be' · IB master distance fields",
@@ -346,17 +335,17 @@ export const PRESETS = [
   {
     id: "ib",
     label: "Close to today's IB",
-    picks: { accent: "teal", font: "inter", radius: "tight", shadow: "ib", density: "compact", surface: "grey", listCard: "ibrow", rail: "box", cta: "box", honest: "off", why: "off", nav: "off", seller: "strip" },
+    picks: { accent: "teal", font: "inter", radius: "tight", shadow: "ib", density: "compact", surface: "grey", listCard: "ibrow", rail: "box", cta: "box", honest: "off", nav: "off", seller: "strip" },
   },
   {
     id: "dense",
     label: "Seller dense",
-    picks: { density: "compact", listCard: "row", media: "mosaic", scores: "chips", honest: "split", why: "chips", about: "sections", amenities: "chips", location: "chips", reviews: "summary", policies: "accordion", nav: "pills", cta: "delta", seller: "panel" },
+    picks: { density: "compact", listCard: "row", media: "mosaic", scores: "chips", honest: "split", about: "sections", amenities: "chips", location: "chips", reviews: "summary", policies: "accordion", nav: "pills", cta: "delta", seller: "panel" },
   },
   {
     id: "editorial",
     label: "Editorial",
-    picks: { font: "serif", radius: "round", shadow: "raised", density: "airy", surface: "cream", accent: "forest", media: "carousel", title: "center", scores: "hero", honest: "cards", why: "highlight", about: "cards", amenities: "grid", location: "map", reviews: "bars" },
+    picks: { font: "serif", radius: "round", shadow: "raised", density: "airy", surface: "cream", accent: "forest", media: "carousel", title: "center", scores: "hero", honest: "cards", about: "cards", amenities: "grid", location: "map", reviews: "bars" },
   },
 ];
 
@@ -518,7 +507,7 @@ export const FINAL = {
     topBar: "stepper", filters: "column", toolbar: "row", notice: "price", grouping: "headers", listCard: "ibrow",
     tags: "pills", detail: "drawer", rail: "card", bookings: "cards", support: "fab",
     media: "mosaic", title: "inline", scores: "strip", rooms: "grid", about: "clamp",
-    amenities: "list", honest: "postcard", why: "chips", location: "tabs", reviews: "carousel",
+    amenities: "list", honest: "postcard", location: "tabs", reviews: "carousel",
     policies: "accordion", nav: "tabs", cta: "bar", seller: "strip",
   },
   why: {
@@ -535,7 +524,6 @@ export const FINAL = {
     media: "Hero plus mosaic fits a desktop drawer better than the phone strip.",
     rooms: "The live IB room cards, unchanged: sellers already know them.",
     honest: "The postcard is the most 30 Sundays thing on the page; couples remember it.",
-    why: "Chips keep the Indian-couple reasons short since the honest bit already sits above.",
     policies: "One accordion for policies, legal and FAQs avoids three separate long lists.",
     cta: "The replace bar shows old and new totals, which is what the couple needs to say yes.",
   },
