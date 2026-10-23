@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronLeft, Share2, Images, Play, MapPin, Image as ImageIcon, CalendarDays, Users, LogIn, LogOut, Moon } from "lucide-react";
+import { ChevronLeft, Share2, Images, Play, MapPin, CalendarDays, Users, LogIn, LogOut, Moon } from "lucide-react";
 import { Stars, BookingB, SourceLogo, SOURCE_NAME, DataSource, SellerNote } from "../kit";
 import { Tags } from "./screen";
 import { useDesign } from "../design";
@@ -110,30 +110,16 @@ function TabsMedia({ photos, cats }) {
 }
 
 // ─── Title ───
-// The only badge next to a hotel's name: shown when 30 Sundays has a contract.
-export function ContractedBadge({ size = "md" }) {
-  const sm = size === "sm";
+function SundaysPick() {
   return (
-    <span className={`inline-flex items-center gap-1 rounded-md font-bold tracking-wide align-middle ${sm ? "px-1.5 py-[2px] text-[10.5px]" : "px-2 py-[3px] text-[11px]"}`}
-      style={{ background: "#E6F7F5", color: "#00857A", border: "1px solid #B7E6E0" }} title="30 Sundays has a contract with this hotel">
-      © CONTRACTED
+    <span className="inline-flex items-center gap-1 px-2 py-[3px] rounded-md text-[9.5px] font-extrabold tracking-wide text-[#C00840] align-middle"
+      style={{ background: "linear-gradient(135deg, #FFF0F4 0%, #FEF6E9 100%)", border: "1px solid #F8D8E1" }}>
+      <img src={`${import.meta.env.BASE_URL}logo.png`} className="w-3 h-3 object-contain" /> SUNDAYS PICK
     </span>
   );
 }
 
-// Show Images | Show on Map, on the right of the name line in the detail view.
-export function DetailLinks({ onImages, onMap }) {
-  const cls = "text-[14px] font-medium flex items-center gap-1.5 hover:underline whitespace-nowrap";
-  return (
-    <div className="flex items-center gap-3 shrink-0" style={{ color: "#E31B53" }}>
-      <button onClick={onImages} className={cls}><ImageIcon size={15} /> Show Images</button>
-      <span className="text-[#414651]">|</span>
-      <button onClick={onMap} className={cls}><MapPin size={15} /> Show on Map</button>
-    </div>
-  );
-}
-
-export function Title({ h, v, actions }) {
+export function Title({ h, v }) {
   const { picks } = useDesign();
   const tags = <Tags h={h} v={picks.tags === "text" ? "text" : "pills"} className={v === "center" ? "justify-center mt-2" : "mt-2"} />;
   const type = h.type === "Resort" ? "resort" : "hotel";
@@ -147,10 +133,9 @@ export function Title({ h, v, actions }) {
   if (v === "center")
     return (
       <div className="text-center">
-        {actions && <div className="flex justify-end mb-1">{actions}</div>}
         <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-sub">{h.neighbourhood}</div>
         <h1 className="mt-1" style={{ fontFamily: "var(--head-font)", fontSize: 28, fontWeight: 700, letterSpacing: -0.5, lineHeight: 1.1 }}>{h.name}</h1>
-        <div className="mt-2 flex justify-center items-center gap-2"><Stars n={h.stars} size={14} /> {h.ib?.contracted && <ContractedBadge />}</div>
+        <div className="mt-2 flex justify-center items-center gap-2"><Stars n={h.stars} size={14} /> {h.sundaysPick && <SundaysPick />}</div>
         {tags}
         <DataSource s="both" />
         <SellerNote items={seller} />
@@ -160,13 +145,10 @@ export function Title({ h, v, actions }) {
     return (
       <div>
         <div className="text-[10.5px] font-extrabold uppercase tracking-[0.9px] text-sub flex items-center gap-1"><MapPin size={11} /> {h.neighbourhood}</div>
-        <div className="mt-1 flex items-center gap-3 flex-wrap">
-          <h1 className="flex-1 min-w-0" style={{ fontFamily: "var(--head-font)", fontSize: 24, fontWeight: 700, letterSpacing: -0.4 }}>{h.name}<DataSource s="both" /></h1>
-          {actions}
-        </div>
+        <h1 className="mt-1" style={{ fontFamily: "var(--head-font)", fontSize: 24, fontWeight: 700, letterSpacing: -0.4 }}>{h.name}<DataSource s="both" /></h1>
         <div className="mt-2 flex items-center gap-2 flex-wrap">
           <span className="inline-flex items-center gap-1 text-[12px] font-bold text-[#B54708] bg-[#FFF4E0] px-2 py-0.5" style={{ borderRadius: "var(--rp)" }}>{h.stars} star {type}</span>
-          {h.ib?.contracted && <ContractedBadge />}
+          {h.sundaysPick && <SundaysPick />}
         </div>
         {tags}
         <SellerNote items={seller} />
@@ -174,12 +156,9 @@ export function Title({ h, v, actions }) {
     );
   return (
     <div>
-      <div className="flex items-center gap-3 flex-wrap">
-        <h1 className="flex-1 min-w-0" style={{ fontFamily: "var(--head-font)", fontSize: 22, fontWeight: 700, letterSpacing: -0.4, lineHeight: 1.25 }}>
-          {h.name} {h.ib?.contracted && <ContractedBadge />}<DataSource s="both" />
-        </h1>
-        {actions}
-      </div>
+      <h1 style={{ fontFamily: "var(--head-font)", fontSize: 22, fontWeight: 700, letterSpacing: -0.4, lineHeight: 1.25 }}>
+        {h.name} {h.sundaysPick && <SundaysPick />}<DataSource s="both" />
+      </h1>
       <div className="mt-1.5 flex items-center gap-1.5 text-[13px] text-sub">
         <Stars n={h.stars} /> {h.stars} star {type} · {h.neighbourhood}
       </div>
