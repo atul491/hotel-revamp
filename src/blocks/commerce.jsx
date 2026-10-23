@@ -259,7 +259,7 @@ export function Similar({ h, v, ctx }) {
 
 // ─── Section nav ───
 export const SECTIONS = [
-  ["rooms", "Rooms"], ["about", "About"], ["amenities", "Amenities"], ["honest", "Honest bit"],
+  ["about", "About"], ["amenities", "Amenities"], ["honest", "Honest bit"],
   ["location", "Location"], ["reviews", "Reviews"], ["policies", "Policies"], ["similar", "Similar"],
 ];
 export function Nav({ v, ids, scrollTo }) {

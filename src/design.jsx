@@ -224,16 +224,6 @@ export const BLOCKS = [
     ],
   },
   {
-    key: "stay",
-    title: "Your stay (dates, guests, check-in)",
-    where: "App stay slot + StayBasicsCrisp · IB tab header",
-    variants: [
-      { id: "card", label: "Stay card", note: "App: dates · nights · travellers, then check-in / check-out line" },
-      { id: "columns", label: "Check-in / out columns", note: "Two columns with big times, early / late line" },
-      { id: "timeline", label: "Timeline", note: "Arrive → nights → leave on one line" },
-    ],
-  },
-  {
     key: "rooms",
     title: "Rooms and rates",
     where: "Show rooms · IB rate cards",
@@ -370,7 +360,7 @@ export const PRESETS = [
   {
     id: "dense",
     label: "Seller dense",
-    picks: { density: "compact", listCard: "row", media: "mosaic", scores: "chips", stay: "timeline", honest: "split", why: "chips", about: "sections", amenities: "chips", location: "chips", reviews: "summary", policies: "accordion", similar: "list", nav: "pills", cta: "delta", seller: "panel" },
+    picks: { density: "compact", listCard: "row", media: "mosaic", scores: "chips", honest: "split", why: "chips", about: "sections", amenities: "chips", location: "chips", reviews: "summary", policies: "accordion", similar: "list", nav: "pills", cta: "delta", seller: "panel" },
   },
   {
     id: "editorial",
@@ -536,7 +526,7 @@ export const FINAL = {
     accent: "fuchsia", font: "figtree", radius: "soft", shadow: "soft", density: "compact", surface: "white",
     topBar: "stepper", filters: "column", toolbar: "row", notice: "price", grouping: "headers", listCard: "ibrow",
     tags: "pills", detail: "drawer", rail: "card", bookings: "cards", support: "fab",
-    media: "mosaic", title: "inline", scores: "strip", stay: "columns", rooms: "grid", about: "clamp",
+    media: "mosaic", title: "inline", scores: "strip", rooms: "grid", about: "clamp",
     amenities: "list", honest: "postcard", why: "chips", location: "tabs", reviews: "carousel",
     policies: "accordion", similar: "list", nav: "tabs", cta: "bar", seller: "strip",
   },
@@ -552,7 +542,6 @@ export const FINAL = {
     rail: "White card with the change this hotel makes, so the total never surprises the seller.",
     bookings: "City cards make it obvious which stays still need a room before Continue.",
     media: "Hero plus mosaic fits a desktop drawer better than the phone strip.",
-    stay: "Big check-in / check-out times are the thing couples ask about most.",
     rooms: "Your IB rate cards: one card per room and meal plan, suppliers as radio rows, meal as an icon.",
     honest: "The postcard is the most 30 Sundays thing on the page; couples remember it.",
     why: "Chips keep the Indian-couple reasons short since the honest bit already sits above.",
