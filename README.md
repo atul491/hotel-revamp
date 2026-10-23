@@ -26,4 +26,11 @@ npm run dev
 
 ## Create-your-own versions
 
-`api/variant.js` is a Vercel function that calls Claude (`claude-opus-5-5`) with the element, its data, and the seller's text and screenshot, and returns an HTML fragment that renders from `window.DATA`. It needs `ANTHROPIC_API_KEY` set in the Vercel project (Settings → Environment Variables). Without it, requests are saved as drafts and can be built later with the card's **Build** button. Made versions are stored in the browser (localStorage) and drawn in a sandboxed iframe.
+`api/variant.js` is a Vercel function that sends the element, its data, and the seller's text and screenshot to an AI model and returns an HTML fragment that renders from `window.DATA`. It supports both providers; the create box has a Claude / OpenAI switch showing which keys are set.
+
+| Vercel env var | Purpose |
+|---|---|
+| `ANTHROPIC_API_KEY` | Turns on Claude (`ANTHROPIC_MODEL`, default `claude-opus-5-5`) |
+| `OPENAI_API_KEY` | Turns on OpenAI (`OPENAI_MODEL`, default `gpt-5.5`) |
+| `AI_PROVIDER` | Optional default when both keys are set: `anthropic` or `openai` |
+ Without it, requests are saved as drafts and can be built later with the card's **Build** button. Made versions are stored in the browser (localStorage) and drawn in a sandboxed iframe.

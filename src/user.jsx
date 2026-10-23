@@ -177,6 +177,26 @@ function shrink(file, max = 1400) {
   });
 }
 
+// Which AI providers have a key on the server (asked once per page load).
+const PROVIDER_LABEL = { anthropic: "Claude", openai: "OpenAI" };
+let providersPromise;
+function useProviders() {
+  const [p, setP] = useState({ providers: [], default: null, loaded: false });
+  useEffect(() => {
+    providersPromise ||= fetch(`${import.meta.env.BASE_URL}api/variant`).then((r) => (r.ok ? r.json() : { providers: [] })).catch(() => ({ providers: [] }));
+    providersPromise.then((x) => setP({ providers: x.providers || [], default: x.default || null, loaded: true }));
+  }, []);
+  return p;
+}
+const PKEY = "hotel-revamp:provider";
+const savedProvider = () => {
+  try {
+    return localStorage.getItem(PKEY);
+  } catch {
+    return null;
+  }
+};
+
 async function generate(payload) {
   const res = await fetch(`${import.meta.env.BASE_URL}api/variant`, {
     method: "POST",
@@ -198,6 +218,17 @@ const describe = (o) => ({ key: o.key, title: o.title, where: o.where, variants:
 // ─── The box under each element ───
 export function CreateOption({ o, data, onCreated }) {
   const u = useUserVariants();
+  const prov = useProviders();
+  const [choice, setChoice] = useState(savedProvider);
+  const provider = prov.providers.includes(choice) ? choice : prov.default;
+  const choose = (x) => {
+    setChoice(x);
+    try {
+      localStorage.setItem(PKEY, x);
+    } catch {
+      /* fine */
+    }
+  };
   const [text, setText] = useState("");
   const [image, setImage] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -216,19 +247,19 @@ export function CreateOption({ o, data, onCreated }) {
   const submit = async () => {
     if (!text.trim() && !image) return;
     const id = `u-${Date.now().toString(36)}`;
-    const base = { id, label: "My version", note: text.slice(0, 120), text, image, status: "building", createdAt: Date.now() };
+    const base = { id, label: "My version", note: text.slice(0, 120), text, image, status: "building", createdAt: Date.now(), provider };
     u.put(o.key, base);
     onCreated?.(id);
     setBusy(true);
     setErr("");
     try {
-      const out = await generate({ element: describe(o), data, text, image });
+      const out = await generate({ element: describe(o), data, text, image, provider });
       u.patch(o.key, id, { ...out, status: "ready" });
       setText("");
       setImage(null);
     } catch (e) {
       u.patch(o.key, id, { status: "draft", error: e.message, label: "My version (draft)" });
-      setErr(e.code === "no_key" ? "Saved as a draft. To build it automatically, add ANTHROPIC_API_KEY in Vercel → Project → Settings → Environment Variables, then press Build on the card." : e.message);
+      setErr(e.code === "no_key" ? "Saved as a draft. To build it automatically, add ANTHROPIC_API_KEY or OPENAI_API_KEY in Vercel → Project → Settings → Environment Variables, then press Build on the card." : e.message);
     } finally {
       setBusy(false);
     }
@@ -241,7 +272,22 @@ export function CreateOption({ o, data, onCreated }) {
       onDrop={(e) => { e.preventDefault(); setDrag(false); addFile(e.dataTransfer.files?.[0]); }}
       className={`shrink-0 w-[390px] self-stretch flex flex-col rounded-xl border-2 border-dashed p-3 bg-white ${drag ? "border-fuchsia bg-[#FFF5F8]" : "border-[#D5D7DA]"}`}
     >
-      <div className="text-[14px] font-bold flex items-center gap-1.5"><Sparkles size={15} className="text-fuchsia" /> Create my own version</div>
+      <div className="text-[14px] font-bold flex items-center gap-1.5">
+        <Sparkles size={15} className="text-fuchsia" /> Create my own version
+        {prov.providers.length > 0 && (
+          <span className="ml-auto flex bg-surface rounded-md p-0.5 text-[11.5px] font-semibold">
+            {["anthropic", "openai"].map((x) => {
+              const ok = prov.providers.includes(x);
+              return (
+                <button key={x} disabled={!ok} onClick={() => choose(x)} title={ok ? `Build with ${PROVIDER_LABEL[x]}` : `No ${PROVIDER_LABEL[x]} key on Vercel`}
+                  className={`px-2 py-0.5 rounded ${provider === x ? "bg-white shadow text-head" : "text-sub"} disabled:opacity-35`}>
+                  {PROVIDER_LABEL[x]}
+                </button>
+              );
+            })}
+          </span>
+        )}
+      </div>
       <p className="text-[12px] text-sub mt-0.5 mb-2">Describe it, paste or drop a screenshot, or both. Claude builds it with this element's real data.</p>
       <textarea
         value={text}
@@ -262,7 +308,7 @@ export function CreateOption({ o, data, onCreated }) {
       )}
       <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => addFile(e.target.files?.[0])} />
       <button onClick={submit} disabled={busy || (!text.trim() && !image)} className="mt-2 bg-fuchsia text-white text-[13.5px] font-bold rounded-lg py-2 flex items-center justify-center gap-1.5 disabled:opacity-40">
-        {busy ? <><Loader2 size={15} className="animate-spin" /> Building (up to a minute)...</> : <><Wand2 size={15} /> Create option</>}
+        {busy ? <><Loader2 size={15} className="animate-spin" /> Building with {PROVIDER_LABEL[provider] || "AI"} (up to a minute)...</> : <><Wand2 size={15} /> Create option{provider ? ` with ${PROVIDER_LABEL[provider]}` : ""}</>}
       </button>
       {err && <p className="text-[11.5px] text-[#B54708] mt-1.5 leading-snug">{err}</p>}
       {u.warn && <p className="text-[11.5px] text-[#B42318] mt-1.5">{u.warn}</p>}
@@ -273,13 +319,15 @@ export function CreateOption({ o, data, onCreated }) {
 // ─── A made version's own card actions: rebuild, change, delete ───
 export function UserCardActions({ o, v, data }) {
   const u = useUserVariants();
+  const prov = useProviders();
+  const provider = prov.providers.includes(v.provider) ? v.provider : prov.default;
   const [change, setChange] = useState("");
   const [busy, setBusy] = useState(false);
   const run = async (instruction) => {
     setBusy(true);
     u.patch(o.key, v.id, { status: "building", error: "" });
     try {
-      const out = await generate({ element: describe(o), data, text: instruction || v.text, image: instruction ? null : v.image, previous: instruction && v.html ? { html: v.html } : null });
+      const out = await generate({ element: describe(o), data, text: instruction || v.text, image: instruction ? null : v.image, previous: instruction && v.html ? { html: v.html } : null, provider });
       u.patch(o.key, v.id, { ...out, status: "ready", text: instruction ? `${v.text}\n\nThen: ${instruction}` : v.text });
       setChange("");
     } catch (e) {
@@ -291,6 +339,7 @@ export function UserCardActions({ o, v, data }) {
   return (
     <div className="mt-2 space-y-1.5" onClick={(e) => e.stopPropagation()}>
       {v.error && <p className="text-[11.5px] text-[#B54708] leading-snug">{v.error}</p>}
+      {v.model && <p className="text-[11px] text-inact">Built with {PROVIDER_LABEL[v.provider] || v.provider} · {v.model}</p>}
       <div className="flex gap-1.5">
         <input value={change} onChange={(e) => setChange(e.target.value)} placeholder={v.html ? "Change it, e.g. 'bigger price, no inclusions'" : "Add detail (optional)"} className="flex-1 min-w-0 border border-divider rounded-md px-2 py-1 text-[12px]" />
         <button disabled={busy} onClick={() => run(change.trim() || null)} className="text-[12px] font-semibold border border-divider rounded-md px-2 py-1 flex items-center gap-1 disabled:opacity-40">
