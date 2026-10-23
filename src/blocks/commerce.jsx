@@ -265,12 +265,14 @@ export const SECTIONS = [
   ["about", "About"], ["amenities", "Amenities"], ["honest", "Honest bit"],
   ["location", "Location"], ["reviews", "Reviews"], ["policies", "Policies"],
 ];
-export function Nav({ v, ids, scrollTo }) {
-  const [act, setAct] = useState(ids[0]);
+export function Nav({ v, ids, scrollTo, active }) {
+  const [clicked, setClicked] = useState(ids[0]);
   if (v === "off") return null;
-  const go = (id) => { setAct(id); scrollTo(id); };
+  // `active` comes from the page's scroll position; clicking just scrolls there.
+  const act = active || clicked;
+  const go = (id) => { setClicked(id); scrollTo(id); };
   return (
-    <div className="sticky top-0 z-20 bg-white/95 backdrop-blur border-b border-divider -mx-[var(--pad)] px-[var(--pad)]">
+    <div data-nav className="sticky top-0 z-20 bg-white/95 backdrop-blur border-b border-divider -mx-[var(--pad)] px-[var(--pad)]">
       <div className={`flex overflow-x-auto no-scrollbar ${v === "pills" ? "gap-1.5 py-2" : "gap-4"}`}>
         {SECTIONS.filter(([id]) => ids.includes(id)).map(([id, l]) =>
           v === "pills" ? (

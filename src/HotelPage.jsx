@@ -21,6 +21,34 @@ export default function HotelPage({ h, ctx, scrollRef, jumpTo }) {
   const root = scrollRef || local;
   const on = (k) => picks[k] !== "off";
   const ids = ["about", "amenities", "honest", "location", "reviews", "policies"].filter((k) => k !== "honest" || on(k));
+  // ─── Scroll spy: the tab for the section being read stays highlighted ───
+  const [active, setActive] = useState(null);
+  useEffect(() => {
+    const page = local.current;
+    if (!page) return;
+    let box = page.parentElement;
+    while (box && !/(auto|scroll)/.test(getComputedStyle(box).overflowY)) box = box.parentElement;
+    const target = box || window;
+    const onScroll = () => {
+      const top = box ? box.getBoundingClientRect().top : 0;
+      const nav = page.querySelector("[data-nav]");
+      const line = top + (nav ? nav.offsetHeight : 0) + 24;
+      let cur = null;
+      page.querySelectorAll("[data-sec]").forEach((el) => {
+        if (el.getBoundingClientRect().top <= line) cur = el.dataset.sec;
+      });
+      // At the very bottom, the last section counts as read.
+      if (box && box.scrollTop + box.clientHeight >= box.scrollHeight - 4) {
+        const all = page.querySelectorAll("[data-sec]");
+        cur = all[all.length - 1]?.dataset.sec || cur;
+      }
+      setActive(cur);
+    };
+    onScroll();
+    target.addEventListener("scroll", onScroll, { passive: true });
+    return () => target.removeEventListener("scroll", onScroll);
+  }, [h.id]);
+
   const scrollTo = (id) => {
     const el = root.current?.querySelector(`[data-sec="${id}"]`);
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -48,7 +76,7 @@ export default function HotelPage({ h, ctx, scrollRef, jumpTo }) {
           <Slot k="scores" s={S}><Scores h={h} v={picks.scores} /></Slot>
           <Slot k="seller" s={S}><SellerPanel h={h} ctx={ctx} /></Slot>
         </div>
-        <Slot k="nav" s={S}><Nav v={picks.nav} ids={ids} scrollTo={scrollTo} /></Slot>
+        <Slot k="nav" s={S}><Nav v={picks.nav} ids={ids} scrollTo={scrollTo} active={active} /></Slot>
         <div className="flex flex-col pt-5" style={{ gap: "var(--gap)" }}>
           <Sec id="about"><Slot k="about" s={S}><About h={h} v={picks.about} /></Slot></Sec>
           <Sec id="amenities"><Slot k="amenities" s={S}><Amenities h={h} v={picks.amenities} /></Slot></Sec>
