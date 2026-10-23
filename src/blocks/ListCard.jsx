@@ -188,7 +188,7 @@ function IBRow({ h, ctx, active, onOpen, wished, onWish, expanded, onToggleRooms
           {show("room") && <div className="text-[19px] font-medium mt-3">{room.name}</div>}
           {show("roomFacts") && (room.size || bed) && <div className="text-[16px] text-[#414651] mt-1.5">{[room.size && `${room.size} m²`, bed].filter(Boolean).join(" • ")}</div>}
           {show("amenities") && (
-            <div className="mt-2"><AmenityIcons items={[r0.board_basis.description, ...h.ib.inclusions.filter((i) => !/breakfast/i.test(i))]} size={16} /></div>
+            <div className="mt-2"><AmenityIcons items={[r0.board_basis.description, ...h.ib.inclusions.filter((i) => !/breakfast/i.test(i))]} size={16} max={4} /></div>
           )}
           {show("links") && (
             <div className="flex items-center gap-4 mt-3" style={{ color: "#E31B53" }}>
