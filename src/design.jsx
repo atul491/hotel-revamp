@@ -366,12 +366,12 @@ export function option(key) {
 // ─── Your own settings, beyond the fixed variants ───
 export const CARD_PARTS = [
   ["photo", "Photo"], ["wishlist", "Wishlist heart"], ["stars", "Stars"], ["room", "Room name"], ["roomFacts", "Size • bed"],
-  ["amenities", "Amenity icons"], ["links", "Show images / Show on map"], ["tags", "Tags"], ["reviews", "Reviews + score"],
+  ["amenities", "Amenity icons"], ["tags", "Tags"], ["reviews", "Reviews + score"],
   ["perNight", "₹ per night"], ["total", "Total for the stay"], ["actions", "Select / Show rooms"],
 ];
 export const TAG_KINDS = [
   ["tier", "Tier (Gold / Silver / Bronze)"], ["transfer", "SIC / Private"], ["refund", "Refundable"],
-  ["pick", "Sundays pick"], ["contracted", "Contracted © (seller only)"], ["recommended", "Recommended 👍 (seller only)"],
+["contracted", "Contracted © (seller only)"], ["recommended", "Recommended 👍 (seller only)"],
 ];
 export const CUSTOM_DEFAULTS = {
   accent: "#7F56D9",

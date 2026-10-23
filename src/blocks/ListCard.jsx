@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Images, MapPin, Utensils, Car, RotateCcw, Ban, LogIn, ChevronRight, ThumbsUp, Star, ArrowLeftRight } from "lucide-react";
+import { Images, MapPin, Utensils, Car, RotateCcw, Ban, LogIn, ChevronRight, ThumbsUp, Star, ArrowLeftRight, ArrowUpRight } from "lucide-react";
 import { Heart, Image as ImageIco, ChevronDown as Down, Check as Tick } from "lucide-react";
 import { Stars, BookingB, inr, scoreColor, SellerNote, AmenityIcons } from "../kit";
 import { useDesign } from "../design";
 import { Tags, NOTE } from "./screen";
+import { ContractedBadge } from "./top";
 
 const MEAL = { BB: "Breakfast included", RO: "Room only", HB: "Breakfast + Dinner" };
 
@@ -168,32 +169,39 @@ function IBRow({ h, ctx, active, onOpen, wished, onWish, expanded, onToggleRooms
     <div className="bg-white p-4" style={{ borderRadius: "var(--r)", boxShadow: "var(--shadow)", outline: active ? "2px solid var(--accent)" : "none", outlineOffset: 1 }}>
       <div className="flex gap-6 flex-wrap">
         {show("photo") && (
-          <button onClick={onOpen} className="relative shrink-0">
-            <img src={h.photos[0].url} className="w-[260px] h-[196px] object-cover" style={{ borderRadius: "var(--rw)" }} />
+          <button onClick={onOpen} title="Open hotel details" className="group/photo relative shrink-0 overflow-hidden cursor-pointer" style={{ borderRadius: "var(--rw)" }}>
+            <img src={h.photos[0].url} className="w-[260px] h-[196px] object-cover transition-transform duration-300 group-hover/photo:scale-105" />
+            <span className="absolute inset-0 bg-black/0 group-hover/photo:bg-black/15 transition-colors" />
             {show("tags") && tv === "photo" && <Tags h={h} v="pills" className="absolute top-2 left-2 right-2" />}
+            <span className="absolute bottom-2 left-2 right-2 flex items-center justify-between">
+              <span className="text-[11.5px] font-semibold text-white bg-black/60 px-2 py-0.5 rounded-full flex items-center gap-1"><ImageIco size={12} /> {h.photos.length}</span>
+              <span className="text-[12px] font-bold bg-white/95 text-[#181D27] px-2.5 py-1 rounded-full shadow flex items-center gap-1 group-hover/photo:bg-white">
+                View details <ArrowUpRight size={13} />
+              </span>
+            </span>
           </button>
         )}
         <div className="flex-1 min-w-[240px]">
           <div className="flex items-center gap-2.5 flex-wrap">
-            <button onClick={onOpen} className="text-[24px] font-bold text-left hover:underline leading-tight" style={{ fontFamily: "var(--head-font)" }}>{h.name}</button>
+            <button onClick={onOpen} title="Open hotel details" className="group/name text-[24px] font-bold text-left leading-tight inline-flex items-center gap-1.5 cursor-pointer decoration-2 underline-offset-4 hover:underline" style={{ fontFamily: "var(--head-font)" }}>
+              <span className="group-hover/name:text-[#E31B53] transition-colors">{h.name}</span>
+              <ChevronRight size={20} className="text-[#E31B53] transition-transform group-hover/name:translate-x-0.5" />
+            </button>
+            <span className="inline-flex items-center gap-2.5">
             {show("stars") && <span className="text-[19px] font-semibold flex items-center gap-0.5">{h.stars}<Stars n={1} size={20} color="#FDB022" /></span>}
             {show("wishlist") && (
               <button onClick={onWish} className="w-9 h-9 rounded-full border border-divider flex items-center justify-center" title="Wishlist">
                 <Heart size={17} fill={wished ? "var(--accent)" : "none"} color={wished ? "var(--accent)" : "#98A2B3"} />
               </button>
             )}
+            {h.ib.contracted && <ContractedBadge />}
+            </span>
           </div>
           {show("tags") && (tv === "inline" || tv === "text") && <Tags h={h} v={tv === "text" ? "text" : "pills"} className="mt-1.5" />}
           {show("room") && <div className="text-[19px] font-medium mt-3">{room.name}</div>}
           {show("roomFacts") && (room.size || bed) && <div className="text-[16px] text-[#414651] mt-1.5">{[room.size && `${room.size} m²`, bed].filter(Boolean).join(" • ")}</div>}
           {show("amenities") && (
             <div className="mt-2"><AmenityIcons items={[r0.board_basis.description, ...h.ib.inclusions.filter((i) => !/breakfast/i.test(i))]} size={16} /></div>
-          )}
-          {show("links") && (
-            <div className="flex items-center gap-4 mt-3" style={{ color: "#E31B53" }}>
-              <button onClick={onOpen} className={link}><ImageIco size={15} /> Show Images</button><span className="text-[#414651]">|</span>
-              <button onClick={onOpen} className={link}><MapPin size={15} /> Show on Map</button>
-            </div>
           )}
         </div>
         <div className="flex flex-col items-end text-right ml-auto min-w-[210px]">
