@@ -2,7 +2,7 @@ import { useRef } from "react";
 import { useDesign } from "./design";
 import { Media, Title, Scores } from "./blocks/top";
 import { Honest, Why, About, Amenities, Location, Reviews } from "./blocks/content";
-import { Policies, Similar, Nav, Cta, SellerPanel } from "./blocks/commerce";
+import { Policies, Nav, Cta, SellerPanel } from "./blocks/commerce";
 import { Slot } from "./user";
 
 function Sec({ id, children }) {
@@ -18,9 +18,7 @@ export default function HotelPage({ h, ctx, scrollRef }) {
   const local = useRef(null);
   const root = scrollRef || local;
   const on = (k) => picks[k] !== "off";
-  const ids = ["about", "amenities", "honest", "location", "reviews", "policies", "similar"].filter(
-    (k) => !["honest", "similar"].includes(k) || on(k),
-  );
+  const ids = ["about", "amenities", "honest", "location", "reviews", "policies"].filter((k) => k !== "honest" || on(k));
   const scrollTo = (id) => {
     const el = root.current?.querySelector(`[data-sec="${id}"]`);
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -48,7 +46,6 @@ export default function HotelPage({ h, ctx, scrollRef }) {
           <Sec id="location"><Slot k="location" s={S}><Location h={h} v={picks.location} /></Slot></Sec>
           <Sec id="reviews"><Slot k="reviews" s={S}><Reviews h={h} v={picks.reviews} /></Slot></Sec>
           <Sec id="policies"><Slot k="policies" s={S}><Policies h={h} v={picks.policies} /></Slot></Sec>
-          {on("similar") && <Sec id="similar"><Slot k="similar" s={S}><Similar h={h} v={picks.similar} ctx={ctx} /></Slot></Sec>}
         </div>
         <div className="h-4" />
         <Slot k="cta" s={S}><Cta h={h} v={picks.cta} ctx={ctx} /></Slot>

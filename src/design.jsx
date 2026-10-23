@@ -228,7 +228,7 @@ export const BLOCKS = [
     title: "Rooms and rates",
     where: "Show rooms · IB rate cards",
     variants: [
-      { id: "grid", label: "IB rate cards", note: "One card per room and meal plan: meal as an icon, Refundable pill, suppliers as Sup A / Sup B radio rows, total, Select" },
+      { id: "grid", label: "Live IB room cards", note: "Copy of the live IB Show rooms: room name, Room features (meal + Refundable), supplier ₹/night box, N other provider, total, Select" },
     ],
   },
   {
@@ -305,16 +305,6 @@ export const BLOCKS = [
     ],
   },
   {
-    key: "similar",
-    title: "Similar hotels",
-    where: "App SimilarHotels · IB other results",
-    variants: [
-      { id: "cards", label: "Swipe cards", note: "App: 220px cards with photo, why line and price pill" },
-      { id: "list", label: "Compact list", note: "Thumb + name + delta rows" },
-      { id: "off", label: "Hide", note: "" },
-    ],
-  },
-  {
     key: "nav",
     title: "Section navigation",
     where: "App SectionNav",
@@ -360,12 +350,12 @@ export const PRESETS = [
   {
     id: "dense",
     label: "Seller dense",
-    picks: { density: "compact", listCard: "row", media: "mosaic", scores: "chips", honest: "split", why: "chips", about: "sections", amenities: "chips", location: "chips", reviews: "summary", policies: "accordion", similar: "list", nav: "pills", cta: "delta", seller: "panel" },
+    picks: { density: "compact", listCard: "row", media: "mosaic", scores: "chips", honest: "split", why: "chips", about: "sections", amenities: "chips", location: "chips", reviews: "summary", policies: "accordion", nav: "pills", cta: "delta", seller: "panel" },
   },
   {
     id: "editorial",
     label: "Editorial",
-    picks: { font: "serif", radius: "round", shadow: "raised", density: "airy", surface: "cream", accent: "forest", media: "carousel", title: "center", scores: "hero", honest: "cards", why: "highlight", about: "cards", amenities: "grid", location: "map", reviews: "bars", similar: "cards" },
+    picks: { font: "serif", radius: "round", shadow: "raised", density: "airy", surface: "cream", accent: "forest", media: "carousel", title: "center", scores: "hero", honest: "cards", why: "highlight", about: "cards", amenities: "grid", location: "map", reviews: "bars" },
   },
 ];
 
@@ -528,7 +518,7 @@ export const FINAL = {
     tags: "pills", detail: "drawer", rail: "card", bookings: "cards", support: "fab",
     media: "mosaic", title: "inline", scores: "strip", rooms: "grid", about: "clamp",
     amenities: "list", honest: "postcard", why: "chips", location: "tabs", reviews: "carousel",
-    policies: "accordion", similar: "list", nav: "tabs", cta: "bar", seller: "strip",
+    policies: "accordion", nav: "tabs", cta: "bar", seller: "strip",
   },
   why: {
     topBar: "Sellers already know the arrow stepper; ticks show which cities are done at a glance.",
@@ -542,11 +532,10 @@ export const FINAL = {
     rail: "White card with the change this hotel makes, so the total never surprises the seller.",
     bookings: "City cards make it obvious which stays still need a room before Continue.",
     media: "Hero plus mosaic fits a desktop drawer better than the phone strip.",
-    rooms: "Your IB rate cards: one card per room and meal plan, suppliers as radio rows, meal as an icon.",
+    rooms: "The live IB room cards, unchanged: sellers already know them.",
     honest: "The postcard is the most 30 Sundays thing on the page; couples remember it.",
     why: "Chips keep the Indian-couple reasons short since the honest bit already sits above.",
     policies: "One accordion for policies, legal and FAQs avoids three separate long lists.",
-    similar: "A compact list; the full list is already on the left for sellers.",
     cta: "The replace bar shows old and new totals, which is what the couple needs to say yes.",
   },
 };

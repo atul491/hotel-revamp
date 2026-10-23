@@ -35,10 +35,18 @@ function Radio({ on }) {
   );
 }
 
-// ─── Rooms and rates: IB rate cards ───
-// One card per room + meal plan + refund policy. Each supplier quoting that
-// exact room is a radio row ("Sup A", "Sup B"), cheapest shown first, the rest
-// behind "N other provider". Meal plans are icons, as on the detail page.
+// ─── Rooms and rates: copy of the live IB "Show rooms" cards ───
+// Sizes and colours from couple_trails_itinerary_builder (production)
+// SearchedHotelList/HotelListCard.jsx and its tokens: title 18/600 navy,
+// 11px uppercase labels, 13px features, 16/600 price, 18/700 total, sm pill.
+// The supplier box and "N other provider" follow the live screen.
+const IB = {
+  navy: "#181e4c", body: "#1e293b", secondary: "#334155", label: "#94a3b8",
+  divider: "#e0e2eb", bg: "#f9f9fb", pink: "#fd014f", pinkDivider: "#f8bacc",
+  green: "#4eac7e", greenBg: "#f1f9f5", red: "#d70143", redBg: "#fff1f1",
+};
+const MEAL_SHORT = { BB: "Breakfast", RO: "Room Only", HB: "Half Board", FB: "Full Board", AI: "All Inclusive" };
+
 export function Rooms({ h, ctx, bare }) {
   const { nights } = ctx;
   const cards = [];
@@ -52,77 +60,72 @@ export function Rooms({ h, ctx, bare }) {
   );
   cards.forEach((c) => c.rates.sort((a, b) => a.pricing.selling_price - b.pricing.selling_price));
   cards.sort((a, b) => a.rates[0].pricing.selling_price - b.rates[0].pricing.selling_price);
-  // Suppliers are named Sup A, Sup B... in order of who is cheapest at this hotel.
-  const letters = {};
-  cards.flatMap((c) => c.rates).sort((a, b) => a.pricing.selling_price - b.pricing.selling_price)
-    .forEach((r) => { if (!(r.supplier in letters)) letters[r.supplier] = String.fromCharCode(65 + Object.keys(letters).length); });
-
   return (
-    <section>
+    <section style={{ fontFamily: "Geist, Inter, system-ui, sans-serif" }}>
       {!bare && <H2>Select your room<DataSource s="both" /></H2>}
-      <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))" }}>
-        {cards.map((c) => <RateCard key={c.k} c={c} h={h} ctx={ctx} nights={nights} letters={letters} />)}
+      <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))" }}>
+        {cards.map((c) => <RateCard key={c.k} c={c} h={h} ctx={ctx} nights={nights} />)}
       </div>
     </section>
   );
 }
 
-function RateCard({ c, h, ctx, nights, letters }) {
+function RateCard({ c, h, ctx, nights }) {
   const booked = ctx.currentId === h.id ? c.rates.find((r) => r.rate_id === ctx.bookedRateId) : null;
   const [pickId, setPickId] = useState((booked || c.rates[0]).rate_id);
   const [open, setOpen] = useState(false);
   const chosen = c.rates.find((r) => r.rate_id === pickId) || c.rates[0];
-  const selected = !!booked;
+  const selected = !!booked && booked.rate_id === chosen.rate_id;
   const others = c.rates.length - 1;
-  const eyebrow = "text-[12px] font-semibold uppercase tracking-[0.5px] text-[#7A86A8]";
-  const row = (r, withRadio) => {
+  const refundable = c.rates[0].is_refundable;
+  const label = { fontSize: 11, lineHeight: "16px", fontWeight: 500, color: IB.label, letterSpacing: "0.05em" };
+  const box = (r, radio) => {
     const on = r.rate_id === chosen.rate_id;
     return (
-      <button key={r.rate_id} onClick={() => setPickId(r.rate_id)}
-        className="w-full flex items-center gap-3 border px-3 py-2.5 text-left"
-        style={{ borderRadius: "var(--rw)", borderColor: on || !withRadio ? "#1B2559" : "#E4E7EC", borderWidth: on && withRadio ? 1.5 : 1 }}>
-        {withRadio && (
-          <span className="w-[22px] h-[22px] rounded-full border-2 flex items-center justify-center shrink-0" style={{ borderColor: on ? "#101828" : "#D0D5DD" }}>
-            {on && <span className="w-2.5 h-2.5 rounded-full bg-[#101828]" />}
+      <button key={r.rate_id} onClick={(e) => { e.stopPropagation(); setPickId(r.rate_id); }}
+        className="w-full flex items-center gap-2.5 rounded-md px-3 py-2 text-left bg-white"
+        style={{ border: `1px solid ${on || !radio ? IB.navy : IB.divider}` }}>
+        {radio && (
+          <span className="w-4 h-4 rounded-full flex items-center justify-center shrink-0" style={{ border: `1.5px solid ${on ? IB.navy : "#cbd5e1"}` }}>
+            {on && <span className="w-2 h-2 rounded-full" style={{ background: IB.navy }} />}
           </span>
         )}
-        <span className="flex-1 text-[14.5px]">Sup {letters[r.supplier]}</span>
-        <b className="text-[17px]">{inr(r.pricing.selling_price)} <span className="font-semibold">/night</span></b>
+        <span className="flex-1 uppercase" style={{ fontSize: 12, lineHeight: "16px", color: IB.body }}>{r.supplier}</span>
+        <span style={{ fontSize: 16, lineHeight: "20px", fontWeight: 600, color: IB.navy }}>₹{r.pricing.selling_price.toLocaleString("en-IN")} /night</span>
       </button>
     );
   };
   return (
-    <div className="flex flex-col bg-white border p-5 text-[#1B2559]"
-      style={{ borderRadius: "var(--r)", boxShadow: "var(--shadow)", borderColor: selected ? "#1570EF" : "#E9EAEB", borderWidth: selected ? 2 : 1 }}>
-      <div className="text-[21px] font-bold leading-snug" style={{ fontFamily: "var(--head-font)" }}>{c.room.name}</div>
-      <div className={`${eyebrow} mt-3`}>Room features</div>
-      <div className="flex items-center justify-between gap-2 mt-1.5">
-        <AmenityIcons items={[c.rates[0].board_basis.description]} size={17} />
-        {c.rates[0].is_refundable
-          ? <span className="text-[14px] font-semibold px-2.5 py-0.5 text-[#2E9E5B] bg-[#ECFDF3]" style={{ borderRadius: "var(--rp)" }}>Refundable</span>
-          : <span className="text-[14px] font-semibold px-2.5 py-0.5 text-[#E31B53] bg-[#FFF1F3]" style={{ borderRadius: "var(--rp)" }}>Non Refundable</span>}
+    <div className="flex flex-col rounded-lg p-4 transition-shadow hover:shadow-md"
+      style={{
+        background: selected ? IB.bg : "#fff",
+        border: selected ? `2px solid ${IB.pinkDivider}` : `1px solid ${IB.divider}`,
+        boxShadow: "0 1px 3px rgba(15,23,42,0.08)",
+      }}>
+      <h4 className="line-clamp-2" title={c.room.name} style={{ fontSize: 18, lineHeight: "24px", fontWeight: 600, color: IB.navy }}>{c.room.name}</h4>
+      <div className="uppercase mt-2" style={label}>Room Features</div>
+      <div className="flex items-center justify-between gap-2 mt-1">
+        <span style={{ fontSize: 13, lineHeight: "18px", color: IB.body }}>{MEAL_SHORT[c.rates[0].board_basis.type] || c.rates[0].board_basis.description}</span>
+        <span className="rounded-full px-2 py-0.5" style={{ fontSize: 12, lineHeight: "16px", fontWeight: 500, color: refundable ? IB.green : IB.red, background: refundable ? IB.greenBg : IB.redBg }}>
+          {refundable ? "Refundable" : "Non Refundable"}
+        </span>
       </div>
-      <div className={`${eyebrow} mt-4 mb-2`}>Pricing</div>
-      {open ? (
-        <div className="space-y-2">{c.rates.map((r) => row(r, true))}</div>
-      ) : (
-        row(chosen, false)
-      )}
+      <div className="uppercase mt-3 mb-2" style={label}>Pricing</div>
+      {open ? <div className="space-y-1.5">{c.rates.map((r) => box(r, true))}</div> : box(chosen, false)}
       {others > 0 && (
-        <button onClick={() => setOpen(!open)} className="mt-2.5 text-[14px] font-semibold flex items-center gap-1 self-start" style={{ color: "#E31B53" }}>
-          {open ? <><ChevronDown size={15} /> Hide</> : <><ChevronRight size={15} /> {others} other provider{others > 1 ? "s" : ""}</>}
+        <button onClick={() => setOpen(!open)} className="mt-2 flex items-center gap-1 self-start" style={{ fontSize: 12, lineHeight: "16px", fontWeight: 500, color: IB.pink }}>
+          {open ? <><ChevronDown size={13} /> Hide</> : <><ChevronRight size={13} /> {others} other provider{others > 1 ? "s" : ""}</>}
         </button>
       )}
-      <div className="flex-1" />
-      <div className="flex items-center justify-between mt-6 text-[14.5px]">
-        <span>Total ({nights} nights):</span>
-        <b className="text-[24px]">{inr(chosen.pricing.selling_price * nights)}</b>
+      <div className="flex-1 min-h-[16px]" />
+      <div className="flex items-center justify-between mt-3">
+        <span style={{ fontSize: 12, lineHeight: "16px", color: IB.secondary }}>Total ({nights} nights):</span>
+        <span style={{ fontSize: 18, lineHeight: "22px", fontWeight: 700, color: IB.navy }}>₹{(chosen.pricing.selling_price * nights).toLocaleString("en-IN")}</span>
       </div>
       <div className="flex justify-end mt-4">
-        <button onClick={() => ctx.book?.(h, chosen.rate_id)}
-          className="px-5 py-2 text-[15px] font-bold border-[1.5px]"
-          style={{ borderRadius: "var(--rp)", borderColor: "#E31B53", background: selected && booked.rate_id === chosen.rate_id ? "#E31B53" : "#fff", color: selected && booked.rate_id === chosen.rate_id ? "#fff" : "#E31B53" }}>
-          {selected && booked.rate_id === chosen.rate_id ? "Selected" : "Select"}
+        <button onClick={() => ctx.book?.(h, chosen.rate_id)} className="rounded-full px-4"
+          style={{ height: 30, fontSize: 13, fontWeight: 600, border: `1px solid ${IB.pink}`, background: selected ? IB.pink : "#fff", color: selected ? "#fff" : IB.pink }}>
+          {selected ? "Selected" : "Select"}
         </button>
       </div>
     </div>
@@ -260,7 +263,7 @@ export function Similar({ h, v, ctx }) {
 // ─── Section nav ───
 export const SECTIONS = [
   ["about", "About"], ["amenities", "Amenities"], ["honest", "Honest bit"],
-  ["location", "Location"], ["reviews", "Reviews"], ["policies", "Policies"], ["similar", "Similar"],
+  ["location", "Location"], ["reviews", "Reviews"], ["policies", "Policies"],
 ];
 export function Nav({ v, ids, scrollTo }) {
   const [act, setAct] = useState(ids[0]);
