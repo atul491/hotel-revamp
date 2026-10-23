@@ -201,7 +201,7 @@ function IBRow({ h, ctx, active, onOpen, onOpenAt, wished, onWish, expanded, onT
           )}
           <div className="mt-auto pt-2 flex">
             <button onClick={(e) => { e.stopPropagation(); onOpen?.(); }}
-              className="h-7 px-3 text-[12px] font-semibold inline-flex items-center gap-1 text-white bg-[#E31B53] transition-colors hover:bg-[#C00840]"
+              className="h-7 px-3 text-[12px] font-semibold inline-flex items-center gap-1 text-[#181D27] bg-[#F2F4F7] transition-colors hover:bg-[#E4E7EC]"
               style={{ borderRadius: "var(--rp)" }}>
               View details <ChevronRight size={13} strokeWidth={2.5} />
             </button>
@@ -228,7 +228,7 @@ function IBRow({ h, ctx, active, onOpen, onOpenAt, wished, onWish, expanded, onT
                 style={{ borderRadius: "var(--rp)", borderColor: "#E31B53", background: isCurrent ? "#E31B53" : "#fff", color: isCurrent ? "#fff" : "#E31B53" }}>
                 {isCurrent ? <><Tick size={12} strokeWidth={3} /> Selected</> : "Select"}
               </button>
-              <button onClick={(e) => { e.stopPropagation(); onToggleRooms?.(); }} className="h-7 px-3 text-[12px] font-semibold border border-divider inline-flex items-center gap-1.5 shadow-sm" style={{ borderRadius: "var(--rp)", color: "#98A2B3" }}>
+              <button onClick={(e) => { e.stopPropagation(); onToggleRooms?.(); }} className="h-7 px-3 text-[12px] font-semibold border border-divider inline-flex items-center gap-1.5 shadow-sm" style={{ borderRadius: "var(--rp)", color: "#181D27" }}>
                 <Down size={13} className={expanded ? "rotate-180" : ""} /> {expanded ? "Hide rooms" : "Show rooms"}
               </button>
             </div>
