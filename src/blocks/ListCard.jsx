@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Images, MapPin, Utensils, Car, RotateCcw, Ban, LogIn, ChevronRight, ThumbsUp, Star, ArrowLeftRight } from "lucide-react";
 import { Heart, Image as ImageIco, ChevronDown as Down, Check as Tick } from "lucide-react";
-import { Stars, BookingB, inr, scoreColor, SellerNote } from "../kit";
+import { Stars, BookingB, inr, scoreColor, SellerNote, AmenityIcons } from "../kit";
 import { useDesign } from "../design";
 import { Tags, NOTE } from "./screen";
 
@@ -155,78 +155,70 @@ function ReelCard({ h, d, isCurrent, frame, onOpen, r0, seller }) {
 }
 
 // ─── The new IB listing row ───
-function IBRow({ h, ctx, active, onOpen, wished, onWish, expanded, onToggleRooms, onSelect, r0: cheapest, isCurrent, seller: _seller, picks, custom }) {
-  let r0 = cheapest;
-  let seller = _seller;
+function IBRow({ h, ctx, active, onOpen, wished, onWish, expanded, onToggleRooms, onSelect, r0: cheapest, isCurrent, picks, custom }) {
   const show = (k) => !custom.hiddenParts.includes(k);
   const tv = picks.tags;
-  const refundable = h.rooms.some((r) => r.rates.some((x) => x.is_refundable));
   // The hotel already on the itinerary shows its saved rate, others their cheapest.
-  if (isCurrent && ctx.selOf) {
-    const sel = ctx.selOf(h);
-    r0 = h.rooms.flatMap((r) => r.rates).find((x) => x.rate_id === sel.rateId) || r0;
-  }
+  const all = h.rooms.flatMap((r) => r.rates);
+  const r0 = (isCurrent && all.find((x) => x.rate_id === ctx.bookedRateId)) || cheapest;
   const room = h.rooms.find((r) => r.rates.includes(r0)) || h.rooms[0];
-  seller = [["Supplier", r0.supplier], ["Cost", inr(r0.pricing.cost_price)], ["Contracted", h.ib.contracted ? "©" : "No"], ["Transfers", h.ib.private_sic]];
-  const link = "text-[13px] font-medium flex items-center gap-1";
+  const bed = String(room.beds || "").replace(/^\d+\s*/, "").replace(/\s*beds?$/i, "");
+  const link = "text-[15px] font-medium flex items-center gap-1.5";
   return (
     <div className="bg-white p-4" style={{ borderRadius: "var(--r)", boxShadow: "var(--shadow)", outline: active ? "2px solid var(--accent)" : "none", outlineOffset: 1 }}>
-      <div className="flex gap-4 flex-wrap">
+      <div className="flex gap-6 flex-wrap">
         {show("photo") && (
           <button onClick={onOpen} className="relative shrink-0">
-            <img src={h.photos[0].url} className="w-[200px] h-[156px] object-cover" style={{ borderRadius: "var(--rw)" }} />
+            <img src={h.photos[0].url} className="w-[260px] h-[196px] object-cover" style={{ borderRadius: "var(--rw)" }} />
             {show("tags") && tv === "photo" && <Tags h={h} v="pills" className="absolute top-2 left-2 right-2" />}
           </button>
         )}
         <div className="flex-1 min-w-[240px]">
-          <div className="flex items-center gap-2 flex-wrap">
-            <button onClick={onOpen} className="text-[19px] font-bold text-left hover:underline" style={{ fontFamily: "var(--head-font)" }}>{h.name}</button>
-            {show("stars") && <span className="text-[15px] font-semibold flex items-center gap-0.5">{h.stars}<Stars n={1} size={16} color="#FDB022" /></span>}
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <button onClick={onOpen} className="text-[24px] font-bold text-left hover:underline leading-tight" style={{ fontFamily: "var(--head-font)" }}>{h.name}</button>
+            {show("stars") && <span className="text-[19px] font-semibold flex items-center gap-0.5">{h.stars}<Stars n={1} size={20} color="#FDB022" /></span>}
             {show("wishlist") && (
-              <button onClick={onWish} className="w-8 h-8 rounded-full border border-divider flex items-center justify-center" title="Wishlist">
-                <Heart size={15} fill={wished ? "var(--accent)" : "none"} color={wished ? "var(--accent)" : "#98A2B3"} />
+              <button onClick={onWish} className="w-9 h-9 rounded-full border border-divider flex items-center justify-center" title="Wishlist">
+                <Heart size={17} fill={wished ? "var(--accent)" : "none"} color={wished ? "var(--accent)" : "#98A2B3"} />
               </button>
             )}
           </div>
           {show("tags") && (tv === "inline" || tv === "text") && <Tags h={h} v={tv === "text" ? "text" : "pills"} className="mt-1.5" />}
-          {show("room") && <div className="text-[15px] font-medium mt-2">{room.name}</div>}
-          {show("inclusions") && (
-            <div className="text-[13px] text-sub mt-1 leading-relaxed">
-              {h.ib.inclusions.join(", ")}{h.ib.inclusions.length ? " • " : ""}{refundable ? "Refundable" : "Non-refundable"}
-            </div>
+          {show("room") && <div className="text-[19px] font-medium mt-3">{room.name}</div>}
+          {show("roomFacts") && (room.size || bed) && <div className="text-[16px] text-[#414651] mt-1.5">{[room.size && `${room.size} m²`, bed].filter(Boolean).join(" • ")}</div>}
+          {show("amenities") && (
+            <div className="mt-2"><AmenityIcons items={[r0.board_basis.description, ...h.ib.inclusions.filter((i) => !/breakfast/i.test(i))]} size={16} /></div>
           )}
           {show("links") && (
-            <div className="flex items-center gap-3 mt-2.5" style={{ color: "var(--accent)" }}>
-              <button onClick={onOpen} className={link}><ImageIco size={13} /> Show Images</button><span className="text-inact">|</span>
-              <button onClick={onOpen} className={link}><MapPin size={13} /> Show on Map</button>
+            <div className="flex items-center gap-4 mt-3" style={{ color: "#E31B53" }}>
+              <button onClick={onOpen} className={link}><ImageIco size={15} /> Show Images</button><span className="text-[#414651]">|</span>
+              <button onClick={onOpen} className={link}><MapPin size={15} /> Show on Map</button>
             </div>
           )}
-          <SellerNote items={seller} />
         </div>
-        <div className="flex flex-col items-end text-right ml-auto min-w-[190px]">
-          {show("tags") && tv === "pills" && <Tags h={h} v="pills" className="justify-end mb-2" />}
+        <div className="flex flex-col items-end text-right ml-auto min-w-[210px]">
+          {show("tags") && tv === "pills" && <Tags h={h} v="pills" className="justify-end mb-2.5" />}
           {show("reviews") && (
             <div className="flex items-center gap-2">
-              <div className="text-[13px] leading-tight text-sub">{h.ratings.booking.count.toLocaleString("en-IN")}+<br /><b className="text-[15px] text-head">Reviews</b></div>
-              <span className="w-10 h-10 text-white text-[15px] font-bold flex items-center justify-center" style={{ background: "#003580", borderRadius: "8px 8px 8px 0" }}>{h.ratings.booking.score.toFixed(1)}</span>
+              <div className="text-[16px] leading-tight text-[#414651]">{h.ratings.booking.count.toLocaleString("en-IN")}+<br /><b className="text-[18px] font-semibold text-head">Reviews</b></div>
+              <span className="w-[52px] h-[52px] text-white text-[19px] font-bold flex items-center justify-center" style={{ background: "#003580", borderRadius: 8 }}>{h.ratings.booking.score.toFixed(1)}</span>
             </div>
           )}
-          {show("perNight") && <div className="text-[13.5px] text-sub mt-2">{inr(r0.pricing.selling_price)}/Night</div>}
+          {show("perNight") && <div className="text-[17px] text-[#414651] mt-2">{inr(r0.pricing.selling_price)}/Night</div>}
           {show("total") && (
-            <div className="text-[20px] font-extrabold leading-tight" title={picks.notice === "price" ? NOTE : undefined}>
+            <div className="text-[25px] font-extrabold leading-tight text-[#1B2559]" title={picks.notice === "price" ? NOTE : undefined}>
               {inr(r0.pricing.selling_price * ctx.nights)} ({ctx.nights} Nights){picks.notice === "price" && <span className="text-[11px] align-super text-sub ml-0.5 cursor-help">ⓘ</span>}
             </div>
           )}
-          {show("indicative") && <div className="text-[12.5px] text-sub mt-0.5"><b className="text-head">Indicative</b> · exact on Show rooms</div>}
           <div className="flex-1" />
           {show("actions") && (
-            <div className="flex gap-2 mt-3">
-              <button onClick={onSelect} className="px-4 py-1.5 text-[13.5px] font-semibold border inline-flex items-center gap-1"
-                style={isCurrent ? { borderRadius: "var(--rp)", background: "var(--accent)", borderColor: "var(--accent)", color: "#fff" } : { borderRadius: "var(--rp)", background: "#F2F4F7", borderColor: "#F2F4F7", color: "#667085" }}>
-                {isCurrent ? <><Tick size={13} strokeWidth={3} /> Selected</> : "Select"}
+            <div className="flex gap-3 mt-4">
+              <button onClick={onSelect} className="px-5 py-2 text-[17px] font-bold border-[1.5px] inline-flex items-center gap-1"
+                style={{ borderRadius: "var(--rp)", borderColor: "#E31B53", background: isCurrent ? "#E31B53" : "#fff", color: isCurrent ? "#fff" : "#E31B53" }}>
+                {isCurrent ? <><Tick size={15} strokeWidth={3} /> Selected</> : "Select"}
               </button>
-              <button onClick={onToggleRooms} className="px-4 py-1.5 text-[13.5px] font-semibold border border-divider inline-flex items-center gap-1.5" style={{ borderRadius: "var(--rp)", color: "#535862" }}>
-                <Down size={14} className={expanded ? "rotate-180" : ""} /> {expanded ? "Hide rooms" : "Show rooms"}
+              <button onClick={onToggleRooms} className="px-5 py-2 text-[17px] font-semibold border border-divider inline-flex items-center gap-2 shadow-sm" style={{ borderRadius: "var(--rp)", color: "#98A2B3" }}>
+                <Down size={17} className={expanded ? "rotate-180" : ""} /> {expanded ? "Hide rooms" : "Show rooms"}
               </button>
             </div>
           )}

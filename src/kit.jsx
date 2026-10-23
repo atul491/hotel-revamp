@@ -2,6 +2,7 @@ import { createContext, useContext } from "react";
 import {
   Ban, Bath, BedDouble, ConciergeBell, Flower2, Footprints, Hammer, Heart, IdCard, Info, Languages, Leaf,
   LogIn, PawPrint, Plug, Shield, Sun, Trees, Umbrella, Users, Utensils, Wallet, Waves, Wifi, Star, Check, X,
+  Car, Coffee, GlassWater, Wine, Dumbbell, Clock, Zap, Soup, BedSingle, Sparkles, LogOut,
 } from "lucide-react";
 import { useDesign } from "./design";
 
@@ -10,7 +11,50 @@ export const ICONS = {
   hammer: Hammer, heart: Heart, idcard: IdCard, info: Info, languages: Languages, leaf: Leaf, login: LogIn,
   paw: PawPrint, plug: Plug, shield: Shield, sun: Sun, trees: Trees, umbrella: Umbrella, users: Users,
   utensils: Utensils, wallet: Wallet, waves: Waves, wifi: Wifi,
+  car: Car, coffee: Coffee, water: GlassWater, wine: Wine, dumbbell: Dumbbell, clock: Clock, zap: Zap,
+  soup: Soup, roomonly: BedSingle, sparkles: Sparkles, logout: LogOut,
 };
+
+// ─── Amenities as icons (same icon set and stroke as the detail page) ───
+const AMENITY_RULES = [
+  [/breakfast \+ dinner|half board|\bhb\b/i, "soup", "Breakfast + Dinner"],
+  [/all inclusive/i, "soup", "All inclusive"],
+  [/breakfast|\bbb\b/i, "utensils", "Breakfast"],
+  [/room only|\bro\b/i, "roomonly", "Room only"],
+  [/wifi/i, "wifi", "Free WiFi"],
+  [/parking/i, "car", "Parking"],
+  [/welcome drink/i, "wine", "Welcome drink"],
+  [/coffee|tea/i, "coffee", "Coffee and tea"],
+  [/water/i, "water", "Drinking water"],
+  [/pool|beach/i, "waves", null],
+  [/fitness|gym/i, "dumbbell", "Fitness centre"],
+  [/early check-in|express check-in/i, "login", null],
+  [/late check-?in/i, "clock", "Late check-in"],
+  [/late check-?out/i, "logout", "Late check-out"],
+  [/spa/i, "flower", "Spa"],
+  [/honeymoon/i, "heart", "Honeymoon set-up"],
+  [/rooftop/i, "sun", "Rooftop access"],
+];
+export function amenityIcon(label) {
+  const hit = AMENITY_RULES.find(([re]) => re.test(label));
+  return { icon: hit?.[1] || "sparkles", label: hit?.[2] || label };
+}
+
+export function AmenityIcons({ items, size = 15, well = true }) {
+  const seen = new Set();
+  const list = items.map((x) => ({ ...amenityIcon(x), raw: x })).filter((a) => !seen.has(a.raw) && seen.add(a.raw));
+  return (
+    <span className="inline-flex flex-wrap items-center gap-1.5">
+      {list.map((a) => (
+        <span key={a.raw} title={a.raw} aria-label={a.raw}
+          className={`inline-flex items-center justify-center text-sub ${well ? "w-7 h-7 bg-surface" : ""}`}
+          style={well ? { borderRadius: "var(--rw)" } : undefined}>
+          <Ico name={a.icon} size={size} />
+        </span>
+      ))}
+    </span>
+  );
+}
 
 export function Ico({ name, size = 16, ...rest }) {
   const C = ICONS[name] || Info;

@@ -107,6 +107,7 @@ export function useStay(initialId = SAVED.hotelId) {
       ...STAY,
       baseNightly,
       currentId: booking.byGuest ? "" : booking.hotelId,
+      bookedRateId: booking.rateId,
       currentName: booking.byGuest ? "Hotel booked by guest" : booked?.name,
       sel: selOf(h),
       setSel: (s) => setSels((p) => ({ ...p, [h.id]: s })),

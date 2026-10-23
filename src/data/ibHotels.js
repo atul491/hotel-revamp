@@ -84,6 +84,7 @@ export const IB_SEARCH_RESULTS = [
         name: "Deluxe Suite, garden wing",
         room_rates: [
           rate("r-101-bb", "Deluxe Suite Garden", "Breakfast included", "BB", true, 11950, 13866, "Contracted", { hold: true }),
+          rate("r-101-bb2", "Deluxe Suite Garden", "Breakfast included", "BB", true, 12180, 14120, "TBO"),
           rate("r-101-ro", "Deluxe Suite Garden", "Room only", "RO", false, 10400, 12070, "TBO", { pan: true }),
         ],
       },
@@ -92,6 +93,7 @@ export const IB_SEARCH_RESULTS = [
         name: "Ocean Suite, upper floor",
         room_rates: [
           rate("r-102-bb", "Ocean Suite", "Breakfast included", "BB", true, 13150, 15266, "TBO", { pan: true }),
+          rate("r-102-bb2", "Ocean Suite", "Breakfast included", "BB", true, 13400, 15540, "Travclan"),
           rate("r-102-hb", "Ocean Suite", "Breakfast + Dinner", "HB", true, 15900, 18440, "Travclan", { passport: true }),
         ],
       },
@@ -120,7 +122,7 @@ export const IB_SEARCH_RESULTS = [
     master: { address: "Jl. Petitenget, Seminyak, Bali", b_city: "Seminyak", distance_from_centre_km: 1.2, g_rating: 4.5, number_of_reviews: 4210, beachfront: true },
     image: U("1566073771259-6a8506099945"),
     room_details: {
-      room_201: { std_room_id: "201", name: "Wonderful Garden Escape", room_rates: [rate("r-201-bb", "Wonderful Room", "Breakfast included", "BB", true, 15500, 17999, "TBO", { pan: true })] },
+      room_201: { std_room_id: "201", name: "Wonderful Garden Escape", room_rates: [rate("r-201-bb", "Wonderful Room", "Breakfast included", "BB", true, 15500, 17999, "TBO", { pan: true }), rate("r-201-bb2", "Wonderful Room", "Breakfast included", "BB", true, 15900, 18450, "Travclan")] },
     },
   },
   {
@@ -177,8 +179,8 @@ export const IB_SEARCH_RESULTS = [
     master: { address: "Jl. Raya Seminyak No.500, Seminyak", b_city: "Seminyak", distance_from_centre_km: 0.6, g_rating: 4.5, number_of_reviews: 969 },
     image: U("1520250497591-112f2f40a3f4"),
     room_details: {
-      room_501: { std_room_id: "501", name: "Superior Double Room", room_rates: [rate("r-501-bb", "Superior Double", "Breakfast included", "BB", false, 6400, 7440, "TBO"), rate("r-501-bbr", "Superior Double", "Breakfast included", "BB", true, 6550, 7601, "Travclan")] },
-      room_502: { std_room_id: "502", name: "Executive King Room", room_rates: [rate("r-502-bb", "Executive King", "Breakfast included", "BB", true, 6890, 7998, "TBO", { hold: true })] },
+      room_501: { std_room_id: "501", name: "Superior Double Room", room_rates: [rate("r-501-bb", "Superior Double", "Breakfast included", "BB", false, 6400, 7440, "TBO"), rate("r-501-bbr", "Superior Double", "Breakfast included", "BB", true, 6550, 7601, "Travclan"), rate("r-501-bbr2", "Superior Double", "Breakfast included", "BB", true, 6700, 7780, "TBO")] },
+      room_502: { std_room_id: "502", name: "Executive King Room", room_rates: [rate("r-502-bb", "Executive King", "Breakfast included", "BB", true, 6890, 7998, "TBO", { hold: true }), rate("r-502-bb2", "Executive King", "Breakfast included", "BB", true, 7000, 8120, "Travclan")] },
     },
   },
   {

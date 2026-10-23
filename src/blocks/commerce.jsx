@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Check, ChevronDown, ChevronRight, ArrowLeftRight, FileText, Ruler, BedDouble, Eye, Utensils } from "lucide-react";
-import { H2, Ico, Stars, BookingB, inr, DataSource, SellerNote, useView, Btn } from "../kit";
+import { H2, Ico, Stars, BookingB, inr, DataSource, SellerNote, useView, Btn, AmenityIcons } from "../kit";
 import { useDesign } from "../design";
 
 const MEAL = { BB: "Breakfast included", RO: "Room only", HB: "Breakfast + Dinner", FB: "Full board", AI: "All inclusive" };
@@ -35,199 +35,97 @@ function Radio({ on }) {
   );
 }
 
-// ─── Rooms and rates ───
-export function Rooms({ h, v, ctx }) {
-  const { mode } = useView();
-  const { sel, setSel, nights } = ctx;
-  const title = <H2 sub={`${h.rooms.length} room types. Any extra cost is for all ${nights} nights.`}>Select your room<DataSource s="both" /></H2>;
-
-  if (v === "grid") {
-    // One card per rate, cheapest first, the way IB's live-price screen lays them out.
-    const short = { BB: "Breakfast", RO: "Room only", HB: "Breakfast + Dinner", FB: "Full board", AI: "All inclusive" };
-    const cards = h.rooms
-      .flatMap((room) => room.rates.map((r) => ({ room, r })))
-      .sort((a, b) => a.r.pricing.selling_price - b.r.pricing.selling_price);
-    const suppliers = [...new Set(cards.map((c) => c.r.supplier))].filter((x) => x !== "Contracted");
-    const eyebrow = "text-[11px] font-semibold uppercase tracking-[0.6px] text-[#7A86A8]";
-    return (
-      <section>{title}
-        <div className="flex items-center gap-2.5 text-[13px] text-[#343C6A] mb-3">
-          <span className="w-5 h-5 rounded-full border-2 border-[#E9EAEB] animate-spin" style={{ borderTopColor: "var(--accent)" }} />
-          {mode === "seller" ? `Checking ${suppliers.map((x) => x.toUpperCase()).join(", ") || "suppliers"}...` : "Checking live prices..."} · prices may still change
-        </div>
-        <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))" }}>
-          {cards.map(({ room, r }) => {
-            const on = sel.rateId === r.rate_id;
-            return (
-              <div key={r.rate_id} className="flex flex-col border p-4 text-[#1B2559]"
-                style={{ borderRadius: "var(--r)", boxShadow: "var(--shadow)", borderColor: on ? "#F5A3B7" : "#E9EAEB", borderWidth: on ? 2 : 1, background: on ? "#F9FAFB" : "#fff" }}>
-                <div className="text-[17px] font-bold leading-snug" style={{ fontFamily: "var(--head-font)" }}>{room.name}</div>
-                <div className={`${eyebrow} mt-2.5`}>Room features</div>
-                <div className="flex items-center justify-between gap-2 mt-1 text-[13.5px]">
-                  <span>{short[r.board_basis.type] || r.board_basis.description}</span>
-                  {r.is_refundable
-                    ? <span className="text-[12.5px] font-semibold px-2 py-0.5 text-[#2E9E5B] bg-[#ECFDF3]" style={{ borderRadius: "var(--rp)" }}>Refundable</span>
-                    : <span className="text-[12.5px] font-semibold px-2 py-0.5 text-[#E31B53] bg-[#FFF1F3]" style={{ borderRadius: "var(--rp)" }}>Non Refundable</span>}
-                </div>
-                <div className={`${eyebrow} mt-3`}>Pricing</div>
-                <div className="mt-1.5 border border-[#1B2559] px-3 py-2 flex items-center justify-between text-[13px]" style={{ borderRadius: "var(--rw)" }}>
-                  <span>{mode === "seller" ? r.supplier.toUpperCase() : "Per night"}</span>
-                  <b className="text-[15px]">{inr(r.pricing.selling_price)} <span className="font-semibold">/night</span></b>
-                </div>
-                <div className="flex items-center justify-between mt-3 text-[13px]">
-                  <span>Total ({nights} nights):</span>
-                  <b className="text-[19px]">{inr(r.pricing.selling_price * nights)}</b>
-                </div>
-                <SellerNote items={rateSeller(r)} />
-                <div className="flex-1" />
-                <div className="flex justify-end mt-3">
-                  <button onClick={() => setSel({ roomId: room.id, rateId: r.rate_id })}
-                    className="px-4 py-1.5 text-[13.5px] font-bold border-[1.5px] inline-flex items-center gap-1"
-                    style={{ borderRadius: "var(--rp)", borderColor: "var(--accent)", background: on ? "var(--accent)" : "#fff", color: on ? "#fff" : "var(--accent)" }}>
-                    {on ? <><Check size={13} strokeWidth={3} /> Selected</> : "Select"}
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-    );
-  }
-
-  if (v === "ib")
-    return (
-      <section>{title}
-        <div className="space-y-3 font-inter">
-          {h.rooms.map((room) => (
-            <div key={room.id} className="flex border border-gray-200 rounded-md p-3 gap-3">
-              <div className="w-1/3 font-semibold text-[14px]" style={{ color: h.ib?.contracted ? "#00A898" : "#FDA201" }}>{room.name}{h.ib?.contracted && " ©"}</div>
-              <div className="w-2/3 space-y-1.5">
-                <div className="text-[12.5px] text-ib-muted">Lowest Price: <b className="text-ib-blue">{inr(room.rates[0].pricing.selling_price)}</b></div>
-                {room.rates.map((r) => (
-                  <button key={r.rate_id} onClick={() => setSel({ roomId: room.id, rateId: r.rate_id })}
-                    className="w-full flex items-center justify-between gap-2 border rounded-md p-2 text-[12.5px] text-ib-muted text-left"
-                    style={{ borderColor: sel.rateId === r.rate_id ? "var(--accent)" : "#E5E7EB", borderWidth: sel.rateId === r.rate_id ? 2 : 1 }}>
-                    <span><b>{r.name}</b> – {r.board_basis.description} ({r.board_basis.type})<br /><RateFlags r={r} /></span>
-                    <span className="flex items-center gap-2 font-semibold text-ib-blue">{inr(r.pricing.selling_price)}<Radio on={sel.rateId === r.rate_id} /></span>
-                  </button>
-                ))}
-                {mode === "seller" && room.rates.map((r) => <SellerNote key={r.rate_id} items={rateSeller(r)} />)}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-    );
-
-  if (v === "table") {
-    const rows = [
-      ["Photo", (r) => <img src={r.images[0]} className="w-full h-[70px] object-cover" style={{ borderRadius: "var(--rw)" }} />],
-      ["Size", (r) => `${r.size} m²`],
-      ["Beds", (r) => r.beds],
-      ["View", (r) => r.view],
-      ["Meals", (r) => MEAL[r.rates[0].board_basis.type] || r.mealPlan],
-      ["Cancellation", (r) => (r.rates[0].is_refundable ? <span className="text-[#027A48] font-semibold">Free</span> : <span className="text-[#B42318] font-semibold">Non-refundable</span>)],
-      ["Price", (r) => <DeltaText d={deltaOf(r.rates[0], ctx)} nights={nights} />],
-    ];
-    return (
-      <section>{title}
-        <div className="overflow-x-auto no-scrollbar">
-          <table className="w-full text-[12px] border-collapse min-w-[420px]">
-            <thead>
-              <tr><th className="w-[84px]" />{h.rooms.map((r) => <th key={r.id} className="text-left font-bold text-[12.5px] p-1.5 align-bottom">{r.name}</th>)}</tr>
-            </thead>
-            <tbody>
-              {rows.map(([l, f]) => (
-                <tr key={l} className="border-t border-divider">
-                  <td className="text-sub p-1.5 font-semibold">{l}</td>
-                  {h.rooms.map((r) => <td key={r.id} className="p-1.5 align-top">{f(r)}</td>)}
-                </tr>
-              ))}
-              <tr>
-                <td />
-                {h.rooms.map((r) => {
-                  const on = sel.roomId === r.id;
-                  return <td key={r.id} className="p-1.5"><Pick on={on} onClick={() => setSel({ roomId: r.id, rateId: r.rates[0].rate_id })} /></td>;
-                })}
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        {mode === "seller" && h.rooms.map((r) => <SellerNote key={r.id} items={[["Room", r.name], ...rateSeller(r.rates[0])]} />)}
-      </section>
-    );
-  }
+// ─── Rooms and rates: IB rate cards ───
+// One card per room + meal plan + refund policy. Each supplier quoting that
+// exact room is a radio row ("Sup A", "Sup B"), cheapest shown first, the rest
+// behind "N other provider". Meal plans are icons, as on the detail page.
+export function Rooms({ h, ctx, bare }) {
+  const { nights } = ctx;
+  const cards = [];
+  const byKey = {};
+  h.rooms.forEach((room) =>
+    room.rates.forEach((r) => {
+      const k = `${room.id}|${r.board_basis.type}|${r.is_refundable}`;
+      if (!byKey[k]) cards.push((byKey[k] = { k, room, rates: [] }));
+      byKey[k].rates.push(r);
+    }),
+  );
+  cards.forEach((c) => c.rates.sort((a, b) => a.pricing.selling_price - b.pricing.selling_price));
+  cards.sort((a, b) => a.rates[0].pricing.selling_price - b.rates[0].pricing.selling_price);
+  // Suppliers are named Sup A, Sup B... in order of who is cheapest at this hotel.
+  const letters = {};
+  cards.flatMap((c) => c.rates).sort((a, b) => a.pricing.selling_price - b.pricing.selling_price)
+    .forEach((r) => { if (!(r.supplier in letters)) letters[r.supplier] = String.fromCharCode(65 + Object.keys(letters).length); });
 
   return (
-    <section>{title}
-      <div className="space-y-3">
-        {h.rooms.map((room) => {
-          const on = sel.roomId === room.id;
-          const r0 = room.rates.find((r) => r.rate_id === sel.rateId) || room.rates[0];
-          return (
-            <div key={room.id} className="bg-white border p-3" style={{ borderRadius: "var(--r)", borderColor: on ? "var(--accent)" : "#E9EAEB", borderWidth: on ? 1.5 : 1 }}>
-              <div className="flex gap-3">
-                <div className="relative shrink-0">
-                  <img src={room.images[0]} className="w-[108px] h-[96px] object-cover" style={{ borderRadius: "var(--rw)" }} />
-                  <span className="absolute bottom-1 left-1 text-[10px] text-white bg-black/60 px-1.5 rounded">{room.images.length} photos</span>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-[14px] font-bold leading-snug">{room.name}</div>
-                  <div className="flex flex-wrap gap-1 mt-1.5">
-                    {[[Ruler, `${room.size} m²`], [BedDouble, room.beds], [Eye, room.view]].map(([I, t]) => (
-                      <span key={t} className="inline-flex items-center gap-1 text-[11px] bg-surface px-1.5 py-0.5 rounded text-sub"><I size={11} /> {t}</span>
-                    ))}
-                  </div>
-                  {v === "app" && (
-                    <div className="mt-1.5 text-[12px] space-y-0.5">
-                      <div className="font-semibold text-[#027A48]">✓ {MEAL[r0.board_basis.type] || room.mealPlan}</div>
-                      {r0.is_refundable ? <div className="font-semibold text-[#027A48]">✓ Free cancellation</div> : <div className="text-inact">Non-refundable</div>}
-                    </div>
-                  )}
-                </div>
-              </div>
-              {v === "app" ? (
-                <div className="flex items-center justify-between mt-2.5 pt-2.5 border-t border-divider text-[13px]">
-                  <DeltaText d={deltaOf(r0, ctx)} nights={nights} />
-                  <Pick on={on} onClick={() => setSel({ roomId: room.id, rateId: r0.rate_id })} />
-                </div>
-              ) : (
-                <div className="mt-2.5 space-y-1.5">
-                  {room.rates.map((r) => {
-                    const onR = sel.rateId === r.rate_id;
-                    return (
-                      <div key={r.rate_id}>
-                        <button onClick={() => setSel({ roomId: room.id, rateId: r.rate_id })}
-                          className="w-full flex items-center gap-2.5 border px-2.5 py-2 text-left"
-                          style={{ borderRadius: "var(--rw)", borderColor: onR ? "var(--accent)" : "#E9EAEB", background: onR ? "var(--accent-soft)" : "#fff" }}>
-                          <Radio on={onR} />
-                          <span className="flex-1 min-w-0">
-                            <span className="text-[13px] font-bold flex items-center gap-1"><Utensils size={12} className="text-sub" /> {MEAL[r.board_basis.type] || r.board_basis.description}</span>
-                            <RateFlags r={r} />
-                          </span>
-                          <span className="text-[12.5px] text-right"><DeltaText d={deltaOf(r, ctx)} nights={nights} /></span>
-                        </button>
-                        <SellerNote items={rateSeller(r)} />
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          );
-        })}
+    <section>
+      {!bare && <H2>Select your room<DataSource s="both" /></H2>}
+      <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))" }}>
+        {cards.map((c) => <RateCard key={c.k} c={c} h={h} ctx={ctx} nights={nights} letters={letters} />)}
       </div>
     </section>
   );
 }
 
-function Pick({ on, onClick }) {
+function RateCard({ c, h, ctx, nights, letters }) {
+  const booked = ctx.currentId === h.id ? c.rates.find((r) => r.rate_id === ctx.bookedRateId) : null;
+  const [pickId, setPickId] = useState((booked || c.rates[0]).rate_id);
+  const [open, setOpen] = useState(false);
+  const chosen = c.rates.find((r) => r.rate_id === pickId) || c.rates[0];
+  const selected = !!booked;
+  const others = c.rates.length - 1;
+  const eyebrow = "text-[12px] font-semibold uppercase tracking-[0.5px] text-[#7A86A8]";
+  const row = (r, withRadio) => {
+    const on = r.rate_id === chosen.rate_id;
+    return (
+      <button key={r.rate_id} onClick={() => setPickId(r.rate_id)}
+        className="w-full flex items-center gap-3 border px-3 py-2.5 text-left"
+        style={{ borderRadius: "var(--rw)", borderColor: on || !withRadio ? "#1B2559" : "#E4E7EC", borderWidth: on && withRadio ? 1.5 : 1 }}>
+        {withRadio && (
+          <span className="w-[22px] h-[22px] rounded-full border-2 flex items-center justify-center shrink-0" style={{ borderColor: on ? "#101828" : "#D0D5DD" }}>
+            {on && <span className="w-2.5 h-2.5 rounded-full bg-[#101828]" />}
+          </span>
+        )}
+        <span className="flex-1 text-[14.5px]">Sup {letters[r.supplier]}</span>
+        <b className="text-[17px]">{inr(r.pricing.selling_price)} <span className="font-semibold">/night</span></b>
+      </button>
+    );
+  };
   return (
-    <button onClick={onClick} className="px-4 py-1.5 text-[12.5px] font-bold border-[1.5px] inline-flex items-center gap-1"
-      style={{ borderRadius: "var(--rp)", borderColor: "var(--accent)", background: on ? "var(--accent)" : "#fff", color: on ? "#fff" : "var(--accent)" }}>
-      {on ? <><Check size={13} strokeWidth={3} /> Selected</> : "Select"}
-    </button>
+    <div className="flex flex-col bg-white border p-5 text-[#1B2559]"
+      style={{ borderRadius: "var(--r)", boxShadow: "var(--shadow)", borderColor: selected ? "#1570EF" : "#E9EAEB", borderWidth: selected ? 2 : 1 }}>
+      <div className="text-[21px] font-bold leading-snug" style={{ fontFamily: "var(--head-font)" }}>{c.room.name}</div>
+      <div className={`${eyebrow} mt-3`}>Room features</div>
+      <div className="flex items-center justify-between gap-2 mt-1.5">
+        <AmenityIcons items={[c.rates[0].board_basis.description]} size={17} />
+        {c.rates[0].is_refundable
+          ? <span className="text-[14px] font-semibold px-2.5 py-0.5 text-[#2E9E5B] bg-[#ECFDF3]" style={{ borderRadius: "var(--rp)" }}>Refundable</span>
+          : <span className="text-[14px] font-semibold px-2.5 py-0.5 text-[#E31B53] bg-[#FFF1F3]" style={{ borderRadius: "var(--rp)" }}>Non Refundable</span>}
+      </div>
+      <div className={`${eyebrow} mt-4 mb-2`}>Pricing</div>
+      {open ? (
+        <div className="space-y-2">{c.rates.map((r) => row(r, true))}</div>
+      ) : (
+        row(chosen, false)
+      )}
+      {others > 0 && (
+        <button onClick={() => setOpen(!open)} className="mt-2.5 text-[14px] font-semibold flex items-center gap-1 self-start" style={{ color: "#E31B53" }}>
+          {open ? <><ChevronDown size={15} /> Hide</> : <><ChevronRight size={15} /> {others} other provider{others > 1 ? "s" : ""}</>}
+        </button>
+      )}
+      <div className="flex-1" />
+      <div className="flex items-center justify-between mt-6 text-[14.5px]">
+        <span>Total ({nights} nights):</span>
+        <b className="text-[24px]">{inr(chosen.pricing.selling_price * nights)}</b>
+      </div>
+      <div className="flex justify-end mt-4">
+        <button onClick={() => ctx.book?.(h, chosen.rate_id)}
+          className="px-5 py-2 text-[15px] font-bold border-[1.5px]"
+          style={{ borderRadius: "var(--rp)", borderColor: "#E31B53", background: selected && booked.rate_id === chosen.rate_id ? "#E31B53" : "#fff", color: selected && booked.rate_id === chosen.rate_id ? "#fff" : "#E31B53" }}>
+          {selected && booked.rate_id === chosen.rate_id ? "Selected" : "Select"}
+        </button>
+      </div>
+    </div>
   );
 }
 

@@ -130,7 +130,7 @@ export const SCREEN = [
     title: "Hotel card in the results list",
     where: "IB listing row · App change-hotel list",
     variants: [
-      { id: "ibrow", label: "IB listing row", note: "IB today: photo, name + stars + heart, room, inclusions, links; tags, reviews, ₹/night, total, Select / Show rooms" },
+      { id: "ibrow", label: "IB listing row", note: "Photo, name + stars + heart, room, size • bed, amenity icons, links; tier + SIC, reviews, ₹/night, total, Select / Show rooms" },
       { id: "row", label: "Seller row", note: "Photo left, dense facts right, from-price. Narrower" },
       { id: "reel", label: "App listing card", note: "Swipe photos, stars, score chip, area, inclusions, price delta" },
       { id: "stay", label: "App stay card", note: "The itinerary HotelStayCard: one photo, star line, name, room, cancellation" },
@@ -236,13 +236,9 @@ export const BLOCKS = [
   {
     key: "rooms",
     title: "Rooms and rates",
-    where: "App 'Select your room' · IB GroupedRoomCard",
+    where: "Show rooms · IB rate cards",
     variants: [
-      { id: "grid", label: "Rate cards grid", note: "One card per rate, cheapest first: room name, meal + refundable pill, supplier /night box, total, Select. Live-price check line on top" },
-      { id: "hybrid", label: "Room card + rate rows", note: "App room card with IB rate rows under it (meal, refund, hold, PAN). Same for both" },
-      { id: "app", label: "App room cards", note: "Photo, tags, meal, cancellation, + ₹ delta, Select pill" },
-      { id: "table", label: "Comparison table", note: "Rooms as columns: size, beds, view, meals, price" },
-      { id: "ib", label: "IB rate list", note: "Today's IB: room name left, Lowest Price and radio rate rows right" },
+      { id: "grid", label: "IB rate cards", note: "One card per room and meal plan: meal as an icon, Refundable pill, suppliers as Sup A / Sup B radio rows, total, Select" },
     ],
   },
   {
@@ -369,17 +365,17 @@ export const PRESETS = [
   {
     id: "ib",
     label: "Close to today's IB",
-    picks: { accent: "teal", font: "inter", radius: "tight", shadow: "ib", density: "compact", surface: "grey", listCard: "ibrow", rail: "box", rooms: "ib", cta: "box", honest: "off", why: "off", nav: "off", seller: "strip" },
+    picks: { accent: "teal", font: "inter", radius: "tight", shadow: "ib", density: "compact", surface: "grey", listCard: "ibrow", rail: "box", cta: "box", honest: "off", why: "off", nav: "off", seller: "strip" },
   },
   {
     id: "dense",
     label: "Seller dense",
-    picks: { density: "compact", listCard: "row", media: "mosaic", scores: "chips", stay: "timeline", honest: "split", why: "chips", about: "sections", amenities: "chips", location: "chips", reviews: "summary", rooms: "table", policies: "accordion", similar: "list", nav: "pills", cta: "delta", seller: "panel" },
+    picks: { density: "compact", listCard: "row", media: "mosaic", scores: "chips", stay: "timeline", honest: "split", why: "chips", about: "sections", amenities: "chips", location: "chips", reviews: "summary", policies: "accordion", similar: "list", nav: "pills", cta: "delta", seller: "panel" },
   },
   {
     id: "editorial",
     label: "Editorial",
-    picks: { font: "serif", radius: "round", shadow: "raised", density: "airy", surface: "cream", accent: "forest", media: "carousel", title: "center", scores: "hero", honest: "cards", why: "highlight", about: "cards", amenities: "grid", location: "map", reviews: "bars", rooms: "app", similar: "cards" },
+    picks: { font: "serif", radius: "round", shadow: "raised", density: "airy", surface: "cream", accent: "forest", media: "carousel", title: "center", scores: "hero", honest: "cards", why: "highlight", about: "cards", amenities: "grid", location: "map", reviews: "bars", similar: "cards" },
   },
 ];
 
@@ -389,9 +385,9 @@ export function option(key) {
 
 // ─── Your own settings, beyond the fixed variants ───
 export const CARD_PARTS = [
-  ["photo", "Photo"], ["wishlist", "Wishlist heart"], ["stars", "Stars"], ["room", "Room name"], ["inclusions", "Inclusions line"],
-  ["links", "Show images / Show on map"], ["tags", "Tags"], ["reviews", "Reviews + score"], ["perNight", "₹ per night"],
-  ["total", "Total for the stay"], ["indicative", "'Indicative' note"], ["actions", "Select / Show rooms"],
+  ["photo", "Photo"], ["wishlist", "Wishlist heart"], ["stars", "Stars"], ["room", "Room name"], ["roomFacts", "Size • bed"],
+  ["amenities", "Amenity icons"], ["links", "Show images / Show on map"], ["tags", "Tags"], ["reviews", "Reviews + score"],
+  ["perNight", "₹ per night"], ["total", "Total for the stay"], ["actions", "Select / Show rooms"],
 ];
 export const TAG_KINDS = [
   ["tier", "Tier (Gold / Silver / Bronze)"], ["transfer", "SIC / Private"], ["refund", "Refundable"],
@@ -400,7 +396,7 @@ export const TAG_KINDS = [
 export const CUSTOM_DEFAULTS = {
   accent: "#7F56D9",
   hiddenParts: [],
-  tags: ["tier", "transfer", "refund", "contracted", "recommended"],
+  tags: ["tier", "transfer"],
   notes: {},
 };
 
@@ -442,8 +438,8 @@ export function cssVars(t) {
   };
 }
 
-const KEY = "hotel-revamp:design:v3";
-const CKEY = "hotel-revamp:custom:v1";
+const KEY = "hotel-revamp:design:v4";
+const CKEY = "hotel-revamp:custom:v2";
 const PKEY = "hotel-revamp:presets:v1";
 
 function fromUrl() {
@@ -557,7 +553,7 @@ export const FINAL = {
     bookings: "City cards make it obvious which stays still need a room before Continue.",
     media: "Hero plus mosaic fits a desktop drawer better than the phone strip.",
     stay: "Big check-in / check-out times are the thing couples ask about most.",
-    rooms: "The rate-card grid you liked: one card per rate, supplier and total visible.",
+    rooms: "Your IB rate cards: one card per room and meal plan, suppliers as radio rows, meal as an icon.",
     honest: "The postcard is the most 30 Sundays thing on the page; couples remember it.",
     why: "Chips keep the Indian-couple reasons short since the honest bit already sits above.",
     policies: "One accordion for policies, legal and FAQs avoids three separate long lists.",

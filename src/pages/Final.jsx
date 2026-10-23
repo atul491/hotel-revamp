@@ -18,7 +18,7 @@ export default function Final() {
     </>
   );
   return (
-    <DesignOverride o={O} c={{ tags: ["tier", "transfer", "refund", "contracted", "recommended"], hiddenParts: [] }} replace>
+    <DesignOverride o={O} c={{ tags: ["tier", "transfer"], hiddenParts: [] }} replace>
       <Workspace title="Final (recommended)" right={right} />
       {why && (
         <div className="fixed left-3 bottom-3 z-50 w-[360px] max-h-[60vh] overflow-y-auto bg-white rounded-xl shadow-2xl border border-gray-200 p-4 font-sans text-head">

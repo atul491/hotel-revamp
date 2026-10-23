@@ -57,7 +57,7 @@ export default function Screen({ stay, onOpenHotel, sources = false, fixedSuppor
             <div className="max-w-[760px]"><HotelPage h={x} ctx={ctxFor(x)} /></div>
           ) : (
             <>
-              <Rooms h={x} v={picks.rooms} ctx={ctxFor(x)} />
+              <Rooms h={x} ctx={ctxFor(x)} bare />
               <button onClick={() => open(x)} className="mt-3 text-[13px] font-bold flex items-center gap-1" style={{ color: "var(--accent)" }}>
                 View full hotel page <ExternalLink size={13} />
               </button>
