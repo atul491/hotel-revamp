@@ -163,69 +163,69 @@ function IBRow({ h, ctx, active, onOpen, onOpenAt, wished, onWish, expanded, onT
   const r0 = (isCurrent && all.find((x) => x.rate_id === ctx.bookedRateId)) || cheapest;
   const room = h.rooms.find((r) => r.rates.includes(r0)) || h.rooms[0];
   const bed = String(room.beds || "").replace(/^\d+\s*/, "").replace(/\s*beds?$/i, "");
-  const link = "text-[15px] font-medium flex items-center gap-1.5";
+  const link = "text-[12px] font-medium flex items-center gap-1";
   return (
     // Clicking anywhere on the row opens the hotel, except Select, Show rooms and the heart.
     <div onClick={onOpen} title="Open hotel details"
       className="group/card bg-white p-4 cursor-pointer border border-transparent transition-all duration-150 hover:-translate-y-0.5 hover:shadow-xl hover:border-[#D0D5DD]"
       style={{ borderRadius: "var(--r)", boxShadow: "var(--shadow)", outline: active ? "2px solid var(--accent)" : "none", outlineOffset: 1 }}>
-      <div className="flex gap-6 flex-wrap">
+      <div className="flex gap-4 flex-wrap">
         {show("photo") && (
           <button onClick={(e) => { e.stopPropagation(); onOpen?.(); }} className="relative shrink-0 overflow-hidden" style={{ borderRadius: "var(--rw)" }}>
-            <img src={h.photos[0].url} className="w-[260px] h-[196px] object-cover transition-transform duration-300 group-hover/card:scale-[1.04]" />
+            <img src={h.photos[0].url} className="w-[180px] h-[140px] object-cover transition-transform duration-300 group-hover/card:scale-[1.04]" />
             {show("tags") && tv === "photo" && <Tags h={h} v="pills" className="absolute top-2 left-2 right-2" />}
-            <span className="pointer-events-none absolute left-2 bottom-2 text-[11.5px] font-semibold text-white bg-black/60 px-2 py-0.5 rounded-full flex items-center gap-1">
-              <ImageIco size={12} /> {h.photos.length}
+            <span className="pointer-events-none absolute left-1.5 bottom-1.5 text-[10.5px] font-semibold text-white bg-black/60 px-1.5 py-[2px] rounded-full flex items-center gap-1">
+              <ImageIco size={11} /> {h.photos.length}
             </span>
-            <span className="pointer-events-none absolute right-2 bottom-2 text-[12px] font-bold text-[#181D27] bg-white/95 px-2.5 py-1 rounded-full shadow flex items-center gap-0.5 transition-colors group-hover/card:bg-[#E31B53] group-hover/card:text-white">
-              View details <ChevronRight size={13} strokeWidth={2.5} />
+            <span className="pointer-events-none absolute right-1.5 bottom-1.5 text-[11px] font-bold text-[#181D27] bg-white/95 px-2 py-[3px] rounded-full shadow flex items-center gap-0.5 transition-colors group-hover/card:bg-[#E31B53] group-hover/card:text-white">
+              View details <ChevronRight size={12} strokeWidth={2.5} />
             </span>
           </button>
         )}
-        <div className="flex-1 min-w-[240px]">
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <button onClick={(e) => { e.stopPropagation(); onOpen?.(); }} className="text-[24px] font-bold text-left leading-tight inline-flex items-center gap-1 transition-colors group-hover/card:text-[#E31B53]" style={{ fontFamily: "var(--head-font)" }}>
+        <div className="flex-1 min-w-[220px]">
+          <div className="flex items-center gap-2 flex-wrap">
+            <button onClick={(e) => { e.stopPropagation(); onOpen?.(); }} className="text-left inline-flex items-center gap-1 transition-colors group-hover/card:text-[#E31B53]" style={{ fontFamily: "var(--head-font)", fontSize: 18, lineHeight: "24px", fontWeight: 600 }}>
               {h.name}
-              <ChevronRight size={22} strokeWidth={2.5} className="text-[#E31B53] transition-transform group-hover/card:translate-x-1" />
+              <ChevronRight size={17} strokeWidth={2.5} className="text-[#E31B53] transition-transform group-hover/card:translate-x-1" />
             </button>
-            {show("stars") && <span className="text-[19px] font-semibold flex items-center gap-0.5">{h.stars}<Stars n={1} size={20} color="#FDB022" /></span>}
+            {show("stars") && <span className="text-[14px] font-medium text-[#334155] flex items-center gap-0.5">{h.stars}<Stars n={1} size={16} color="#FDB022" /></span>}
             {show("wishlist") && (
-              <button onClick={(e) => { e.stopPropagation(); onWish?.(); }} className="w-9 h-9 rounded-full border border-divider flex items-center justify-center" title="Wishlist">
-                <Heart size={17} fill={wished ? "var(--accent)" : "none"} color={wished ? "var(--accent)" : "#98A2B3"} />
+              <button onClick={(e) => { e.stopPropagation(); onWish?.(); }} className="w-7 h-7 rounded-full border border-divider flex items-center justify-center" title="Wishlist">
+                <Heart size={14} fill={wished ? "var(--accent)" : "none"} color={wished ? "var(--accent)" : "#98A2B3"} />
               </button>
             )}
             {h.ib.contracted && <ContractedBadge />}
           </div>
-          {show("tags") && (tv === "inline" || tv === "text") && <Tags h={h} v={tv === "text" ? "text" : "pills"} className="mt-1.5" />}
-          {show("room") && <div className="text-[19px] font-medium mt-3">{room.name}</div>}
-          {show("roomFacts") && (room.size || bed) && <div className="text-[16px] text-[#414651] mt-1.5">{[room.size && `${room.size} m²`, bed].filter(Boolean).join(" • ")}</div>}
+          {show("tags") && (tv === "inline" || tv === "text") && <Tags h={h} v={tv === "text" ? "text" : "pills"} className="mt-1" />}
+          {show("room") && <div className="text-[14px] font-medium text-[#334155] mt-2 leading-5">{room.name}</div>}
+          {show("roomFacts") && (room.size || bed) && <div className="text-[13px] text-[#64748b] mt-0.5 leading-[18px]">{[room.size && `${room.size} m²`, bed].filter(Boolean).join(" • ")}</div>}
           {show("amenities") && (
-            <div className="mt-2"><AmenityIcons items={[r0.board_basis.description, ...h.ib.inclusions.filter((i) => !/breakfast/i.test(i))]} size={16} max={4} onMore={() => onOpenAt?.("amenities")} /></div>
+            <div className="mt-1.5"><AmenityIcons items={[r0.board_basis.description, ...h.ib.inclusions.filter((i) => !/breakfast/i.test(i))]} size={13} max={4} onMore={() => onOpenAt?.("amenities")} /></div>
           )}
         </div>
-        <div className="flex flex-col items-end text-right ml-auto min-w-[210px]">
-          {show("tags") && tv === "pills" && <Tags h={h} v="pills" className="justify-end mb-2.5" />}
+        <div className="flex flex-col items-end text-right ml-auto min-w-[180px]">
+          {show("tags") && tv === "pills" && <Tags h={h} v="pills" className="justify-end mb-1" />}
           {show("reviews") && (
             <div className="flex items-center gap-2">
-              <div className="text-[16px] leading-tight text-[#414651]">{h.ratings.booking.count.toLocaleString("en-IN")}+<br /><b className="text-[18px] font-semibold text-head">Reviews</b></div>
-              <span className="w-[52px] h-[52px] text-white text-[19px] font-bold flex items-center justify-center" style={{ background: "#003580", borderRadius: 8 }}>{h.ratings.booking.score.toFixed(1)}</span>
+              <div className="flex flex-col items-end"><span className="text-[12px] leading-[14px] font-semibold text-[#64748b]">{h.ratings.booking.count.toLocaleString("en-IN")}+</span><span className="text-[14px] leading-4 font-semibold text-[#1e293b]">Reviews</span></div>
+              <span className="min-w-9 h-9 px-1 text-white text-[14px] font-semibold flex items-center justify-center" style={{ background: "#003580", borderRadius: "8px 8px 8px 2px" }}>{h.ratings.booking.score.toFixed(1)}</span>
             </div>
           )}
-          {show("perNight") && <div className="text-[17px] text-[#414651] mt-2">{inr(r0.pricing.selling_price)}/Night</div>}
+          {show("perNight") && <div className="text-[12px] leading-4 text-[#334155] mt-1.5">{inr(r0.pricing.selling_price)}/Night</div>}
           {show("total") && (
-            <div className="text-[25px] font-extrabold leading-tight text-[#1B2559]" title={picks.notice === "price" ? NOTE : undefined}>
-              {inr(r0.pricing.selling_price * ctx.nights)} ({ctx.nights} Nights){picks.notice === "price" && <span className="text-[11px] align-super text-sub ml-0.5 cursor-help">ⓘ</span>}
+            <div className="text-[16px] leading-[22px] font-bold text-[#181e4c]" title={picks.notice === "price" ? NOTE : undefined}>
+              {inr(r0.pricing.selling_price * ctx.nights)} ({ctx.nights} Nights){picks.notice === "price" && <span className="text-[10px] align-super text-sub ml-0.5 cursor-help">ⓘ</span>}
             </div>
           )}
           <div className="flex-1" />
           {show("actions") && (
-            <div className="flex gap-3 mt-4">
-              <button onClick={(e) => { e.stopPropagation(); onSelect?.(); }} className="px-5 py-2 text-[17px] font-bold border-[1.5px] inline-flex items-center gap-1"
+            <div className="flex gap-2 mt-3">
+              <button onClick={(e) => { e.stopPropagation(); onSelect?.(); }} className="h-7 px-3 text-[12px] font-semibold border inline-flex items-center gap-1"
                 style={{ borderRadius: "var(--rp)", borderColor: "#E31B53", background: isCurrent ? "#E31B53" : "#fff", color: isCurrent ? "#fff" : "#E31B53" }}>
-                {isCurrent ? <><Tick size={15} strokeWidth={3} /> Selected</> : "Select"}
+                {isCurrent ? <><Tick size={12} strokeWidth={3} /> Selected</> : "Select"}
               </button>
-              <button onClick={(e) => { e.stopPropagation(); onToggleRooms?.(); }} className="px-5 py-2 text-[17px] font-semibold border border-divider inline-flex items-center gap-2 shadow-sm" style={{ borderRadius: "var(--rp)", color: "#98A2B3" }}>
-                <Down size={17} className={expanded ? "rotate-180" : ""} /> {expanded ? "Hide rooms" : "Show rooms"}
+              <button onClick={(e) => { e.stopPropagation(); onToggleRooms?.(); }} className="h-7 px-3 text-[12px] font-semibold border border-divider inline-flex items-center gap-1.5 shadow-sm" style={{ borderRadius: "var(--rp)", color: "#98A2B3" }}>
+                <Down size={13} className={expanded ? "rotate-180" : ""} /> {expanded ? "Hide rooms" : "Show rooms"}
               </button>
             </div>
           )}

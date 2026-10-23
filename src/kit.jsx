@@ -49,14 +49,14 @@ export function AmenityIcons({ items, size = 15, well = true, max, onMore }) {
     <span className="inline-flex flex-wrap items-center gap-1.5">
       {shown.map((a) => (
         <span key={a.raw} title={a.raw} aria-label={a.raw}
-          className={`inline-flex items-center justify-center text-sub ${well ? "w-7 h-7 bg-surface" : ""}`}
+          className={`inline-flex items-center justify-center text-sub ${well ? "w-6 h-6 bg-surface" : ""}`}
           style={well ? { borderRadius: "var(--rw)" } : undefined}>
           <Ico name={a.icon} size={size} />
         </span>
       ))}
       {rest.length > 0 && (
         <button type="button" onClick={(e) => { if (onMore) { e.stopPropagation(); onMore(); } }}
-          title="See all amenities" className="h-7 px-2 inline-flex items-center text-[12.5px] font-semibold text-sub bg-surface whitespace-nowrap hover:text-[#E31B53] hover:bg-[#FFF1F3] transition-colors"
+          title="See all amenities" className="h-6 px-1.5 inline-flex items-center text-[11px] font-semibold text-sub bg-surface whitespace-nowrap hover:text-[#E31B53] hover:bg-[#FFF1F3] transition-colors"
           style={{ borderRadius: "var(--rw)" }}>
           +{rest.length} more
         </button>
@@ -221,7 +221,7 @@ export function DataSource({ s }) {
 // ─── The only badge next to a hotel's name: shown when 30 Sundays has a contract ───
 export function ContractedBadge() {
   return (
-    <span className="inline-flex items-center gap-1 rounded-md px-2 py-[3px] text-[11px] font-bold tracking-wide align-middle whitespace-nowrap"
+    <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-[2px] text-[10px] font-bold tracking-wide align-middle whitespace-nowrap"
       style={{ background: "#E6F7F5", color: "#00857A", border: "1px solid #B7E6E0" }} title="30 Sundays has a contract with this hotel">
       © CONTRACTED
     </span>
