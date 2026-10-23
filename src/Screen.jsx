@@ -15,6 +15,7 @@ export default function Screen({ stay, onOpenHotel, sources = false, fixedSuppor
   const { list, ctx, h, openId, setOpenId, filters, setFilters, priceRange, wish, setWish, booking, setBooking, booked, bookedRate, trip, city, setCity } = stay;
   const [expanded, setExpanded] = useState({});
   const [drawer, setDrawer] = useState(false);
+  const [jump, setJump] = useState(null);
   const [tierTab, setTierTab] = useState("gold");
   const userGrouping = usePickedUser("grouping");
   const S = stay;
@@ -23,7 +24,8 @@ export default function Screen({ stay, onOpenHotel, sources = false, fixedSuppor
     if (f.byGuest !== filters.byGuest) setBooking({ ...booking, byGuest: f.byGuest });
     setFilters(f);
   };
-  const open = (x) => {
+  const open = (x, section = null) => {
+    setJump(section);
     setOpenId(x.id);
     onOpenHotel?.(x.id);
     if (picks.detail === "inline") setExpanded((e) => ({ ...e, [x.id]: "full" }));
@@ -44,6 +46,7 @@ export default function Screen({ stay, onOpenHotel, sources = false, fixedSuppor
         ctx={ctx}
         active={x.id === openId}
         onOpen={() => open(x)}
+        onOpenAt={(sec) => open(x, sec)}
         wished={wish.includes(x.id)}
         onWish={() => setWish(wish.includes(x.id) ? wish.filter((y) => y !== x.id) : [...wish, x.id])}
         expanded={!!expanded[x.id]}
@@ -54,7 +57,7 @@ export default function Screen({ stay, onOpenHotel, sources = false, fixedSuppor
       {expanded[x.id] && (
         <div className="bg-white border border-divider border-t-0 px-4 pb-4 -mt-2 pt-4" style={{ borderRadius: "0 0 var(--r) var(--r)" }}>
           {expanded[x.id] === "full" ? (
-            <div className="max-w-[760px]"><HotelPage h={x} ctx={ctxFor(x)} /></div>
+            <div className="max-w-[760px]"><HotelPage h={x} ctx={ctxFor(x)} jumpTo={x.id === h.id ? jump : null} /></div>
           ) : (
             <>
               <Slot k="rooms" s={{ ...S, h: x, ctx: ctxFor(x) }}><Rooms h={x} ctx={ctxFor(x)} bare /></Slot>
@@ -160,7 +163,7 @@ export default function Screen({ stay, onOpenHotel, sources = false, fixedSuppor
                 <span className="text-[12px] text-sub">from {inr(h.ib.fromPrice)}/night</span>
                 <button onClick={() => setDrawer(false)} className="ml-auto w-8 h-8 rounded-full hover:bg-surface flex items-center justify-center"><X size={17} /></button>
               </div>
-              <div className="flex-1 overflow-y-auto"><HotelPage h={h} ctx={ctxFor(h)} /></div>
+              <div className="flex-1 overflow-y-auto"><HotelPage h={h} ctx={ctxFor(h)} jumpTo={jump} /></div>
             </div>
           </div>
         )}

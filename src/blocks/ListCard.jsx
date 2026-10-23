@@ -25,7 +25,7 @@ function Delta({ d }) {
   );
 }
 
-export function ListCard({ h, v, ctx, active, onOpen, wished, onWish, expanded, onToggleRooms, onSelect }) {
+export function ListCard({ h, v, ctx, active, onOpen, onOpenAt, wished, onWish, expanded, onToggleRooms, onSelect }) {
   const { picks, custom } = useDesign();
   const r0 = h.rooms.flatMap((r) => r.rates).sort((a, b) => a.pricing.selling_price - b.pricing.selling_price)[0];
   const d = (h.ib.fromPrice - ctx.baseNightly) * ctx.nights;
@@ -39,7 +39,7 @@ export function ListCard({ h, v, ctx, active, onOpen, wished, onWish, expanded, 
   };
 
   if (v === "ibrow")
-    return <IBRow {...{ h, ctx, active, onOpen, wished, onWish, expanded, onToggleRooms, onSelect, r0, isCurrent, seller, picks, custom }} />;
+    return <IBRow {...{ h, ctx, active, onOpen, onOpenAt, wished, onWish, expanded, onToggleRooms, onSelect, r0, isCurrent, seller, picks, custom }} />;
 
   if (v === "ib")
     return (
@@ -155,7 +155,7 @@ function ReelCard({ h, d, isCurrent, frame, onOpen, r0, seller }) {
 }
 
 // ─── The new IB listing row ───
-function IBRow({ h, ctx, active, onOpen, wished, onWish, expanded, onToggleRooms, onSelect, r0: cheapest, isCurrent, picks, custom }) {
+function IBRow({ h, ctx, active, onOpen, onOpenAt, wished, onWish, expanded, onToggleRooms, onSelect, r0: cheapest, isCurrent, picks, custom }) {
   const show = (k) => !custom.hiddenParts.includes(k);
   const tv = picks.tags;
   // The hotel already on the itinerary shows its saved rate, others their cheapest.
@@ -166,17 +166,28 @@ function IBRow({ h, ctx, active, onOpen, wished, onWish, expanded, onToggleRooms
   const link = "text-[15px] font-medium flex items-center gap-1.5";
   return (
     // Clicking anywhere on the row opens the hotel, except Select, Show rooms and the heart.
-    <div onClick={onOpen} title="Open hotel details" className="bg-white p-4 cursor-pointer transition-shadow hover:shadow-lg" style={{ borderRadius: "var(--r)", boxShadow: "var(--shadow)", outline: active ? "2px solid var(--accent)" : "none", outlineOffset: 1 }}>
+    <div onClick={onOpen} title="Open hotel details"
+      className="group/card bg-white p-4 cursor-pointer border border-transparent transition-all duration-150 hover:-translate-y-0.5 hover:shadow-xl hover:border-[#D0D5DD]"
+      style={{ borderRadius: "var(--r)", boxShadow: "var(--shadow)", outline: active ? "2px solid var(--accent)" : "none", outlineOffset: 1 }}>
       <div className="flex gap-6 flex-wrap">
         {show("photo") && (
-          <button onClick={(e) => { e.stopPropagation(); onOpen?.(); }} className="relative shrink-0">
-            <img src={h.photos[0].url} className="w-[260px] h-[196px] object-cover" style={{ borderRadius: "var(--rw)" }} />
+          <button onClick={(e) => { e.stopPropagation(); onOpen?.(); }} className="relative shrink-0 overflow-hidden" style={{ borderRadius: "var(--rw)" }}>
+            <img src={h.photos[0].url} className="w-[260px] h-[196px] object-cover transition-transform duration-300 group-hover/card:scale-[1.04]" />
             {show("tags") && tv === "photo" && <Tags h={h} v="pills" className="absolute top-2 left-2 right-2" />}
+            <span className="pointer-events-none absolute left-2 bottom-2 text-[11.5px] font-semibold text-white bg-black/60 px-2 py-0.5 rounded-full flex items-center gap-1">
+              <ImageIco size={12} /> {h.photos.length}
+            </span>
+            <span className="pointer-events-none absolute right-2 bottom-2 text-[12px] font-bold text-[#181D27] bg-white/95 px-2.5 py-1 rounded-full shadow flex items-center gap-0.5 transition-colors group-hover/card:bg-[#E31B53] group-hover/card:text-white">
+              View details <ChevronRight size={13} strokeWidth={2.5} />
+            </span>
           </button>
         )}
         <div className="flex-1 min-w-[240px]">
           <div className="flex items-center gap-2.5 flex-wrap">
-            <button onClick={(e) => { e.stopPropagation(); onOpen?.(); }} className="text-[24px] font-bold text-left hover:underline leading-tight" style={{ fontFamily: "var(--head-font)" }}>{h.name}</button>
+            <button onClick={(e) => { e.stopPropagation(); onOpen?.(); }} className="text-[24px] font-bold text-left leading-tight inline-flex items-center gap-1 transition-colors group-hover/card:text-[#E31B53]" style={{ fontFamily: "var(--head-font)" }}>
+              {h.name}
+              <ChevronRight size={22} strokeWidth={2.5} className="text-[#E31B53] transition-transform group-hover/card:translate-x-1" />
+            </button>
             {show("stars") && <span className="text-[19px] font-semibold flex items-center gap-0.5">{h.stars}<Stars n={1} size={20} color="#FDB022" /></span>}
             {show("wishlist") && (
               <button onClick={(e) => { e.stopPropagation(); onWish?.(); }} className="w-9 h-9 rounded-full border border-divider flex items-center justify-center" title="Wishlist">
@@ -189,7 +200,7 @@ function IBRow({ h, ctx, active, onOpen, wished, onWish, expanded, onToggleRooms
           {show("room") && <div className="text-[19px] font-medium mt-3">{room.name}</div>}
           {show("roomFacts") && (room.size || bed) && <div className="text-[16px] text-[#414651] mt-1.5">{[room.size && `${room.size} m²`, bed].filter(Boolean).join(" • ")}</div>}
           {show("amenities") && (
-            <div className="mt-2"><AmenityIcons items={[r0.board_basis.description, ...h.ib.inclusions.filter((i) => !/breakfast/i.test(i))]} size={16} max={4} /></div>
+            <div className="mt-2"><AmenityIcons items={[r0.board_basis.description, ...h.ib.inclusions.filter((i) => !/breakfast/i.test(i))]} size={16} max={4} onMore={() => onOpenAt?.("amenities")} /></div>
           )}
         </div>
         <div className="flex flex-col items-end text-right ml-auto min-w-[210px]">

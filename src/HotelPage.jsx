@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { DetailLinks } from "./kit";
 import { useDesign } from "./design";
@@ -15,7 +15,7 @@ function Sec({ id, children }) {
 // Show rooms), so the page itself does not repeat them.
 // One hotel page, assembled from whatever is picked on /options.
 // Seller and couple get the same blocks; `mode` only adds seller notes.
-export default function HotelPage({ h, ctx, scrollRef }) {
+export default function HotelPage({ h, ctx, scrollRef, jumpTo }) {
   const { picks } = useDesign();
   const local = useRef(null);
   const root = scrollRef || local;
@@ -28,6 +28,13 @@ export default function HotelPage({ h, ctx, scrollRef }) {
   const inset = picks.media === "strip";
   const S = { h, ctx };
   const [gallery, setGallery] = useState(false);
+  // Opened from "+N more" on the list: land on that section.
+  useEffect(() => {
+    if (!jumpTo) return;
+    const t = setTimeout(() => scrollTo(jumpTo), 80);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jumpTo, h.id]);
   const links = <DetailLinks onImages={() => setGallery(true)} onMap={() => scrollTo("location")} />;
 
   return (

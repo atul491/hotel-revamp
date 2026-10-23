@@ -40,7 +40,7 @@ export function amenityIcon(label) {
   return { icon: hit?.[1] || "sparkles", label: hit?.[2] || label };
 }
 
-export function AmenityIcons({ items, size = 15, well = true, max }) {
+export function AmenityIcons({ items, size = 15, well = true, max, onMore }) {
   const seen = new Set();
   const list = items.map((x) => ({ ...amenityIcon(x), raw: x })).filter((a) => !seen.has(a.raw) && seen.add(a.raw));
   const shown = max && list.length > max + 1 ? list.slice(0, max) : list; // never "+1 more"
@@ -55,19 +55,11 @@ export function AmenityIcons({ items, size = 15, well = true, max }) {
         </span>
       ))}
       {rest.length > 0 && (
-        <span className="group/more relative inline-flex">
-          <span className="h-7 px-2 inline-flex items-center text-[12.5px] font-semibold text-sub bg-surface whitespace-nowrap" style={{ borderRadius: "var(--rw)" }}
-            aria-label={`${rest.length} more: ${rest.map((x) => x.raw).join(", ")}`}>
-            +{rest.length} more
-          </span>
-          <span className="pointer-events-none absolute left-0 top-full mt-1.5 z-30 hidden group-hover/more:block bg-white border border-divider shadow-lg p-2 min-w-[180px]" style={{ borderRadius: "var(--rw)" }}>
-            {rest.map((x) => (
-              <span key={x.raw} className="flex items-center gap-2 py-1 text-[12.5px] text-head whitespace-nowrap">
-                <Ico name={x.icon} size={14} className="text-sub" /> {x.raw}
-              </span>
-            ))}
-          </span>
-        </span>
+        <button type="button" onClick={(e) => { if (onMore) { e.stopPropagation(); onMore(); } }}
+          title="See all amenities" className="h-7 px-2 inline-flex items-center text-[12.5px] font-semibold text-sub bg-surface whitespace-nowrap hover:text-[#E31B53] hover:bg-[#FFF1F3] transition-colors"
+          style={{ borderRadius: "var(--rw)" }}>
+          +{rest.length} more
+        </button>
       )}
     </span>
   );
