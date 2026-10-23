@@ -1,14 +1,11 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { SlidersHorizontal, Database, X, Award } from "lucide-react";
-import { useDesign } from "../design";
+import { Database, X } from "lucide-react";
 import Screen from "../Screen";
 import { useStay } from "../stay";
 import { FIELD_SOURCES } from "../data/ibHotels";
 
 // The page /universal and /final share: the IB seller screen.
 export function Workspace({ title = "Seller screen", right }) {
-  const { shareQuery } = useDesign();
   const stay = useStay();
   const [sources, setSources] = useState(false);
   const [legend, setLegend] = useState(false);
@@ -16,14 +13,12 @@ export function Workspace({ title = "Seller screen", right }) {
   return (
     <div className="h-screen flex flex-col font-inter bg-[#EEF0F4] text-[#343C6A]">
       <header className="bg-[#101828] text-white px-4 py-2 flex items-center gap-3 flex-wrap text-[12.5px]">
-        <Link to="/" className="font-bold text-[14px]">Hotel Revamp</Link>
+        <span className="font-bold text-[14px]">Hotel Revamp</span>
         <span className="opacity-60">/ {title}</span>
         <div className="ml-auto flex items-center gap-2 flex-wrap">
           <label className="flex items-center gap-1.5 cursor-pointer text-white/80"><input type="checkbox" checked={sources} onChange={(e) => setSources(e.target.checked)} /> Data source tags</label>
           <button onClick={() => setLegend(true)} className="font-semibold border border-white/25 rounded px-2.5 py-1 flex items-center gap-1"><Database size={13} /> IB ↔ App fields</button>
           {right}
-          <Link to={`/options${shareQuery()}`} className="font-semibold bg-white text-[#101828] rounded px-2.5 py-1 flex items-center gap-1"><SlidersHorizontal size={13} /> Design options</Link>
-          <Link to="/final" className="font-semibold border border-white/25 rounded px-2.5 py-1 flex items-center gap-1"><Award size={13} /> Final</Link>
         </div>
       </header>
       <div className="flex-1 min-h-0 p-3">

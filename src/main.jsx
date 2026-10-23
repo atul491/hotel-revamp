@@ -3,10 +3,6 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { DesignProvider } from "./design";
 import { UserVariantsProvider } from "./user";
-import Home from "./pages/Home";
-import Universal from "./pages/Universal";
-import Options from "./pages/Options";
-import IBCurrent from "./pages/IBCurrent";
 import Final from "./pages/Final";
 import "./index.css";
 
@@ -16,12 +12,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       <DesignProvider>
         <UserVariantsProvider>
         <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/universal" element={<Universal />} />
-          <Route path="/options" element={<Options />} />
-          <Route path="/ib" element={<IBCurrent />} />
+          {/* Only /final is kept; every other address lands there. */}
           <Route path="/final" element={<Final />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<Navigate to="/final" replace />} />
         </Routes>
         </UserVariantsProvider>
       </DesignProvider>
