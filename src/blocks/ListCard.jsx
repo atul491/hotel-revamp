@@ -165,20 +165,21 @@ function IBRow({ h, ctx, active, onOpen, wished, onWish, expanded, onToggleRooms
   const bed = String(room.beds || "").replace(/^\d+\s*/, "").replace(/\s*beds?$/i, "");
   const link = "text-[15px] font-medium flex items-center gap-1.5";
   return (
-    <div className="bg-white p-4" style={{ borderRadius: "var(--r)", boxShadow: "var(--shadow)", outline: active ? "2px solid var(--accent)" : "none", outlineOffset: 1 }}>
+    // Clicking anywhere on the row opens the hotel, except Select, Show rooms and the heart.
+    <div onClick={onOpen} title="Open hotel details" className="bg-white p-4 cursor-pointer transition-shadow hover:shadow-lg" style={{ borderRadius: "var(--r)", boxShadow: "var(--shadow)", outline: active ? "2px solid var(--accent)" : "none", outlineOffset: 1 }}>
       <div className="flex gap-6 flex-wrap">
         {show("photo") && (
-          <button onClick={onOpen} className="relative shrink-0">
+          <button onClick={(e) => { e.stopPropagation(); onOpen?.(); }} className="relative shrink-0">
             <img src={h.photos[0].url} className="w-[260px] h-[196px] object-cover" style={{ borderRadius: "var(--rw)" }} />
             {show("tags") && tv === "photo" && <Tags h={h} v="pills" className="absolute top-2 left-2 right-2" />}
           </button>
         )}
         <div className="flex-1 min-w-[240px]">
           <div className="flex items-center gap-2.5 flex-wrap">
-            <button onClick={onOpen} className="text-[24px] font-bold text-left hover:underline leading-tight" style={{ fontFamily: "var(--head-font)" }}>{h.name}</button>
+            <button onClick={(e) => { e.stopPropagation(); onOpen?.(); }} className="text-[24px] font-bold text-left hover:underline leading-tight" style={{ fontFamily: "var(--head-font)" }}>{h.name}</button>
             {show("stars") && <span className="text-[19px] font-semibold flex items-center gap-0.5">{h.stars}<Stars n={1} size={20} color="#FDB022" /></span>}
             {show("wishlist") && (
-              <button onClick={onWish} className="w-9 h-9 rounded-full border border-divider flex items-center justify-center" title="Wishlist">
+              <button onClick={(e) => { e.stopPropagation(); onWish?.(); }} className="w-9 h-9 rounded-full border border-divider flex items-center justify-center" title="Wishlist">
                 <Heart size={17} fill={wished ? "var(--accent)" : "none"} color={wished ? "var(--accent)" : "#98A2B3"} />
               </button>
             )}
@@ -191,8 +192,8 @@ function IBRow({ h, ctx, active, onOpen, wished, onWish, expanded, onToggleRooms
           )}
           {show("links") && (
             <div className="flex items-center gap-4 mt-3" style={{ color: "#E31B53" }}>
-              <button onClick={onOpen} className={link}><ImageIco size={15} /> Show Images</button><span className="text-[#414651]">|</span>
-              <button onClick={onOpen} className={link}><MapPin size={15} /> Show on Map</button>
+              <button onClick={(e) => { e.stopPropagation(); onOpen?.(); }} className={link}><ImageIco size={15} /> Show Images</button><span className="text-[#414651]">|</span>
+              <button onClick={(e) => { e.stopPropagation(); onOpen?.(); }} className={link}><MapPin size={15} /> Show on Map</button>
             </div>
           )}
         </div>
@@ -213,11 +214,11 @@ function IBRow({ h, ctx, active, onOpen, wished, onWish, expanded, onToggleRooms
           <div className="flex-1" />
           {show("actions") && (
             <div className="flex gap-3 mt-4">
-              <button onClick={onSelect} className="px-5 py-2 text-[17px] font-bold border-[1.5px] inline-flex items-center gap-1"
+              <button onClick={(e) => { e.stopPropagation(); onSelect?.(); }} className="px-5 py-2 text-[17px] font-bold border-[1.5px] inline-flex items-center gap-1"
                 style={{ borderRadius: "var(--rp)", borderColor: "#E31B53", background: isCurrent ? "#E31B53" : "#fff", color: isCurrent ? "#fff" : "#E31B53" }}>
                 {isCurrent ? <><Tick size={15} strokeWidth={3} /> Selected</> : "Select"}
               </button>
-              <button onClick={onToggleRooms} className="px-5 py-2 text-[17px] font-semibold border border-divider inline-flex items-center gap-2 shadow-sm" style={{ borderRadius: "var(--rp)", color: "#98A2B3" }}>
+              <button onClick={(e) => { e.stopPropagation(); onToggleRooms?.(); }} className="px-5 py-2 text-[17px] font-semibold border border-divider inline-flex items-center gap-2 shadow-sm" style={{ borderRadius: "var(--rp)", color: "#98A2B3" }}>
                 <Down size={17} className={expanded ? "rotate-180" : ""} /> {expanded ? "Hide rooms" : "Show rooms"}
               </button>
             </div>
