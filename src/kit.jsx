@@ -2,7 +2,7 @@ import { createContext, useContext } from "react";
 import {
   Ban, Bath, BedDouble, ConciergeBell, Flower2, Footprints, Hammer, Heart, IdCard, Info, Languages, Leaf,
   LogIn, PawPrint, Plug, Shield, Sun, Trees, Umbrella, Users, Utensils, Wallet, Waves, Wifi, Star, Check, X,
-  Car, Coffee, GlassWater, Wine, Dumbbell, Clock, Zap, Soup, BedSingle, Sparkles, LogOut,
+  Car, Coffee, GlassWater, Wine, Dumbbell, Clock, Zap, Soup, BedSingle, Sparkles, LogOut, Image as ImageIcon, MapPin,
 } from "lucide-react";
 import { useDesign } from "./design";
 
@@ -223,5 +223,27 @@ export function DataSource({ s }) {
     <span className="ml-2 align-middle text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: c.bg, color: c.fg }}>
       {c.t}
     </span>
+  );
+}
+
+// ─── The only badge next to a hotel's name: shown when 30 Sundays has a contract ───
+export function ContractedBadge() {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-md px-2 py-[3px] text-[11px] font-bold tracking-wide align-middle whitespace-nowrap"
+      style={{ background: "#E6F7F5", color: "#00857A", border: "1px solid #B7E6E0" }} title="30 Sundays has a contract with this hotel">
+      © CONTRACTED
+    </span>
+  );
+}
+
+// ─── Show Images | Show on Map, at the right of the name line on the detail page ───
+export function DetailLinks({ onImages, onMap }) {
+  const cls = "text-[14px] font-medium flex items-center gap-1.5 hover:underline whitespace-nowrap";
+  return (
+    <div className="flex items-center gap-3 shrink-0" style={{ color: "#E31B53" }}>
+      <button type="button" onClick={onImages} className={cls}><ImageIcon size={15} /> Show Images</button>
+      <span className="text-[#414651]">|</span>
+      <button type="button" onClick={onMap} className={cls}><MapPin size={15} /> Show on Map</button>
+    </div>
   );
 }

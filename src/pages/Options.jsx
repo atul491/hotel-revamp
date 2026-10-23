@@ -161,8 +161,7 @@ export default function Options() {
                                 <span className={`w-5 h-5 mt-0.5 rounded-full border-2 flex items-center justify-center shrink-0 ${on ? "bg-fuchsia border-fuchsia" : "border-[#D5D7DA] bg-white"}`}>{on && <Check size={12} color="#fff" strokeWidth={3} />}</span>
                                 <span>
                                   <span className="text-[14px] font-bold">{v.label}</span>
-                                  {v.id === o.variants[0].id && <span className="ml-1.5 text-[10px] font-bold text-sub bg-white border border-divider rounded px-1">DEFAULT</span>}
-                                  {FINAL.picks[o.key] === v.id && <span className="ml-1.5 text-[10px] font-bold text-white bg-head rounded px-1">MY PICK</span>}
+                                  {v.id === DEFAULTS[o.key] && <span className="ml-1.5 text-[10px] font-bold text-white bg-head rounded px-1">CURRENT /FINAL</span>}
                                   {v.note && <span className="block text-[12px] text-sub leading-snug">{v.note}</span>}
                                 </span>
                               </button>

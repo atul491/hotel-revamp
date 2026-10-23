@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Images, MapPin, Utensils, Car, RotateCcw, Ban, LogIn, ChevronRight, ThumbsUp, Star, ArrowLeftRight } from "lucide-react";
 import { Heart, Image as ImageIco, ChevronDown as Down, Check as Tick } from "lucide-react";
-import { Stars, BookingB, inr, scoreColor, SellerNote, AmenityIcons } from "../kit";
+import { Stars, BookingB, inr, scoreColor, SellerNote, AmenityIcons, ContractedBadge } from "../kit";
 import { useDesign } from "../design";
 import { Tags, NOTE } from "./screen";
 
@@ -183,18 +183,13 @@ function IBRow({ h, ctx, active, onOpen, wished, onWish, expanded, onToggleRooms
                 <Heart size={17} fill={wished ? "var(--accent)" : "none"} color={wished ? "var(--accent)" : "#98A2B3"} />
               </button>
             )}
+            {h.ib.contracted && <ContractedBadge />}
           </div>
           {show("tags") && (tv === "inline" || tv === "text") && <Tags h={h} v={tv === "text" ? "text" : "pills"} className="mt-1.5" />}
           {show("room") && <div className="text-[19px] font-medium mt-3">{room.name}</div>}
           {show("roomFacts") && (room.size || bed) && <div className="text-[16px] text-[#414651] mt-1.5">{[room.size && `${room.size} m²`, bed].filter(Boolean).join(" • ")}</div>}
           {show("amenities") && (
             <div className="mt-2"><AmenityIcons items={[r0.board_basis.description, ...h.ib.inclusions.filter((i) => !/breakfast/i.test(i))]} size={16} max={4} /></div>
-          )}
-          {show("links") && (
-            <div className="flex items-center gap-4 mt-3" style={{ color: "#E31B53" }}>
-              <button onClick={(e) => { e.stopPropagation(); onOpen?.(); }} className={link}><ImageIco size={15} /> Show Images</button><span className="text-[#414651]">|</span>
-              <button onClick={(e) => { e.stopPropagation(); onOpen?.(); }} className={link}><MapPin size={15} /> Show on Map</button>
-            </div>
           )}
         </div>
         <div className="flex flex-col items-end text-right ml-auto min-w-[210px]">

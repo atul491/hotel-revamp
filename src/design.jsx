@@ -337,10 +337,11 @@ export const BLOCKS = [
 ];
 
 export const ALL = [...GLOBALS, ...SCREEN, ...BLOCKS];
-export const DEFAULTS = Object.fromEntries(ALL.map((o) => [o.key, o.variants[0].id]));
+// DEFAULTS are set from FINAL further down: /universal starts as /final looks.
+export let DEFAULTS = Object.fromEntries(ALL.map((o) => [o.key, o.variants[0].id]));
 
 export const PRESETS = [
-  { id: "app", label: "Defaults", picks: {} },
+  { id: "app", label: "Same as /final", picks: {} },
   { id: "final", label: "My recommendation", picks: null },
   {
     id: "ib",
@@ -418,8 +419,8 @@ export function cssVars(t) {
   };
 }
 
-const KEY = "hotel-revamp:design:v4";
-const CKEY = "hotel-revamp:custom:v2";
+const KEY = "hotel-revamp:design:v5";
+const CKEY = "hotel-revamp:custom:v3";
 const PKEY = "hotel-revamp:presets:v1";
 
 function fromUrl() {
@@ -539,3 +540,6 @@ export const FINAL = {
     cta: "The replace bar shows old and new totals, which is what the couple needs to say yes.",
   },
 };
+
+// /universal and /options start from the /final look.
+DEFAULTS = { ...DEFAULTS, ...Object.fromEntries(Object.entries(FINAL.picks).filter(([k, v]) => option(k)?.variants.some((x) => x.id === v))) };

@@ -1,4 +1,6 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
+import { X } from "lucide-react";
+import { DetailLinks } from "./kit";
 import { useDesign } from "./design";
 import { Media, Title, Scores } from "./blocks/top";
 import { Honest, Why, About, Amenities, Location, Reviews } from "./blocks/content";
@@ -25,6 +27,8 @@ export default function HotelPage({ h, ctx, scrollRef }) {
   };
   const inset = picks.media === "strip";
   const S = { h, ctx };
+  const [gallery, setGallery] = useState(false);
+  const links = <DetailLinks onImages={() => setGallery(true)} onMap={() => scrollTo("location")} />;
 
   return (
     <div ref={local} style={{ fontSize: 14 }}>
@@ -33,7 +37,7 @@ export default function HotelPage({ h, ctx, scrollRef }) {
       </div>
       <div className="px-[var(--pad)] pb-2">
         <div className="pt-4 space-y-3.5">
-          <Slot k="title" s={S}><Title h={h} v={picks.title} /></Slot>
+          <Slot k="title" s={S}><Title h={h} v={picks.title} actions={links} /></Slot>
           <Slot k="scores" s={S}><Scores h={h} v={picks.scores} /></Slot>
           <Slot k="seller" s={S}><SellerPanel h={h} ctx={ctx} /></Slot>
         </div>
@@ -49,6 +53,40 @@ export default function HotelPage({ h, ctx, scrollRef }) {
         </div>
         <div className="h-4" />
         <Slot k="cta" s={S}><Cta h={h} v={picks.cta} ctx={ctx} /></Slot>
+      </div>
+      {gallery && <Gallery h={h} onClose={() => setGallery(false)} />}
+    </div>
+  );
+}
+
+// ─── Show Images: every photo, grouped by what it shows ───
+function Gallery({ h, onClose }) {
+  const cats = ["All", ...new Set(h.photos.map((p) => p.category))];
+  const [cat, setCat] = useState("All");
+  const list = cat === "All" ? h.photos : h.photos.filter((p) => p.category === cat);
+  return (
+    <div className="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-6" onClick={onClose}>
+      <div className="bg-white rounded-2xl w-full max-w-[980px] max-h-full flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        <div className="shrink-0 flex items-center gap-3 px-5 py-3 border-b border-divider">
+          <b className="text-[16px]">{h.name}</b><span className="text-[13px] text-sub">{h.photos.length} photos</span>
+          <button onClick={onClose} className="ml-auto w-8 h-8 rounded-full hover:bg-surface flex items-center justify-center"><X size={18} /></button>
+        </div>
+        <div className="shrink-0 flex gap-1.5 px-5 py-2.5 overflow-x-auto no-scrollbar">
+          {cats.map((c) => (
+            <button key={c} onClick={() => setCat(c)} className="px-3 py-1 text-[12.5px] font-semibold rounded-full border whitespace-nowrap"
+              style={{ background: cat === c ? "#181D27" : "#fff", color: cat === c ? "#fff" : "#535862", borderColor: cat === c ? "#181D27" : "#E9EAEB" }}>
+              {c} {c === "All" ? h.photos.length : h.photos.filter((p) => p.category === c).length}
+            </button>
+          ))}
+        </div>
+        <div className="flex-1 overflow-y-auto px-5 pb-5 grid grid-cols-2 md:grid-cols-3 gap-2">
+          {list.map((p, i) => (
+            <figure key={i} className="relative">
+              <img src={p.url} className="w-full aspect-[4/3] object-cover rounded-lg" />
+              {p.caption && <figcaption className="absolute bottom-1.5 left-1.5 text-[11px] text-white bg-black/55 px-2 py-0.5 rounded">{p.caption}</figcaption>}
+            </figure>
+          ))}
+        </div>
       </div>
     </div>
   );
