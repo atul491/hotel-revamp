@@ -177,12 +177,9 @@ function IBRow({ h, ctx, active, onOpen, onOpenAt, wished, onWish, expanded, onT
             <span className="pointer-events-none absolute left-1.5 bottom-1.5 text-[10.5px] font-semibold text-white bg-black/60 px-1.5 py-[2px] rounded-full flex items-center gap-1">
               <ImageIco size={11} /> {h.photos.length}
             </span>
-            <span className="pointer-events-none absolute right-1.5 bottom-1.5 text-[11px] font-bold text-[#181D27] bg-white/95 px-2 py-[3px] rounded-full shadow flex items-center gap-0.5 transition-colors group-hover/card:bg-[#E31B53] group-hover/card:text-white">
-              View details <ChevronRight size={12} strokeWidth={2.5} />
-            </span>
           </button>
         )}
-        <div className="flex-1 min-w-[220px]">
+        <div className="flex-1 min-w-[220px] flex flex-col">
           <div className="flex items-center gap-2 flex-wrap">
             <button onClick={(e) => { e.stopPropagation(); onOpen?.(); }} className="text-left inline-flex items-center gap-1 transition-colors group-hover/card:text-[#E31B53]" style={{ fontFamily: "var(--head-font)", fontSize: 18, lineHeight: "24px", fontWeight: 600 }}>
               {h.name}
@@ -202,6 +199,13 @@ function IBRow({ h, ctx, active, onOpen, onOpenAt, wished, onWish, expanded, onT
           {show("amenities") && (
             <div className="mt-1.5"><AmenityIcons items={[r0.board_basis.description, ...h.ib.inclusions.filter((i) => !/breakfast/i.test(i))]} size={13} max={4} onMore={() => onOpenAt?.("amenities")} /></div>
           )}
+          <div className="mt-auto pt-2 flex">
+            <button onClick={(e) => { e.stopPropagation(); onOpen?.(); }}
+              className="h-7 px-3 text-[12px] font-semibold inline-flex items-center gap-1 text-white bg-[#E31B53] transition-colors hover:bg-[#C00840]"
+              style={{ borderRadius: "var(--rp)" }}>
+              View details <ChevronRight size={13} strokeWidth={2.5} />
+            </button>
+          </div>
         </div>
         <div className="flex flex-col items-end text-right ml-auto min-w-[180px]">
           {show("tags") && tv === "pills" && <Tags h={h} v="pills" className="justify-end mb-1" />}
