@@ -9,7 +9,7 @@
 //
 // Keys come from the Vercel project's environment variables:
 //   ANTHROPIC_API_KEY  → Claude (model: ANTHROPIC_MODEL, default claude-opus-5-5)
-//   OPENAI_API_KEY     → OpenAI (model: OPENAI_MODEL, default gpt-5.5)
+//   OPENAI_API_KEY     → OpenAI (model: OPENAI_MODEL, default gpt-6.1-sol)
 
 import Anthropic from "@anthropic-ai/sdk";
 import OpenAI from "openai";
@@ -17,7 +17,7 @@ import OpenAI from "openai";
 export const config = { maxDuration: 300 };
 
 const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || "claude-opus-5-5";
-const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-5.5";
+const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-6.1-sol";
 
 const SYSTEM = `You design UI elements for the hotel selection screen of 30 Sundays' Itinerary Builder, the desktop tool travel sellers use to pick hotels for honeymoon itineraries. The couple later sees the same hotel in the 30 Sundays app, so what the seller sees should be honest and complete.
 

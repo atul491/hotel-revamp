@@ -31,6 +31,6 @@ npm run dev
 | Vercel env var | Purpose |
 |---|---|
 | `ANTHROPIC_API_KEY` | Turns on Claude (`ANTHROPIC_MODEL`, default `claude-opus-5-5`) |
-| `OPENAI_API_KEY` | Turns on OpenAI (`OPENAI_MODEL`, default `gpt-5.5`) |
+| `OPENAI_API_KEY` | Turns on OpenAI (`OPENAI_MODEL`, default `gpt-6.1-sol`) |
 | `AI_PROVIDER` | Optional default when both keys are set: `anthropic` or `openai` |
  Without it, requests are saved as drafts and can be built later with the card's **Build** button. Made versions are stored in the browser (localStorage) and drawn in a sandboxed iframe.
