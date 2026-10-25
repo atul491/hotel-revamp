@@ -185,6 +185,7 @@ export const IB_SEARCH_RESULTS = [
     tbo_code: "1500771",
     hotel: "Grandmas Plus Seminyak",
     hotel_image: "",
+    roomContent: false, // no Trailix room match yet: no room photos / facilities
     star_rating: "3",
     reviews: "8.1",
     contracted: false,
@@ -247,8 +248,11 @@ export function toUniversal(ib) {
   const rooms = roomGroups.map((g, i) => {
     const appRoom = isAlila ? base.rooms.find((r) => r.name === g.name) || base.rooms[i] : null;
     const r0 = base.rooms[i % base.rooms.length];
+    const full = appRoom || { ...r0, name: g.name, id: g.std_room_id };
+    // Supplier-only room: what TBO / TravClan send (name, size, bed), nothing from Trailix.
+    const bare = { ...full, images: [], description: null, amenities: [], view: null, sleeps: null, sizeTip: null };
     return {
-      ...(appRoom || { ...r0, name: g.name, id: g.std_room_id }),
+      ...(ib.roomContent === false ? bare : full),
       std_room_id: g.std_room_id,
       rates: [...g.room_rates].sort((a, b) => a.pricing.selling_price - b.pricing.selling_price),
     };

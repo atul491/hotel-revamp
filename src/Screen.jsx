@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { X, ExternalLink, Hotel } from "lucide-react";
+import { X, ExternalLink, Hotel, ChevronLeft } from "lucide-react";
 import { useDesign } from "./design";
 import { ViewCtx, inr } from "./kit";
 import { ListCard } from "./blocks/ListCard";
 import { Rooms } from "./blocks/commerce";
 import { TopBar, Filters, Toolbar, Notice, TierHeader, PriceDetails, Bookings, Support, TIER } from "./blocks/screen";
 import HotelPage from "./HotelPage";
+import RoomPage from "./RoomPage";
 import { Slot, usePickedUser } from "./user";
 import { TRIP_STAYS } from "./data/ibHotels";
 
@@ -16,6 +17,8 @@ export default function Screen({ stay, onOpenHotel, sources = false, fixedSuppor
   const [expanded, setExpanded] = useState({});
   const [drawer, setDrawer] = useState(false);
   const [jump, setJump] = useState(null);
+  // Room open in the drawer: { roomId, rateId } or null (then the drawer shows the hotel).
+  const [room, setRoom] = useState(null);
   const [tierTab, setTierTab] = useState("gold");
   const userGrouping = usePickedUser("grouping");
   const S = stay;
@@ -24,7 +27,14 @@ export default function Screen({ stay, onOpenHotel, sources = false, fixedSuppor
     if (f.byGuest !== filters.byGuest) setBooking({ ...booking, byGuest: f.byGuest });
     setFilters(f);
   };
+  const openRoom = (x, roomId, rateId) => {
+    setOpenId(x.id);
+    onOpenHotel?.(x.id);
+    setRoom({ roomId, rateId });
+    setDrawer(true);
+  };
   const open = (x, section = null) => {
+    setRoom(null);
     setJump(section);
     setOpenId(x.id);
     onOpenHotel?.(x.id);
@@ -32,6 +42,7 @@ export default function Screen({ stay, onOpenHotel, sources = false, fixedSuppor
     else setDrawer(true);
   };
   const ctxFor = (x) => ({ ...ctx, sel: ctx.selOf(x), setSel: (s) => ctx.setSelFor(x, s), open: (id) => open(list.find((y) => y.id === id) || x) });
+  const openRoomObj = room ? h.rooms.find((r) => r.id === room.roomId) : null;
   const openedDelta = (() => {
     const { r } = findSel(h, ctx.selOf(h).rateId);
     return (r.pricing.selling_price - ctx.baseNightly) * ctx.nights;
@@ -60,7 +71,7 @@ export default function Screen({ stay, onOpenHotel, sources = false, fixedSuppor
             <div className="max-w-[760px]"><HotelPage h={x} ctx={ctxFor(x)} jumpTo={x.id === h.id ? jump : null} /></div>
           ) : (
             <>
-              <Slot k="rooms" s={{ ...S, h: x, ctx: ctxFor(x) }}><Rooms h={x} ctx={ctxFor(x)} bare /></Slot>
+              <Slot k="rooms" s={{ ...S, h: x, ctx: ctxFor(x) }}><Rooms h={x} ctx={ctxFor(x)} bare onOpenRoom={(roomId, rateId) => openRoom(x, roomId, rateId)} /></Slot>
               <button onClick={() => open(x)} className="mt-3 text-[13px] font-bold flex items-center gap-1" style={{ color: "var(--accent)" }}>
                 View full hotel page <ExternalLink size={13} />
               </button>
@@ -159,11 +170,27 @@ export default function Screen({ stay, onOpenHotel, sources = false, fixedSuppor
             <div onClick={(e) => e.stopPropagation()}
               className={`bg-white flex flex-col ${picks.detail === "modal" ? "w-full max-w-[880px] max-h-full rounded-2xl overflow-hidden" : "w-[min(680px,100%)] h-full"}`}>
               <div className="flex items-center gap-2 px-4 py-2.5 border-b border-divider">
-                <b className="text-[14px] truncate">{h.name}</b>
-                <span className="text-[12px] text-sub">from {inr(h.ib.fromPrice)}/night</span>
+                {openRoomObj ? (
+                  <>
+                    <button onClick={() => setRoom(null)} title="Back to hotel" className="w-8 h-8 -ml-1 rounded-full hover:bg-surface flex items-center justify-center"><ChevronLeft size={18} /></button>
+                    <div className="min-w-0">
+                      <b className="text-[14px] truncate block">{openRoomObj.name}</b>
+                      <span className="text-[12px] text-sub truncate block">{h.name}</span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <b className="text-[14px] truncate">{h.name}</b>
+                    <span className="text-[12px] text-sub">from {inr(h.ib.fromPrice)}/night</span>
+                  </>
+                )}
                 <button onClick={() => setDrawer(false)} className="ml-auto w-8 h-8 rounded-full hover:bg-surface flex items-center justify-center"><X size={17} /></button>
               </div>
-              <div className="flex-1 overflow-y-auto"><HotelPage h={h} ctx={ctxFor(h)} jumpTo={jump} /></div>
+              <div className="flex-1 overflow-y-auto">
+                {openRoomObj
+                  ? <RoomPage h={h} room={openRoomObj} ctx={ctxFor(h)} highlightRateId={room?.rateId} onOpenHotel={() => setRoom(null)} />
+                  : <HotelPage h={h} ctx={ctxFor(h)} jumpTo={jump} />}
+              </div>
             </div>
           </div>
         )}

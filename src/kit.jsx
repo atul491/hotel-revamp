@@ -2,7 +2,7 @@ import { createContext, useContext } from "react";
 import {
   Ban, Bath, BedDouble, ConciergeBell, Flower2, Footprints, Hammer, Heart, IdCard, Info, Languages, Leaf,
   LogIn, PawPrint, Plug, Shield, Sun, Trees, Umbrella, Users, Utensils, Wallet, Waves, Wifi, Star, Check, X,
-  Car, Coffee, GlassWater, Wine, Dumbbell, Clock, Zap, Soup, BedSingle, Sparkles, LogOut, Image as ImageIcon, MapPin,
+  Car, Coffee, GlassWater, Wine, Dumbbell, Clock, Zap, Soup, BedSingle, Sparkles, LogOut, Image as ImageIcon, MapPin, Ruler,
 } from "lucide-react";
 import { useDesign } from "./design";
 
@@ -12,7 +12,7 @@ export const ICONS = {
   paw: PawPrint, plug: Plug, shield: Shield, sun: Sun, trees: Trees, umbrella: Umbrella, users: Users,
   utensils: Utensils, wallet: Wallet, waves: Waves, wifi: Wifi,
   car: Car, coffee: Coffee, water: GlassWater, wine: Wine, dumbbell: Dumbbell, clock: Clock, zap: Zap,
-  soup: Soup, roomonly: BedSingle, sparkles: Sparkles, logout: LogOut,
+  soup: Soup, roomonly: BedSingle, sparkles: Sparkles, logout: LogOut, ruler: Ruler,
 };
 
 // ─── Amenities as icons (same icon set and stroke as the detail page) ───

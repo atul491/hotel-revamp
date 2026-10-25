@@ -44,7 +44,7 @@ const IB = {
 };
 const MEAL_SHORT = { BB: "Breakfast", RO: "Room Only", HB: "Half Board", FB: "Full Board", AI: "All Inclusive" };
 
-export function Rooms({ h, ctx, bare }) {
+export function Rooms({ h, ctx, bare, onOpenRoom }) {
   const { nights } = ctx;
   const cards = [];
   const byKey = {};
@@ -61,13 +61,13 @@ export function Rooms({ h, ctx, bare }) {
     <section style={{ fontFamily: "Geist, Inter, system-ui, sans-serif" }}>
       {!bare && <H2>Select your room<DataSource s="both" /></H2>}
       <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))" }}>
-        {cards.map((c) => <RateCard key={c.k} c={c} h={h} ctx={ctx} nights={nights} />)}
+        {cards.map((c) => <RateCard key={c.k} c={c} h={h} ctx={ctx} nights={nights} onOpenRoom={onOpenRoom} />)}
       </div>
     </section>
   );
 }
 
-function RateCard({ c, h, ctx, nights }) {
+function RateCard({ c, h, ctx, nights, onOpenRoom }) {
   const booked = ctx.currentId === h.id ? c.rates.find((r) => r.rate_id === ctx.bookedRateId) : null;
   const [pickId, setPickId] = useState((booked || c.rates[0]).rate_id);
   const [open, setOpen] = useState(false);
@@ -93,13 +93,18 @@ function RateCard({ c, h, ctx, nights }) {
     );
   };
   return (
-    <div className="flex flex-col rounded-lg p-4 transition-shadow hover:shadow-md"
+    // Click anywhere on the card for room details; Select and the supplier rows do their own thing.
+    <div onClick={() => onOpenRoom?.(c.room.id, chosen.rate_id)} title={onOpenRoom ? "Open room details" : undefined}
+      className={`flex flex-col rounded-lg p-4 transition-shadow hover:shadow-md ${onOpenRoom ? "cursor-pointer" : ""}`}
       style={{
         background: selected ? IB.bg : "#fff",
         border: selected ? `2px solid ${IB.pinkDivider}` : `1px solid ${IB.divider}`,
         boxShadow: "0 1px 3px rgba(15,23,42,0.08)",
       }}>
       <h4 className="line-clamp-2" title={c.room.name} style={{ fontSize: 18, lineHeight: "24px", fontWeight: 600, color: IB.navy }}>{c.room.name}</h4>
+      {(c.room.size || c.room.beds) && (
+        <div className="mt-0.5" style={{ fontSize: 13, lineHeight: "18px", color: IB.secondary }}>{[c.room.size && `${c.room.size} m²`, c.room.beds].filter(Boolean).join(" • ")}</div>
+      )}
       <div className="uppercase mt-2" style={label}>Room Features</div>
       <div className="flex items-center justify-between gap-2 mt-1">
         <span style={{ fontSize: 13, lineHeight: "18px", color: IB.body }}>{MEAL_SHORT[c.rates[0].board_basis.type] || c.rates[0].board_basis.description}</span>
@@ -110,7 +115,7 @@ function RateCard({ c, h, ctx, nights }) {
       <div className="uppercase mt-3 mb-2" style={label}>Pricing</div>
       {open ? <div className="space-y-1.5">{c.rates.map((r) => box(r, true))}</div> : box(chosen, false)}
       {others > 0 && (
-        <button onClick={() => setOpen(!open)} className="mt-2 flex items-center gap-1 self-start" style={{ fontSize: 12, lineHeight: "16px", fontWeight: 500, color: IB.pink }}>
+        <button onClick={(e) => { e.stopPropagation(); setOpen(!open); }} className="mt-2 flex items-center gap-1 self-start" style={{ fontSize: 12, lineHeight: "16px", fontWeight: 500, color: IB.pink }}>
           {open ? <><ChevronDown size={13} /> Hide</> : <><ChevronRight size={13} /> {others} other provider{others > 1 ? "s" : ""}</>}
         </button>
       )}
@@ -119,8 +124,14 @@ function RateCard({ c, h, ctx, nights }) {
         <span style={{ fontSize: 12, lineHeight: "16px", color: IB.secondary }}>Total ({nights} nights):</span>
         <span style={{ fontSize: 18, lineHeight: "22px", fontWeight: 700, color: IB.navy }}>₹{(chosen.pricing.selling_price * nights).toLocaleString("en-IN")}</span>
       </div>
-      <div className="flex justify-end mt-4">
-        <button onClick={() => ctx.book?.(h, chosen.rate_id)} className="rounded-full px-4"
+      <div className="flex items-center justify-between gap-2 mt-4">
+        {onOpenRoom ? (
+          <button onClick={(e) => { e.stopPropagation(); onOpenRoom(c.room.id, chosen.rate_id); }} className="rounded-full px-3 inline-flex items-center gap-1 bg-[#F2F4F7] hover:bg-[#E4E7EC] transition-colors"
+            style={{ height: 30, fontSize: 13, fontWeight: 600, color: IB.body }}>
+            Room details <ChevronRight size={13} />
+          </button>
+        ) : <span />}
+        <button onClick={(e) => { e.stopPropagation(); ctx.book?.(h, chosen.rate_id); }} className="rounded-full px-4"
           style={{ height: 30, fontSize: 13, fontWeight: 600, border: `1px solid ${IB.pink}`, background: selected ? IB.pink : "#fff", color: selected ? "#fff" : IB.pink }}>
           {selected ? "Selected" : "Select"}
         </button>
