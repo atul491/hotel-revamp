@@ -65,7 +65,6 @@ export function useStay(initialId = SAVED.hotelId) {
       if (types.includes("SIC") && x.ib.private_sic !== "SIC" && !types.includes("Private")) return false;
       const tiers = types.filter((t) => ["Gold", "Silver", "Bronze"].includes(t));
       if (tiers.length && !tiers.map((t) => t.toLowerCase()).includes(x.ib.tier)) return false;
-      if (types.includes("Wishlisted") && !wish.includes(x.id)) return false;
       const anyRef = x.rooms.some((r) => r.rates.some((y) => y.is_refundable));
       const anyNon = x.rooms.some((r) => r.rates.some((y) => !y.is_refundable));
       if (f.refund.length === 1 && f.refund[0] === "Refundable" && !anyRef) return false;

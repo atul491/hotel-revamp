@@ -40,9 +40,6 @@ const rate = (id, name, board, type, refundable, cost, sell, supplier, extra = {
   name,
   board_basis: { description: board, type },
   is_refundable: refundable,
-  is_hold_allowed: !!extra.hold,
-  is_PAN_mandatory: !!extra.pan,
-  is_Passport_mandatory: !!extra.passport,
   pricing: { cost_price: cost, selling_price: sell },
   supplier,
 });
@@ -83,25 +80,25 @@ export const IB_SEARCH_RESULTS = [
         std_room_id: "101",
         name: "Deluxe Suite, garden wing",
         room_rates: [
-          rate("r-101-bb", "Deluxe Suite Garden", "Breakfast included", "BB", true, 11950, 13866, "Contracted", { hold: true }),
+          rate("r-101-bb", "Deluxe Suite Garden", "Breakfast included", "BB", true, 11950, 13866, "Contracted"),
           rate("r-101-bb2", "Deluxe Suite Garden", "Breakfast included", "BB", true, 12180, 14120, "TBO"),
-          rate("r-101-ro", "Deluxe Suite Garden", "Room only", "RO", false, 10400, 12070, "TBO", { pan: true }),
+          rate("r-101-ro", "Deluxe Suite Garden", "Room only", "RO", false, 10400, 12070, "TBO"),
         ],
       },
       room_102: {
         std_room_id: "102",
         name: "Ocean Suite, upper floor",
         room_rates: [
-          rate("r-102-bb", "Ocean Suite", "Breakfast included", "BB", true, 13150, 15266, "TBO", { pan: true }),
+          rate("r-102-bb", "Ocean Suite", "Breakfast included", "BB", true, 13150, 15266, "TBO"),
           rate("r-102-bb2", "Ocean Suite", "Breakfast included", "BB", true, 13400, 15540, "Travclan"),
-          rate("r-102-hb", "Ocean Suite", "Breakfast + Dinner", "HB", true, 15900, 18440, "Travclan", { passport: true }),
+          rate("r-102-hb", "Ocean Suite", "Breakfast + Dinner", "HB", true, 15900, 18440, "Travclan"),
         ],
       },
       room_103: {
         std_room_id: "103",
         name: "One Bedroom Pool Villa",
         room_rates: [
-          rate("r-103-bb", "Pool Villa", "Breakfast included", "BB", false, 16600, 19466, "TBO", { pan: true, passport: true }),
+          rate("r-103-bb", "Pool Villa", "Breakfast included", "BB", false, 16600, 19466, "TBO"),
         ],
       },
     },
@@ -122,7 +119,7 @@ export const IB_SEARCH_RESULTS = [
     master: { address: "Jl. Petitenget, Seminyak, Bali", b_city: "Seminyak", distance_from_centre_km: 1.2, g_rating: 4.5, number_of_reviews: 4210, beachfront: true },
     image: U("1566073771259-6a8506099945"),
     room_details: {
-      room_201: { std_room_id: "201", name: "Wonderful Garden Escape", room_rates: [rate("r-201-bb", "Wonderful Room", "Breakfast included", "BB", true, 15500, 17999, "TBO", { pan: true }), rate("r-201-bb2", "Wonderful Room", "Breakfast included", "BB", true, 15900, 18450, "Travclan")] },
+      room_201: { std_room_id: "201", name: "Wonderful Garden Escape", room_rates: [rate("r-201-bb", "Wonderful Room", "Breakfast included", "BB", true, 15500, 17999, "TBO"), rate("r-201-bb2", "Wonderful Room", "Breakfast included", "BB", true, 15900, 18450, "Travclan")] },
     },
   },
   {
@@ -180,7 +177,7 @@ export const IB_SEARCH_RESULTS = [
     image: U("1520250497591-112f2f40a3f4"),
     room_details: {
       room_501: { std_room_id: "501", name: "Superior Double Room", room_rates: [rate("r-501-bb", "Superior Double", "Breakfast included", "BB", false, 6400, 7440, "TBO"), rate("r-501-bbr", "Superior Double", "Breakfast included", "BB", true, 6550, 7601, "Travclan"), rate("r-501-bbr2", "Superior Double", "Breakfast included", "BB", true, 6700, 7780, "TBO")] },
-      room_502: { std_room_id: "502", name: "Executive King Room", room_rates: [rate("r-502-bb", "Executive King", "Breakfast included", "BB", true, 6890, 7998, "TBO", { hold: true }), rate("r-502-bb2", "Executive King", "Breakfast included", "BB", true, 7000, 8120, "Travclan")] },
+      room_502: { std_room_id: "502", name: "Executive King Room", room_rates: [rate("r-502-bb", "Executive King", "Breakfast included", "BB", true, 6890, 7998, "TBO"), rate("r-502-bb2", "Executive King", "Breakfast included", "BB", true, 7000, 8120, "Travclan")] },
     },
   },
   {
@@ -199,7 +196,7 @@ export const IB_SEARCH_RESULTS = [
     master: { address: "Jl. Kunti, Seminyak", b_city: "Seminyak", distance_from_centre_km: 1.1, g_rating: 4.2, number_of_reviews: 1380 },
     image: U("1551882547-ff40c63fe5fa"),
     room_details: {
-      room_601: { std_room_id: "601", name: "Deluxe Double Room", room_rates: [rate("r-601-ro", "Deluxe Double", "Room only", "RO", false, 3800, 4392, "TBO"), rate("r-601-bb", "Deluxe Double", "Breakfast included", "BB", true, 4300, 4999, "TBO", { pan: true })] },
+      room_601: { std_room_id: "601", name: "Deluxe Double Room", room_rates: [rate("r-601-ro", "Deluxe Double", "Room only", "RO", false, 3800, 4392, "TBO"), rate("r-601-bb", "Deluxe Double", "Breakfast included", "BB", true, 4300, 4999, "TBO")] },
     },
   },
 ];
@@ -300,7 +297,7 @@ export const UNIVERSAL_HOTELS = IB_SEARCH_RESULTS.map(toUniversal);
 export const FIELD_SOURCES = [
   { block: "Name, stars, Booking.com score", ib: "hotel, star_rating, reviews", app: "name, stars, ratings.booking", status: "both" },
   { block: "Contracted ©, Recommended 👍, Private/SIC", ib: "contracted, recommended, private_sic", app: "—", status: "ib" },
-  { block: "Room groups and rates (supplier, cost, sell, refundable, hold, PAN/Passport)", ib: "room_details[].room_rates[]", app: "rooms[] (no rates)", status: "ib" },
+  { block: "Room groups and rates (supplier, cost, sell, refundable)", ib: "room_details[].room_rates[]", app: "rooms[] (no rates)", status: "ib" },
   { block: "Photos, video, reels, gallery categories", ib: "hotel_image (unused)", app: "photos, video, reels", status: "app" },
   { block: "SUNDAYS PICK badge", ib: "—", app: "bookingScore ≥ 8.6", status: "app" },
   { block: "30 Sundays / Google / Tripadvisor scores", ib: "g_rating, g_review (master, hidden)", app: "ratings.*", status: "both" },

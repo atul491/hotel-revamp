@@ -55,7 +55,6 @@ export function TopBar({ v, city, setCity, booked, support }) {
   const left = (
     <div className="flex items-center gap-2">
       <button className={btn} style={{ borderRadius: "var(--rp)", borderColor: "var(--accent)", color: "var(--accent)" }}>Back</button>
-      <button className={`${btn} flex items-center gap-1.5`} style={{ borderRadius: "var(--rp)", borderColor: "var(--accent)", color: "var(--accent)" }}><Heart size={14} /> Wishlist</button>
     </div>
   );
   const right = (
@@ -146,7 +145,7 @@ function CompactCity({ city, setCity, done }) {
 }
 
 // ─── Filters ───
-const TYPE_OPTS = ["Private", "SIC", "Gold", "Silver", "Bronze", "Wishlisted"];
+const TYPE_OPTS = ["Private", "SIC", "Gold", "Silver", "Bronze"];
 const toggle = (arr, x) => (arr.includes(x) ? arr.filter((y) => y !== x) : [...arr, x]);
 
 function Box({ on, onClick, children }) {
@@ -201,7 +200,7 @@ export function Filters({ v, f, set, range }) {
   if (v === "chips") {
     const quick = [["5 Star", () => set({ ...f, stars: toggle(f.stars, 5) }), f.stars.includes(5)], ["SIC", () => set({ ...f, type: toggle(f.type, "SIC") }), f.type.includes("SIC")],
       ["Private", () => set({ ...f, type: toggle(f.type, "Private") }), f.type.includes("Private")], ["Gold", () => set({ ...f, type: toggle(f.type, "Gold") }), f.type.includes("Gold")],
-      ["Refundable", () => set({ ...f, refund: toggle(f.refund, "Refundable") }), f.refund.includes("Refundable")], ["Wishlisted", () => set({ ...f, type: toggle(f.type, "Wishlisted") }), f.type.includes("Wishlisted")]];
+      ["Refundable", () => set({ ...f, refund: toggle(f.refund, "Refundable") }), f.refund.includes("Refundable")]];
     return (
       <div className="flex flex-wrap gap-1.5 items-center">
         {quick.map(([l, fn, on]) => (

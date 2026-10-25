@@ -76,7 +76,7 @@ export const SCREEN = [
   {
     key: "topBar",
     title: "Top bar and city stepper",
-    where: "IB listing: Back, Wishlist, city tabs, Modify, Continue",
+    where: "IB listing: Back, city tabs, Modify, Continue",
     variants: [
       { id: "stepper", label: "Arrow stepper", note: "IB today: cities as arrow segments, done ones ticked, active one filled" },
       { id: "pills", label: "Pill tabs", note: "Cities as rounded pills with nights and dates" },
@@ -355,7 +355,7 @@ export function option(key) {
 
 // ─── Your own settings, beyond the fixed variants ───
 export const CARD_PARTS = [
-  ["photo", "Photo"], ["wishlist", "Wishlist heart"], ["stars", "Stars"], ["room", "Room name"], ["roomFacts", "Size • bed"],
+  ["photo", "Photo"], ["stars", "Stars"], ["room", "Room name"], ["roomFacts", "Size • bed"],
   ["amenities", "Amenity icons"], ["links", "Show images / Show on map"], ["tags", "Tags"], ["reviews", "Reviews + score"],
   ["perNight", "₹ per night"], ["total", "Total for the stay"], ["actions", "Select / Show rooms"],
 ];

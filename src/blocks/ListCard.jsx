@@ -186,11 +186,6 @@ function IBRow({ h, ctx, active, onOpen, onOpenAt, wished, onWish, expanded, onT
               <ChevronRight size={17} strokeWidth={2.5} className="text-[#E31B53] transition-transform group-hover/card:translate-x-1" />
             </button>
             {show("stars") && <span className="text-[14px] font-medium text-[#334155] flex items-center gap-0.5">{h.stars}<Stars n={1} size={16} color="#FDB022" /></span>}
-            {show("wishlist") && (
-              <button onClick={(e) => { e.stopPropagation(); onWish?.(); }} className="w-7 h-7 rounded-full border border-divider flex items-center justify-center" title="Wishlist">
-                <Heart size={14} fill={wished ? "var(--accent)" : "none"} color={wished ? "var(--accent)" : "#98A2B3"} />
-              </button>
-            )}
             {h.ib.contracted && <ContractedBadge />}
           </div>
           {show("tags") && (tv === "inline" || tv === "text") && <Tags h={h} v={tv === "text" ? "text" : "pills"} className="mt-1" />}

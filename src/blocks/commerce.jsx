@@ -15,9 +15,6 @@ function RateFlags({ r }) {
   return (
     <span className="flex flex-wrap gap-x-2 gap-y-0.5 text-[11.5px] font-semibold">
       {r.is_refundable ? <span className="text-[#027A48]">✓ Free cancellation</span> : <span className="text-[#B42318]">Non-refundable</span>}
-      {r.is_hold_allowed && <span className="text-[#1570EF]">Hold allowed</span>}
-      {r.is_PAN_mandatory && <span className="text-[#4F46E5]">PAN required</span>}
-      {r.is_Passport_mandatory && <span className="text-[#4F46E5]">Passport required</span>}
     </span>
   );
 }

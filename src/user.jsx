@@ -90,8 +90,8 @@ const hotelCard = (h, ctx) => {
 export function elementData(k, s) {
   const { h, ctx, list = [], trip, priceRange, booked, bookedRate, custom } = s;
   switch (k) {
-    case "topBar": return { stays: TRIP_STAYS.map((x, i) => ({ ...x, done: i === 0 ? !!booked : !!x.booked })), activeIndex: s.city ?? 0, buttons: ["Back", "Wishlist", "Modify", "Continue"] };
-    case "filters": return { groups: { "Hotel Type": ["Private", "SIC", "Gold", "Silver", "Bronze", "Wishlisted"], "Room Type": ["Refundable", "Non Refundable"], "Star Rating": [5, 4, 3] }, priceRangePerNight: priceRange };
+    case "topBar": return { stays: TRIP_STAYS.map((x, i) => ({ ...x, done: i === 0 ? !!booked : !!x.booked })), activeIndex: s.city ?? 0, buttons: ["Back", "Modify", "Continue"] };
+    case "filters": return { groups: { "Hotel Type": ["Private", "SIC", "Gold", "Silver", "Bronze"], "Room Type": ["Refundable", "Non Refundable"], "Star Rating": [5, 4, 3] }, priceRangePerNight: priceRange };
     case "toolbar": return { count: list.length, sortOptions: ["Sort By Best", "Price: low to high", "Price: high to low", "Rating"], bookedByGuest: false };
     case "notice": return { text: NOTE };
     case "grouping": return { tiers: ["gold", "silver", "bronze"].map((t) => ({ tier: t, title: `30 Sundays ${t[0].toUpperCase()}${t.slice(1)} Hotels`, hotels: list.filter((x) => x.ib.tier === t).map((x) => hotelCard(x, ctx)) })) };
@@ -111,7 +111,7 @@ export function elementData(k, s) {
     case "amenities": return { top: h.facilityTop, groups: h.facilityGroups };
     case "location": return { address: h.address, distanceFromCentreKm: h.distanceFromCenter, nearby: h.nearby };
     case "reviews": return { ratings: h.ratings, summary: h.reviewSummary, breakdown: h.ratingBreakdown, reviews: h.reviews };
-    case "rooms": return { nights: ctx.nights, rooms: h.rooms.map((r) => ({ name: r.name, size: r.size, beds: r.beds, view: r.view, images: r.images, amenities: r.amenities, rates: r.rates.map((x) => ({ meal: x.board_basis.description, refundable: x.is_refundable, holdAllowed: x.is_hold_allowed, supplier: x.supplier, pricePerNight: x.pricing.selling_price, total: x.pricing.selling_price * ctx.nights })) })) };
+    case "rooms": return { nights: ctx.nights, rooms: h.rooms.map((r) => ({ name: r.name, size: r.size, beds: r.beds, view: r.view, images: r.images, amenities: r.amenities, rates: r.rates.map((x) => ({ meal: x.board_basis.description, refundable: x.is_refundable, supplier: x.supplier, pricePerNight: x.pricing.selling_price, total: x.pricing.selling_price * ctx.nights })) })) };
     case "policies": return { policies: h.policies, legal: h.legal, faqs: h.faqs };
     case "similar": return { hotels: (ctx.others || []).map((x) => hotelCard(x, ctx)) };
     case "nav": return { sections: ["Rooms", "About", "Amenities", "Honest bit", "Location", "Reviews", "Policies", "Similar"] };
