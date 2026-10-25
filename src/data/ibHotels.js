@@ -21,9 +21,9 @@ export const HOTEL = {
   ...RAW,
   // Honest bit owns "Good to know"; rooms own meal plans; Stay owns check-in times.
   aboutSections: drop(RAW.aboutSections, (s) => s.title === "Good to know"),
-  facilityTop: drop(RAW.facilityTop, (f) => ["Breakfast included", "Adults only"].includes(f.label)),
+  facilityTop: drop(RAW.facilityTop, (f) => ["Breakfast included", "Adults only"].includes(f.label)).map(({ note, ...f }) => f),
   facilityGroups: RAW.facilityGroups.map((g) => ({ ...g, items: drop(g.items, (i) => /^Breakfast included|^Adults only/.test(i.label)) })),
-  policies: drop(RAW.policies, (p) => p.key === "checkin"),
+  policies: drop(RAW.policies, (p) => p.key === "checkin" || p.key === "ids"),
   faqs: drop(RAW.faqs, (f) => /swimmable|breakfast|airport/i.test(f.q)),
   // Honest bit has the building work; Payment policy has the tax; Children policy has age 16.
   legal: drop(RAW.legal, (l) => /^Construction|tax of 11|16 or older/.test(l)),
@@ -31,6 +31,8 @@ export const HOTEL = {
   whyIndians: drop(RAW.whyIndians, (w) => ["footprints", "heart"].includes(w.icon)),
   // The video tile already shows the first photo as its poster.
   photos: RAW.photos.filter((p, i, a) => a.findIndex((q) => q.url === p.url) === i),
+  nearby: Object.fromEntries(Object.entries(RAW.nearby).filter(([k]) => k !== "Essentials")),
+  rooms: RAW.rooms.map(({ sizeTip, ...r }) => r),
 };
 
 const U = (id, w = 900) => `https://images.unsplash.com/photo-${id}?w=${w}&q=80&auto=format&fit=crop`;

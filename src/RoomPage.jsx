@@ -93,7 +93,7 @@ export default function RoomPage({ h, room, ctx, onOpenHotel, highlightRateId })
 
       {/* Facts */}
       <div className="mt-4 space-y-2 text-[14px]">
-        {room.size && <div className="flex items-center gap-2"><Ruler size={16} style={{ color: IB.label }} /><b>Room size</b> {room.size} m²{room.sizeTip && <span className="ml-1 text-[12px] font-medium rounded-full px-2 py-0.5" style={{ color: IB.green, background: IB.greenBg }}>{room.sizeTip}</span>}</div>}
+        {room.size && <div className="flex items-center gap-2"><Ruler size={16} style={{ color: IB.label }} /><b>Room size</b> {room.size} m²</div>}
         {room.beds && <div className="flex items-center gap-2"><BedDouble size={16} style={{ color: IB.label }} />{room.beds}</div>}
         {room.sleeps && <div className="flex items-center gap-2"><Users size={16} style={{ color: IB.label }} />Sleeps {room.sleeps}</div>}
         {room.view && <div className="flex items-center gap-2"><Eye size={16} style={{ color: IB.label }} />{room.view}</div>}

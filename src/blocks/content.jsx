@@ -200,7 +200,7 @@ export function Amenities({ h, v }) {
 // ─── Location ───
 export function Location({ h, v }) {
   // Nearby tabs in the order sellers asked for; any extra group goes last.
-  const ORDER = ["Transport", "Attractions", "Essentials", "Food and drink"];
+  const ORDER = ["Transport", "Attractions", "Food and drink"];
   const groups = [...ORDER.filter((k) => h.nearby[k]), ...Object.keys(h.nearby).filter((k) => !ORDER.includes(k))];
   const [tab, setTab] = useState(groups[0]);
   const m = h.ib?.master || {};
