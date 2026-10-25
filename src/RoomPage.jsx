@@ -1,17 +1,17 @@
 import { useState } from "react";
 import { ChevronLeft, ChevronRight, Ruler, BedDouble, Users, Eye, Check, Ban, ImageOff, Building2 } from "lucide-react";
-import { inr, Ico, amenityIcon } from "./kit";
+import { Ico, amenityIcon } from "./kit";
 
 // ─── Room detail panel (Booking.com style, Sunday colours) ───
 //
 // Opens in the same right-hand drawer as the hotel page when a seller clicks a
 // room card. Photos, size, beds, guests, view, description and grouped
 // facilities come from Trailix (HotelRoom + Media); meal plan, refundable and
-// prices come from the live supplier rates. A room with no Trailix match still
+// the refund policy from the live rate the seller clicked. Prices stay on the
+// room cards and are not repeated here. A room with no Trailix match still
 // opens and shows what the supplier gave us.
 
 const IB = { navy: "#181e4c", body: "#1e293b", secondary: "#334155", label: "#94a3b8", divider: "#e0e2eb", bg: "#f9f9fb", pink: "#fd014f", pinkDivider: "#f8bacc", green: "#4eac7e", greenBg: "#f1f9f5", red: "#d70143", redBg: "#fff1f1" };
-const MEAL = { BB: "Breakfast", RO: "Room Only", HB: "Half Board", FB: "Full Board", AI: "All Inclusive" };
 const BATHROOM = /bath|shower|toilet|towel|hairdryer|toiletries|robe|slipper|bidet|vanity/i;
 
 const chipIcon = (label) => {
@@ -34,9 +34,9 @@ export default function RoomPage({ h, room, ctx, onOpenHotel, highlightRateId })
   const facilities = amenities.filter((a) => !BATHROOM.test(a));
   const chips = [room.size && `${room.size} m²`, ...amenities.filter((a) => /balcony|air ?con|private bathroom|flat-screen|tv|pool|wifi/i.test(a)).slice(0, 4)].filter(Boolean);
   const matched = photos.length > 0 || amenities.length > 0 || room.description;
-  const booked = ctx.currentId === h.id ? ctx.bookedRateId : null;
-  const rates = [...room.rates].sort((a, b) => a.pricing.selling_price - b.pricing.selling_price);
-  const label = { fontSize: 11, lineHeight: "16px", fontWeight: 500, color: IB.label, letterSpacing: "0.05em" };
+  // The card the seller clicked is one room + meal plan + refund policy; the panel names that policy.
+  const opened = room.rates.find((r) => r.rate_id === highlightRateId) || room.rates[0];
+  const refundable = !!opened?.is_refundable;
 
   return (
     <div className="px-5 pb-6" style={{ fontFamily: "Geist, Inter, system-ui, sans-serif", color: IB.body }}>
@@ -73,7 +73,14 @@ export default function RoomPage({ h, room, ctx, onOpenHotel, highlightRateId })
       )}
 
       {/* Title + chips */}
-      <h2 className="mt-4" style={{ fontSize: 22, lineHeight: "28px", fontWeight: 700, color: IB.navy }}>{room.name}</h2>
+      <div className="mt-4 flex items-center gap-2.5 flex-wrap">
+        <h2 style={{ fontSize: 22, lineHeight: "28px", fontWeight: 700, color: IB.navy }}>{room.name}</h2>
+        {opened && (
+          <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5" style={{ fontSize: 12.5, fontWeight: 500, color: refundable ? IB.green : IB.red, background: refundable ? IB.greenBg : IB.redBg }}>
+            {refundable ? <Check size={12} /> : <Ban size={12} />} {refundable ? "Refundable" : "Non Refundable"}
+          </span>
+        )}
+      </div>
       {chips.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mt-2.5">
           {chips.map((c) => (
@@ -101,39 +108,7 @@ export default function RoomPage({ h, room, ctx, onOpenHotel, highlightRateId })
         <div className="mt-4 text-[14px]"><b>Smoking:</b> <span style={{ color: IB.secondary }}>{room.smoking ? "Smoking allowed" : "No smoking"}</span></div>
       )}
 
-      {/* Rates for this room */}
-      <div className="mt-6 pt-5 border-t" style={{ borderColor: IB.divider }}>
-        <div className="uppercase mb-2" style={label}>Select this room</div>
-        <div className="space-y-2">
-          {rates.map((r) => {
-            const sel = booked === r.rate_id;
-            const hi = highlightRateId === r.rate_id;
-            return (
-              <div key={r.rate_id} className="flex items-center gap-3 rounded-lg px-3 py-2.5 bg-white" style={{ border: sel ? `2px solid ${IB.pinkDivider}` : `1px solid ${hi ? IB.navy : IB.divider}`, background: sel ? IB.bg : "#fff" }}>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap text-[13px]">
-                    <span className="uppercase" style={{ color: IB.body }}>{r.supplier}</span>
-                    <span style={{ color: IB.label }}>·</span>
-                    <span>{MEAL[r.board_basis.type] || r.board_basis.description}</span>
-                    <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5" style={{ fontSize: 12, fontWeight: 500, color: r.is_refundable ? IB.green : IB.red, background: r.is_refundable ? IB.greenBg : IB.redBg }}>
-                      {r.is_refundable ? <Check size={11} /> : <Ban size={11} />} {r.is_refundable ? "Refundable" : "Non Refundable"}
-                    </span>
-                  </div>
-                  <div className="text-[12px] mt-0.5" style={{ color: IB.secondary }}>Total ({ctx.nights} nights): <b style={{ color: IB.navy }}>{inr(r.pricing.selling_price * ctx.nights)}</b></div>
-                </div>
-                <div className="text-right">
-                  <div style={{ fontSize: 16, lineHeight: "20px", fontWeight: 600, color: IB.navy }}>{inr(r.pricing.selling_price)} <span className="text-[12px] font-normal">/night</span></div>
-                </div>
-                <button onClick={() => ctx.book?.(h, r.rate_id)} className="rounded-full px-4 shrink-0"
-                  style={{ height: 30, fontSize: 13, fontWeight: 600, border: `1px solid ${IB.pink}`, background: sel ? IB.pink : "#fff", color: sel ? "#fff" : IB.pink }}>
-                  {sel ? "Selected" : "Select"}
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
+      <div className="mt-6 pt-4 border-t" style={{ borderColor: IB.divider }} />
       <button onClick={onOpenHotel} className="mt-5 inline-flex items-center gap-1.5 text-[13px] font-semibold" style={{ color: IB.pink }}>
         <Building2 size={14} /> View {h.name} details <ChevronRight size={13} />
       </button>
