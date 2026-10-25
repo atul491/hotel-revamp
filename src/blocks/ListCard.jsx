@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Images, MapPin, Utensils, Car, RotateCcw, Ban, LogIn, ChevronRight, ThumbsUp, Star, ArrowLeftRight } from "lucide-react";
-import { Heart, Image as ImageIco, ChevronDown as Down, Check as Tick, TrainFront } from "lucide-react";
+import { Heart, Image as ImageIco, ChevronDown as Down, Check as Tick } from "lucide-react";
 import { Stars, BookingB, inr, scoreColor, SellerNote, AmenityIcons, ContractedBadge } from "../kit";
 import { useDesign } from "../design";
 import { Tags, NOTE } from "./screen";
@@ -193,7 +193,7 @@ function IBRow({ h, ctx, active, onOpen, onOpenAt, wished, onWish, expanded, onT
           {show("roomFacts") && (room.size || bed) && <div className="text-[13px] text-[#64748b] mt-0.5 leading-[18px]">{[room.size && `${room.size} m²`, bed].filter(Boolean).join(" • ")}</div>}
           {show("transit") && h.ib.transit && (
             <div className="flex items-center gap-1.5 text-[13px] text-[#64748b] mt-0.5 leading-[18px]" title="Nearest meeting point">
-              <TrainFront size={13} className="shrink-0" /> {h.ib.transit.walkMin} min walk to {h.ib.transit.name}{h.ib.transit.meters ? ` · ${h.ib.transit.meters} m` : ""}
+              <MapPin size={13} className="shrink-0" style={{ color: "#E31B53" }} /> {h.ib.transit.walkMin} min walk to {h.ib.transit.name}{h.ib.transit.meters ? ` · ${h.ib.transit.meters} m` : ""}
             </div>
           )}
           {show("amenities") && (
