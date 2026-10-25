@@ -50,7 +50,8 @@ export const IB_SEARCH_RESULTS = [
     tbo_code: "1368659",
     hotel: "Alila Seminyak",
     hotel_image: "",
-    transit: { name: "Petitenget bus stop", walkMin: 6, meters: 450, icon: "pin" }, // option A
+    metro: { name: "Seminyak Station", walkMin: 4, meters: 300 },
+    meetingPoint: { name: "Petitenget bus stop", walkMin: 6, meters: 450 },
     star_rating: "5",
     reviews: "9.2",
     contracted: true,
@@ -109,7 +110,6 @@ export const IB_SEARCH_RESULTS = [
     tbo_code: "1199020",
     hotel: "W Bali Seminyak",
     hotel_image: "",
-    transit: { name: "Petitenget bus stop", walkMin: 8, meters: 600, icon: "flag" }, // option B
     star_rating: "5",
     reviews: "9.0",
     contracted: false,
@@ -129,7 +129,7 @@ export const IB_SEARCH_RESULTS = [
     tbo_code: "1077310",
     hotel: "Katamama Suites",
     hotel_image: "",
-    transit: { name: "Petitenget bus stop", walkMin: 9, meters: 700, icon: "footprints" }, // option D
+    meetingPoint: { name: "Petitenget bus stop", walkMin: 9, meters: 700 },
     star_rating: "5",
     reviews: "9.4",
     contracted: false,
@@ -168,7 +168,7 @@ export const IB_SEARCH_RESULTS = [
     tbo_code: "1402288",
     hotel: "The Haven Seminyak",
     hotel_image: "",
-    transit: { name: "Seminyak Square stop", walkMin: 3, meters: 220, icon: "users" }, // option C
+    metro: { name: "Seminyak Square Station", walkMin: 3, meters: 220 },
     star_rating: "4",
     reviews: "8.6",
     contracted: true,
@@ -287,10 +287,10 @@ export function toUniversal(ib) {
       private_sic: ib.private_sic,
       tier: ib.tier,
       inclusions: ib.inclusions || [],
-      // Nearest meeting point (metro / transit stop). From Trailix's computed
-      // nearby "transport" group; absent when there is none, and the row then
-      // simply skips the line.
-      transit: ib.transit || null,
+      // Nearest metro (Trailix nearby "transport" group) and the group pickup /
+      // meeting point (fleet feed). Each is optional; the row skips a missing one.
+      metro: ib.metro || null,
+      meetingPoint: ib.meetingPoint || null,
       // Same field the live IB reads (hotel.__rawHotel.google_map_link); when a
       // hotel has none, fall back to a Google Maps search like the app does.
       google_map_link:

@@ -1,9 +1,6 @@
 import { useState } from "react";
 import { Images, MapPin, Utensils, Car, RotateCcw, Ban, LogIn, ChevronRight, ThumbsUp, Star, ArrowLeftRight } from "lucide-react";
-import { Heart, Image as ImageIco, ChevronDown as Down, Check as Tick, Flag, Users as UsersIco, Footprints } from "lucide-react";
-
-// Meeting-point icon options, one per sample hotel so they can be compared in the list.
-const MEET_ICON = { pin: MapPin, flag: Flag, users: UsersIco, footprints: Footprints };
+import { Heart, Image as ImageIco, ChevronDown as Down, Check as Tick, MapPinned, TrainFront } from "lucide-react";
 import { Stars, BookingB, inr, scoreColor, SellerNote, AmenityIcons, ContractedBadge } from "../kit";
 import { useDesign } from "../design";
 import { Tags, NOTE } from "./screen";
@@ -194,9 +191,18 @@ function IBRow({ h, ctx, active, onOpen, onOpenAt, wished, onWish, expanded, onT
           {show("tags") && (tv === "inline" || tv === "text") && <Tags h={h} v={tv === "text" ? "text" : "pills"} className="mt-1" />}
           {show("room") && <div className="text-[14px] font-medium text-[#334155] mt-2 leading-5">{room.name}</div>}
           {show("roomFacts") && (room.size || bed) && <div className="text-[13px] text-[#64748b] mt-0.5 leading-[18px]">{[room.size && `${room.size} m²`, bed].filter(Boolean).join(" • ")}</div>}
-          {show("transit") && h.ib.transit && (
-            <div className="flex items-center gap-1.5 text-[13px] text-[#64748b] mt-0.5 leading-[18px]" title="Nearest meeting point">
-              {(() => { const I = MEET_ICON[h.ib.transit.icon] || MapPin; return <I size={13} className="shrink-0" style={{ color: "#E31B53" }} />; })()} {h.ib.transit.walkMin} min walk to {h.ib.transit.name}{h.ib.transit.meters ? ` · ${h.ib.transit.meters} m` : ""}
+          {show("transit") && (h.ib.metro || h.ib.meetingPoint) && (
+            <div className="text-[13px] text-[#64748b] mt-0.5 leading-[18px] space-y-0.5">
+              {h.ib.metro && (
+                <div className="flex items-center gap-1.5" title="Nearest metro">
+                  <TrainFront size={13} className="shrink-0" style={{ color: "#E31B53" }} /> {h.ib.metro.name} · {h.ib.metro.walkMin} min walk{h.ib.metro.meters ? ` · ${h.ib.metro.meters} m` : ""}
+                </div>
+              )}
+              {h.ib.meetingPoint && (
+                <div className="flex items-center gap-1.5" title="Meeting point">
+                  <MapPinned size={13} className="shrink-0" style={{ color: "#E31B53" }} /> Meeting point: {h.ib.meetingPoint.name} · {h.ib.meetingPoint.walkMin} min walk{h.ib.meetingPoint.meters ? ` · ${h.ib.meetingPoint.meters} m` : ""}
+                </div>
+              )}
             </div>
           )}
           {show("amenities") && (

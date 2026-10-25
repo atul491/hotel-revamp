@@ -355,7 +355,7 @@ export function option(key) {
 
 // ─── Your own settings, beyond the fixed variants ───
 export const CARD_PARTS = [
-  ["photo", "Photo"], ["stars", "Stars"], ["room", "Room name"], ["roomFacts", "Size • bed"], ["transit", "Nearest meeting point"],
+  ["photo", "Photo"], ["stars", "Stars"], ["room", "Room name"], ["roomFacts", "Size • bed"], ["transit", "Metro and meeting point"],
   ["amenities", "Amenity icons"], ["links", "Show images / Show on map"], ["tags", "Tags"], ["reviews", "Reviews + score"],
   ["perNight", "₹ per night"], ["total", "Total for the stay"], ["actions", "Select / Show rooms"],
 ];
