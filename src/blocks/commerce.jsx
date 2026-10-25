@@ -95,13 +95,13 @@ function RateCard({ c, h, ctx, nights, onOpenRoom }) {
   return (
     // Click anywhere on the card for room details; Select and the supplier rows do their own thing.
     <div onClick={() => onOpenRoom?.(c.room.id, chosen.rate_id)} title={onOpenRoom ? "Open room details" : undefined}
-      className={`flex flex-col rounded-lg p-4 transition-shadow hover:shadow-md ${onOpenRoom ? "cursor-pointer" : ""}`}
+      className={`group/room flex flex-col rounded-lg p-4 transition-all duration-150 ${onOpenRoom ? "cursor-pointer hover:-translate-y-0.5 hover:shadow-xl hover:border-[#D0D5DD]" : "hover:shadow-md"}`}
       style={{
         background: selected ? IB.bg : "#fff",
         border: selected ? `2px solid ${IB.pinkDivider}` : `1px solid ${IB.divider}`,
         boxShadow: "0 1px 3px rgba(15,23,42,0.08)",
       }}>
-      <h4 className="line-clamp-2" title={c.room.name} style={{ fontSize: 18, lineHeight: "24px", fontWeight: 600, color: IB.navy }}>{c.room.name}</h4>
+      <h4 className="line-clamp-2 transition-colors text-[#181e4c] group-hover/room:text-[#E31B53]" title={c.room.name} style={{ fontSize: 18, lineHeight: "24px", fontWeight: 600 }}>{c.room.name}</h4>
       {(c.room.size || c.room.beds) && (
         <div className="mt-0.5" style={{ fontSize: 13, lineHeight: "18px", color: IB.secondary }}>{[c.room.size && `${c.room.size} m²`, c.room.beds].filter(Boolean).join(" • ")}</div>
       )}
