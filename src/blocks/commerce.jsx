@@ -112,7 +112,7 @@ function RateCard({ c, h, ctx, nights, onOpenRoom }) {
           {refundable ? "Refundable" : "Non Refundable"}
         </span>
       </div>
-      <div className="uppercase mt-3 mb-2" style={label}>Pricing</div>
+      <div className="mt-3 mb-2" />
       {open ? <div className="space-y-1.5">{c.rates.map((r) => box(r, true))}</div> : box(chosen, false)}
       {others > 0 && (
         <button onClick={(e) => { e.stopPropagation(); setOpen(!open); }} className="mt-2 flex items-center gap-1 self-start" style={{ fontSize: 12, lineHeight: "16px", fontWeight: 500, color: IB.pink }}>
