@@ -50,6 +50,7 @@ export const IB_SEARCH_RESULTS = [
     tbo_code: "1368659",
     hotel: "Alila Seminyak",
     hotel_image: "",
+    transit: { name: "Petitenget bus stop", walkMin: 6, meters: 450 },
     star_rating: "5",
     reviews: "9.2",
     contracted: true,
@@ -127,6 +128,7 @@ export const IB_SEARCH_RESULTS = [
     tbo_code: "1077310",
     hotel: "Katamama Suites",
     hotel_image: "",
+    transit: { name: "Petitenget bus stop", walkMin: 9, meters: 700 },
     star_rating: "5",
     reviews: "9.4",
     contracted: false,
@@ -165,6 +167,7 @@ export const IB_SEARCH_RESULTS = [
     tbo_code: "1402288",
     hotel: "The Haven Seminyak",
     hotel_image: "",
+    transit: { name: "Seminyak Square stop", walkMin: 3, meters: 220 },
     star_rating: "4",
     reviews: "8.6",
     contracted: true,
@@ -283,6 +286,10 @@ export function toUniversal(ib) {
       private_sic: ib.private_sic,
       tier: ib.tier,
       inclusions: ib.inclusions || [],
+      // Nearest meeting point (metro / transit stop). From Trailix's computed
+      // nearby "transport" group; absent when there is none, and the row then
+      // simply skips the line.
+      transit: ib.transit || null,
       // Same field the live IB reads (hotel.__rawHotel.google_map_link); when a
       // hotel has none, fall back to a Google Maps search like the app does.
       google_map_link:
