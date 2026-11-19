@@ -52,6 +52,7 @@ export const IB_SEARCH_RESULTS = [
     tbo_code: "1368659",
     hotel: "Alila Seminyak",
     hotel_image: "",
+    coords: { lat: -8.6772, lng: 115.1553 },
     metro: { name: "Seminyak Station", walkMin: 4, meters: 300 },
     meetingPoint: { name: "Petitenget bus stop", walkMin: 6, meters: 450 },
     star_rating: "5",
@@ -112,6 +113,7 @@ export const IB_SEARCH_RESULTS = [
     tbo_code: "1199020",
     hotel: "W Bali Seminyak",
     hotel_image: "",
+    coords: { lat: -8.6797, lng: 115.1517 },
     star_rating: "5",
     reviews: "9.0",
     contracted: false,
@@ -131,6 +133,7 @@ export const IB_SEARCH_RESULTS = [
     tbo_code: "1077310",
     hotel: "Katamama Suites",
     hotel_image: "",
+    coords: { lat: -8.6823, lng: 115.1548 },
     meetingPoint: { name: "Petitenget bus stop", walkMin: 9, meters: 700 },
     star_rating: "5",
     reviews: "9.4",
@@ -151,6 +154,7 @@ export const IB_SEARCH_RESULTS = [
     tbo_code: "",
     hotel: "Double-Six Luxury Hotel",
     hotel_image: "",
+    coords: { lat: -8.6975, lng: 115.1618 },
     star_rating: "4",
     reviews: "8.4",
     contracted: false,
@@ -170,6 +174,7 @@ export const IB_SEARCH_RESULTS = [
     tbo_code: "1402288",
     hotel: "The Haven Seminyak",
     hotel_image: "",
+    coords: { lat: -8.6896, lng: 115.1602 },
     metro: { name: "Seminyak Square Station", walkMin: 3, meters: 220 },
     star_rating: "4",
     reviews: "8.6",
@@ -191,6 +196,7 @@ export const IB_SEARCH_RESULTS = [
     tbo_code: "1500771",
     hotel: "Grandmas Plus Seminyak",
     hotel_image: "",
+    coords: { lat: -8.6915, lng: 115.1660 },
     roomContent: false, // no Trailix room match yet: no room photos / facilities
     star_rating: "3",
     reviews: "8.1",
@@ -242,6 +248,9 @@ export const TRIP_STAYS = [
 ];
 export const TRIP_PRICES = { addOns: 0, flights: 105156, activities: 86016, gstRate: 0.05, tcsRate: 0.02 };
 
+// Where the map opens: the city centre (Trailix Region / legacy city centre).
+export const CITY_CENTRE = { Seminyak: { lat: -8.6905, lng: 115.1655 } };
+
 export const IB_STAY_META = { city: "Seminyak", checkIn: "20 Jun 2026", nights: 3, adults: 2, deal: "Riya & Kabir · Bali honeymoon", phone: "+91 98•••• 4410" };
 
 // ─── Join IB + app into one hotel the whole page reads from ───
@@ -273,6 +282,7 @@ export function toUniversal(ib) {
     neighbourhood: isAlila ? base.neighbourhood : similar?.area || ib.master?.b_city,
     address: ib.master?.address || base.address,
     distanceFromCenter: ib.master?.distance_from_centre_km ?? base.distanceFromCenter,
+    coords: ib.coords || null,
     photos: isAlila ? base.photos : [{ url: lead, category: "Exterior", caption: ib.hotel }, ...base.photos.slice(1)],
     ratings: {
       ...base.ratings,

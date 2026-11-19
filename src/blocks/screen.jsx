@@ -233,7 +233,7 @@ function MoreFilters({ f, set, range, n, label, big }) {
 }
 
 // ─── Toolbar ───
-export function Toolbar({ v, count, f, set }) {
+export function Toolbar({ v, count, f, set, extra }) {
   const [q, setQ] = useState(false);
   const search = (cls = "") => (
     <div className={`flex items-center gap-2 border border-divider bg-white px-3 py-2 ${cls}`} style={{ borderRadius: "var(--rw)" }}>
@@ -251,7 +251,7 @@ export function Toolbar({ v, count, f, set }) {
       <input type="checkbox" checked={f.byGuest} onChange={(e) => set({ ...f, byGuest: e.target.checked })} style={{ accentColor: "var(--accent)" }} /> Booked by Guest
     </label>
   );
-  const n = <span className="text-[14px] text-sub whitespace-nowrap">{count} hotels</span>;
+  const n = <span className="text-[14px] text-sub whitespace-nowrap flex items-center gap-2">{count} hotels{extra}</span>;
   if (v === "search") return <div className="space-y-2">{search("py-3")}<div className="flex items-center gap-2">{n}<div className="flex-1" />{sort}{guest}</div></div>;
   if (v === "minimal")
     return (

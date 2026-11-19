@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, ExternalLink, Hotel, ChevronLeft } from "lucide-react";
+import { X, ExternalLink, Hotel, ChevronLeft, Map as MapIco } from "lucide-react";
 import { useDesign } from "./design";
 import { ViewCtx, inr } from "./kit";
 import { ListCard } from "./blocks/ListCard";
@@ -7,8 +7,9 @@ import { Rooms } from "./blocks/commerce";
 import { TopBar, Filters, Toolbar, Notice, TierHeader, PriceDetails, Bookings, Support, TIER } from "./blocks/screen";
 import HotelPage from "./HotelPage";
 import RoomPage from "./RoomPage";
+import MapOverlay from "./MapOverlay";
 import { Slot, usePickedUser } from "./user";
-import { TRIP_STAYS } from "./data/ibHotels";
+import { TRIP_STAYS, CITY_CENTRE } from "./data/ibHotels";
 
 // ─── The IB hotel selection screen, every part switchable from /options ───
 export default function Screen({ stay, onOpenHotel, sources = false, fixedSupport = true }) {
@@ -19,6 +20,7 @@ export default function Screen({ stay, onOpenHotel, sources = false, fixedSuppor
   const [jump, setJump] = useState(null);
   // Room open in the drawer: { roomId, rateId } or null (then the drawer shows the hotel).
   const [room, setRoom] = useState(null);
+  const [mapOpen, setMapOpen] = useState(false);
   const [tierTab, setTierTab] = useState("gold");
   const userGrouping = usePickedUser("grouping");
   const S = stay;
@@ -131,7 +133,13 @@ export default function Screen({ stay, onOpenHotel, sources = false, fixedSuppor
   const toolbarPanel = (
     <div className="p-3 space-y-2.5" style={{ background: "var(--band)", borderRadius: "var(--r)" }}>
       {picks.filters !== "column" && <Slot k="filters" s={S}><Filters v={picks.filters} f={filters} set={setF} range={priceRange} /></Slot>}
-      <Slot k="toolbar" s={S}><Toolbar v={picks.toolbar} count={list.length} f={filters} set={setF} /></Slot>
+      <Slot k="toolbar" s={S}><Toolbar v={picks.toolbar} count={list.length} f={filters} set={setF} extra={
+        <button onClick={() => setMapOpen(true)} title="See these hotels on a map"
+          className="inline-flex items-center gap-1.5 h-7 px-2.5 text-[12.5px] font-semibold border bg-white hover:bg-[#FFF1F3] transition-colors"
+          style={{ borderRadius: "var(--rp)", borderColor: "var(--accent)", color: "var(--accent)" }}>
+          <MapIco size={13} /> Map
+        </button>
+      } /></Slot>
       <Slot k="notice" s={S}><Notice v={picks.notice} /></Slot>
     </div>
   );
@@ -164,6 +172,9 @@ export default function Screen({ stay, onOpenHotel, sources = false, fixedSuppor
         </div>
         {picks.rail === "bar" && <PriceDetails v="bar" trip={trip} />}
         <Slot k="support" s={S}><Support v={picks.support} absolute={!fixedSupport} /></Slot>
+        {mapOpen && (
+          <MapOverlay city={TRIP_STAYS[city].city} centre={CITY_CENTRE[TRIP_STAYS[city].city] || CITY_CENTRE.Seminyak} hotels={city === 0 ? list : []} ctx={ctx} onClose={() => setMapOpen(false)} />
+        )}
 
         {drawer && picks.detail !== "inline" && (
           <div className={`absolute inset-0 z-40 bg-black/35 flex ${picks.detail === "modal" ? "items-center justify-center p-6" : "justify-end"}`} onClick={() => setDrawer(false)}>
