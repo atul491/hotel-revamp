@@ -1,21 +1,9 @@
 import { useMemo, useState } from "react";
 import { UNIVERSAL_HOTELS, IB_SAVED_STAY, TRIP_STAYS, TRIP_PRICES } from "./data/ibHotels";
 
-// The stay being edited: Seminyak, 3 nights, 2 adults, Alila already saved.
-export const STAY = {
-  city: "Seminyak",
-  nights: IB_SAVED_STAY[1],
-  adults: 2,
-  checkIn: "Sat, 20 Jun",
-  checkOut: "Tue, 23 Jun",
-  dayRange: "Day 1–4",
-};
-
-const SAVED = {
-  hotelId: String(IB_SAVED_STAY[0]),
-  roomId: null,
-  rateId: IB_SAVED_STAY[7].travclan_room_id,
-};
+// One stay per city; the active tab decides which one is being edited.
+const stayOf = (i) => ({ ...TRIP_STAYS[i], adults: 2 });
+const SAVED = Object.fromEntries(TRIP_STAYS.map((s, i) => [i, s.saved ? { ...s.saved, byGuest: false } : { byGuest: false }]));
 
 const findRate = (h, rateId) => {
   for (const room of h.rooms) {
@@ -27,19 +15,24 @@ const findRate = (h, rateId) => {
 
 export const EMPTY_FILTERS = { type: [], refund: [], stars: [], min: 0, max: 0, q: "", sort: "best", byGuest: false };
 
-export function useStay(initialId = SAVED.hotelId) {
+export function useStay(initialId = SAVED[0].hotelId) {
   const [openId, setOpenId] = useState(initialId);
   const [sels, setSels] = useState({});
-  const [booking, setBooking] = useState(SAVED);
+  const [bookings, setBookings] = useState(SAVED);
   const [wish, setWish] = useState(["61022417"]);
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [city, setCity] = useState(0);
+  const STAY = stayOf(city);
+  const cityHotels = UNIVERSAL_HOTELS.filter((x) => x.city === STAY.city);
 
+  const booking = bookings[city] || { byGuest: false };
+  const setBooking = (b) => setBookings((all) => ({ ...all, [city]: b }));
   const booked = UNIVERSAL_HOTELS.find((x) => x.id === booking.hotelId);
   const bookedRate = booked ? findRate(booked, booking.rateId) : null;
   const baseNightly = booking.byGuest ? 0 : bookedRate?.r.pricing.selling_price ?? 0;
 
-  const h = UNIVERSAL_HOTELS.find((x) => x.id === openId) || UNIVERSAL_HOTELS[0];
+  // The open hotel must belong to the active city; otherwise fall back to its first hotel.
+  const h = cityHotels.find((x) => x.id === openId) || cityHotels[0];
   const defaultSel = (x) => {
     if (x.id === booking.hotelId) {
       const { room } = findRate(x, booking.rateId);
@@ -58,7 +51,7 @@ export function useStay(initialId = SAVED.hotelId) {
   // Filtering works on the IB fields the left column offers.
   const list = useMemo(() => {
     const f = filters;
-    let out = UNIVERSAL_HOTELS.filter((x) => {
+    let out = cityHotels.filter((x) => {
       const r0 = x.rooms[0].rates[0];
       const types = f.type;
       if (types.includes("Private") && x.ib.private_sic !== "Private" && !types.includes("SIC")) return false;
@@ -74,6 +67,7 @@ export function useStay(initialId = SAVED.hotelId) {
       if (f.max && x.ib.fromPrice > f.max) return false;
       if (f.q && !x.name.toLowerCase().includes(f.q.toLowerCase())) return false;
       return !!r0;
+      // eslint-disable-next-line no-unreachable
     });
     const by = {
       best: (a, b) => (b.ib.contracted - a.ib.contracted) || (b.ib.master?.static_score || b.ratings.booking.score * 10) - (a.ib.master?.static_score || a.ratings.booking.score * 10),
@@ -82,13 +76,22 @@ export function useStay(initialId = SAVED.hotelId) {
       rating: (a, b) => b.ratings.booking.score - a.ratings.booking.score,
     };
     return [...out].sort(by[f.sort] || by.best);
-  }, [filters, wish]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters, wish, city]);
 
-  const prices = UNIVERSAL_HOTELS.map((x) => x.ib.fromPrice);
+  const prices = cityHotels.map((x) => x.ib.fromPrice);
   const priceRange = [Math.min(...prices), Math.max(...prices)];
 
-  const hotelsTotal =
-    baseNightly * STAY.nights + TRIP_STAYS.reduce((n, s) => n + (s.booked ? s.booked.price * s.nights : 0), 0);
+  // Every city's saved room, for the bookings panel, the stepper ticks and the total.
+  const stays = TRIP_STAYS.map((s, i) => {
+    const b = bookings[i] || {};
+    if (b.byGuest) return { s, done: true, byGuest: true, hotel: "Booked by guest", room: "", price: 0 };
+    const hh = UNIVERSAL_HOTELS.find((x) => x.id === b.hotelId);
+    if (!hh) return { s, done: false };
+    const { room, r } = findRate(hh, b.rateId);
+    return { s, done: true, hotel: hh.name, room: room.name, price: r.pricing.selling_price };
+  });
+  const hotelsTotal = stays.reduce((n, x) => n + (x.done && !x.byGuest ? x.price * x.s.nights : 0), 0);
   const gst = Math.round((hotelsTotal + TRIP_PRICES.activities) * TRIP_PRICES.gstRate);
   const tcs = Math.round((hotelsTotal + TRIP_PRICES.activities) * TRIP_PRICES.tcsRate);
   const trip = {
@@ -113,15 +116,15 @@ export function useStay(initialId = SAVED.hotelId) {
       selOf,
       setSelFor: (x, s) => setSels((p) => ({ ...p, [x.id]: s })),
       book,
-      others: UNIVERSAL_HOTELS.filter((x) => x.id !== h.id),
+      others: cityHotels.filter((x) => x.id !== h.id),
       open: setOpenId,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [h.id, sels, booking, baseNightly],
+    [h.id, sels, booking, baseNightly, city],
   );
 
   return {
-    h, ctx, openId, setOpenId, hotels: UNIVERSAL_HOTELS, list,
+    h, ctx, openId, setOpenId, hotels: UNIVERSAL_HOTELS, cityHotels, list, stays, bookings,
     booking, setBooking, booked, bookedRate, wish, setWish, filters, setFilters, priceRange,
     city, setCity, trip,
   };

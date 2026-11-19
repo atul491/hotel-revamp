@@ -14,7 +14,7 @@ import { TRIP_STAYS, CITY_CENTRE } from "./data/ibHotels";
 // ─── The IB hotel selection screen, every part switchable from /options ───
 export default function Screen({ stay, onOpenHotel, sources = false, fixedSupport = true }) {
   const { picks, vars } = useDesign();
-  const { list, ctx, h, openId, setOpenId, filters, setFilters, priceRange, wish, setWish, booking, setBooking, booked, bookedRate, trip, city, setCity } = stay;
+  const { list, ctx, h, openId, setOpenId, filters, setFilters, priceRange, wish, setWish, booking, setBooking, stays, trip, city, setCity } = stay;
   const [expanded, setExpanded] = useState({});
   const [drawer, setDrawer] = useState(false);
   const [jump, setJump] = useState(null);
@@ -28,6 +28,13 @@ export default function Screen({ stay, onOpenHotel, sources = false, fixedSuppor
   const setF = (f) => {
     if (f.byGuest !== filters.byGuest) setBooking({ ...booking, byGuest: f.byGuest });
     setFilters(f);
+  };
+  // Switching city: close any open hotel / room and reset the "booked by guest" tick to that city's state.
+  const goCity = (i) => {
+    setDrawer(false);
+    setRoom(null);
+    setCity(i);
+    setFilters((f) => ({ ...f, byGuest: !!stay.bookings?.[i]?.byGuest, q: "" }));
   };
   const openRoom = (x, roomId, rateId) => {
     setOpenId(x.id);
@@ -86,17 +93,7 @@ export default function Screen({ stay, onOpenHotel, sources = false, fixedSuppor
 
   const tiers = ["gold", "silver", "bronze"].map((t) => [t, list.filter((x) => x.ib.tier === t)]).filter(([, l]) => l.length);
   let body;
-  if (city !== 0) {
-    const s = TRIP_STAYS[city];
-    body = (
-      <div className="bg-white border border-dashed border-[#D5D7DA] p-10 text-center" style={{ borderRadius: "var(--r)" }}>
-        <Hotel className="mx-auto text-inact" />
-        <div className="text-[15px] font-bold mt-2">{s.city} · {s.nights}N · {s.from} – {s.to}</div>
-        <div className="text-[13px] text-sub mt-1">{s.booked ? `${s.booked.hotel} · ${s.booked.room} is saved for this city.` : "No room selected yet."} This demo has hotels for Seminyak only.</div>
-        <button onClick={() => setCity(0)} className="mt-3 text-[13px] font-bold" style={{ color: "var(--accent)" }}>Back to Seminyak</button>
-      </div>
-    );
-  } else if (!list.length) {
+  if (!list.length) {
     body = (
       <div className="text-center py-12 text-sub text-[14px]">
         Nothing matches those filters.{" "}
@@ -127,7 +124,7 @@ export default function Screen({ stay, onOpenHotel, sources = false, fixedSuppor
     );
   } else body = <div className="space-y-3">{list.map(card)}</div>;
 
-  if (userGrouping && city === 0) body = <Slot k="grouping" s={S} />;
+  if (userGrouping) body = <Slot k="grouping" s={S} />;
 
   const showRail = picks.rail !== "bar" || picks.bookings !== "stepper";
   const toolbarPanel = (
@@ -147,7 +144,7 @@ export default function Screen({ stay, onOpenHotel, sources = false, fixedSuppor
   return (
     <ViewCtx.Provider value={{ mode: "seller", sources }}>
       <div className="relative h-full flex flex-col min-h-0" style={{ ...vars, background: "var(--page)" }}>
-        <Slot k="topBar" s={S}><TopBar v={picks.topBar} city={city} setCity={setCity} booked={booked} support={picks.support} /></Slot>
+        <Slot k="topBar" s={S}><TopBar v={picks.topBar} city={city} setCity={goCity} stays={stays} support={picks.support} /></Slot>
         <div className="flex-1 min-h-0 overflow-y-auto">
           <div className="flex gap-4 p-4 items-start">
             {picks.filters === "column" && (
@@ -155,9 +152,9 @@ export default function Screen({ stay, onOpenHotel, sources = false, fixedSuppor
             )}
             <div className="flex-1 min-w-0 space-y-3">
               {toolbarPanel}
-              {filters.byGuest && city === 0 && (
+              {filters.byGuest && (
                 <div className="text-[13px] font-semibold px-3 py-2 bg-[#ECFDF3] text-[#027A48]" style={{ borderRadius: "var(--rw)" }}>
-                  ✓ {TRIP_STAYS[0].city} is marked as booked by the guest. It is removed from the hotel total.
+                  ✓ {TRIP_STAYS[city].city} is marked as booked by the guest. It is removed from the hotel total.
                 </div>
               )}
               {body}
@@ -165,7 +162,7 @@ export default function Screen({ stay, onOpenHotel, sources = false, fixedSuppor
             {showRail && (
               <div className="w-[270px] shrink-0 space-y-3 sticky top-4 hidden lg:block">
                 {picks.rail !== "bar" && <Slot k="rail" s={S}><PriceDetails v={picks.rail} trip={trip} delta={h.id !== ctx.currentId ? openedDelta : null} /></Slot>}
-                <Slot k="bookings" s={S}><Bookings v={picks.bookings} booked={booked} bookedRate={bookedRate} byGuest={booking.byGuest} city={city} setCity={setCity} /></Slot>
+                <Slot k="bookings" s={S}><Bookings v={picks.bookings} stays={stays} city={city} setCity={goCity} /></Slot>
               </div>
             )}
           </div>
@@ -173,7 +170,7 @@ export default function Screen({ stay, onOpenHotel, sources = false, fixedSuppor
         {picks.rail === "bar" && <PriceDetails v="bar" trip={trip} />}
         <Slot k="support" s={S}><Support v={picks.support} absolute={!fixedSupport} /></Slot>
         {mapOpen && (
-          <MapOverlay city={TRIP_STAYS[city].city} centre={CITY_CENTRE[TRIP_STAYS[city].city] || CITY_CENTRE.Seminyak} hotels={city === 0 ? list : []} ctx={ctx} onClose={() => setMapOpen(false)} />
+          <MapOverlay city={TRIP_STAYS[city].city} centre={CITY_CENTRE[TRIP_STAYS[city].city] || CITY_CENTRE.Seminyak} hotels={list} ctx={ctx} onClose={() => setMapOpen(false)} />
         )}
 
         {drawer && picks.detail !== "inline" && (

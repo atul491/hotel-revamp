@@ -35,7 +35,7 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose }) {
 
     // City centre marker
     L.marker([centre.lat, centre.lng], {
-      icon: L.divIcon({ className: "", iconSize: null, iconAnchor: [0, 0], html: `<div class="hr-centre"><span></span>${city} centre</div>` }),
+      icon: L.divIcon({ className: "", iconSize: null, iconAnchor: [0, 0], html: `<div class="hr-centre"><svg viewBox="0 0 24 24" width="28" height="28"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7z" fill="#D70143" stroke="#fff" stroke-width="1.5"/><circle cx="12" cy="9" r="2.6" fill="#fff"/></svg><b>${city} centre</b></div>` }),
       interactive: false,
       zIndexOffset: -100,
     }).addTo(map);
@@ -93,8 +93,8 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose }) {
         .hr-pin::after { content: ""; position: absolute; left: 50%; bottom: -6px; transform: translateX(-50%); border: 6px solid transparent; border-top-color: ${NAVY}; border-bottom: 0; }
         .hr-pin:hover { background: ${PINK}; } .hr-pin:hover::after { border-top-color: ${PINK}; }
         .hr-pin-sel { background: ${PINK}; outline: 2px solid #fff; } .hr-pin-sel::after { border-top-color: ${PINK}; }
-        .hr-centre { transform: translate(-50%, -50%); display: flex; align-items: center; gap: 6px; font: 600 12px/1 Figtree, Inter, system-ui, sans-serif; color: #181D27; background: rgba(255,255,255,.92); padding: 5px 9px; border-radius: 999px; white-space: nowrap; box-shadow: 0 1px 4px rgba(15,23,42,.25); }
-        .hr-centre span { width: 10px; height: 10px; border-radius: 50%; background: ${PINK}; box-shadow: 0 0 0 4px rgba(253,1,79,.2); }
+        .hr-centre { transform: translate(-14px, -28px); display: flex; flex-direction: column; align-items: center; gap: 2px; font: 700 12px/1 Figtree, Inter, system-ui, sans-serif; color: #D70143; white-space: nowrap; filter: drop-shadow(0 2px 3px rgba(15,23,42,.35)); }
+        .hr-centre b { background: rgba(255,255,255,.95); padding: 3px 8px; border-radius: 999px; }
         .leaflet-popup-content-wrapper { border-radius: 12px; padding: 0; overflow: hidden; } .leaflet-popup-content { margin: 0; }
         .hr-card { display: flex; gap: 12px; padding: 12px; width: 340px; box-sizing: border-box; font-family: Figtree, Inter, system-ui, sans-serif; color: #181D27; }
         .hr-card img { width: 104px; height: 104px; object-fit: cover; border-radius: 8px; flex: none; }

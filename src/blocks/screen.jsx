@@ -49,8 +49,8 @@ export function Tags({ h, v, className = "" }) {
 }
 
 // ─── Top bar with the city stepper ───
-export function TopBar({ v, city, setCity, booked, support }) {
-  const done = (i) => (i === 0 ? !!booked : !!TRIP_STAYS[i].booked);
+export function TopBar({ v, city, setCity, stays, support }) {
+  const done = (i) => !!stays?.[i]?.done;
   const btn = "px-4 py-1.5 text-[13.5px] font-bold border-[1.5px]";
   const left = (
     <div className="flex items-center gap-2">
@@ -319,15 +319,9 @@ export function PriceDetails({ v, trip, delta, onOpen }) {
 }
 
 // ─── Hotel bookings per city ───
-export function Bookings({ v, booked, bookedRate, byGuest, city, setCity }) {
+export function Bookings({ v, stays, city, setCity }) {
   if (v === "stepper") return null;
-  const items = TRIP_STAYS.map((s, i) => {
-    if (i === 0) {
-      if (byGuest) return { s, hotel: "Booked by guest", room: "", price: 0, done: true };
-      return booked ? { s, hotel: booked.name, room: bookedRate.room.name, price: bookedRate.r.pricing.selling_price, done: true } : { s };
-    }
-    return s.booked ? { s, hotel: s.booked.hotel, room: s.booked.room, price: s.booked.price, done: true } : { s };
-  });
+  const items = stays;
   const n = items.filter((x) => x.done).length;
   if (v === "checklist")
     return (

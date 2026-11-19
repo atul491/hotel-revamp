@@ -90,7 +90,7 @@ const hotelCard = (h, ctx) => {
 export function elementData(k, s) {
   const { h, ctx, list = [], trip, priceRange, booked, bookedRate, custom } = s;
   switch (k) {
-    case "topBar": return { stays: TRIP_STAYS.map((x, i) => ({ ...x, done: i === 0 ? !!booked : !!x.booked })), activeIndex: s.city ?? 0, buttons: ["Back", "Modify", "Continue"] };
+    case "topBar": return { stays: TRIP_STAYS.map((x, i) => ({ city: x.city, nights: x.nights, from: x.from, to: x.to, done: !!s.stays?.[i]?.done })), activeIndex: s.city ?? 0, buttons: ["Back", "Modify", "Continue"] };
     case "filters": return { groups: { "Hotel Type": ["Private", "SIC", "Gold", "Silver", "Bronze"], "Room Type": ["Refundable", "Non Refundable"], "Star Rating": [5, 4, 3] }, priceRangePerNight: priceRange };
     case "toolbar": return { count: list.length, sortOptions: ["Sort By Best", "Price: low to high", "Price: high to low", "Rating"], bookedByGuest: false };
     case "notice": return { text: NOTE };
@@ -99,7 +99,7 @@ export function elementData(k, s) {
     case "tags": return { tags: tagList(h, custom, "seller").map((t) => ({ kind: t.k, text: t.t })) };
     case "detail": return { hotel: hotelCard(h, ctx) };
     case "rail": return { lines: trip, currency: "INR" };
-    case "bookings": return { cities: TRIP_STAYS.map((x, i) => (i === 0 ? { city: x.city, nights: x.nights, hotel: booked?.name, room: bookedRate?.room.name, price: bookedRate?.r.pricing.selling_price } : { city: x.city, nights: x.nights, ...(x.booked || {}) })) };
+    case "bookings": return { cities: (s.stays || []).map((x) => ({ city: x.s.city, nights: x.s.nights, hotel: x.hotel, room: x.room, price: x.price })) };
     case "support": return { label: "Support" };
     case "media": return { photos: h.photos.map((p) => ({ url: p.url, category: p.category, caption: p.caption })), video: h.video, reels: h.reels?.length || 0 };
     case "title": return { name: h.name, stars: h.stars, type: h.type, area: h.neighbourhood, sundaysPick: h.sundaysPick, tags: tagList(h, custom, "seller").map((t) => t.t) };
