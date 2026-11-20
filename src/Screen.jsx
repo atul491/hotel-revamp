@@ -170,7 +170,7 @@ export default function Screen({ stay, onOpenHotel, sources = false, fixedSuppor
         {picks.rail === "bar" && <PriceDetails v="bar" trip={trip} />}
         <Slot k="support" s={S}><Support v={picks.support} absolute={!fixedSupport} /></Slot>
         {mapOpen && (
-          <MapOverlay city={TRIP_STAYS[city].city} centre={CITY_CENTRE[TRIP_STAYS[city].city] || CITY_CENTRE.Seminyak} hotels={list} ctx={ctx} onClose={() => setMapOpen(false)} />
+          <MapOverlay city={TRIP_STAYS[city].city} centre={CITY_CENTRE[TRIP_STAYS[city].city] || CITY_CENTRE.Seminyak} hotels={list} ctx={ctx} onClose={() => setMapOpen(false)} filters={filters} setFilters={setF} priceRange={priceRange} />
         )}
 
         {drawer && picks.detail !== "inline" && (
