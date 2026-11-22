@@ -97,7 +97,7 @@ export default function Screen({ stay, onOpenHotel, sources = false, fixedSuppor
     body = (
       <div className="text-center py-12 text-sub text-[14px]">
         Nothing matches those filters.{" "}
-        <button className="font-bold underline" style={{ color: "var(--accent)" }} onClick={() => setFilters({ ...filters, type: [], refund: [], stars: [], min: 0, max: 0, q: "" })}>Clear filters</button>
+        <button className="font-bold underline" style={{ color: "var(--accent)" }} onClick={() => setFilters({ ...filters, type: [], refund: [], stars: [], min: 0, max: 0, nearTransit: 0, nearMeeting: 0, q: "" })}>Clear filters</button>
       </div>
     );
   } else if (picks.grouping === "headers") {

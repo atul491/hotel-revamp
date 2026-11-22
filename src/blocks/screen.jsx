@@ -1,6 +1,6 @@
 import { useState } from "react";
 import {
-  Heart, ChevronLeft, ChevronRight, Check, Search, Info, Headphones, Filter, Star, IndianRupee, SlidersHorizontal, ChevronDown, X,
+  Heart, ChevronLeft, ChevronRight, Check, Search, Info, Headphones, Filter, Star, IndianRupee, SlidersHorizontal, ChevronDown, X, MapPin, TrainFront, MapPinned,
 } from "lucide-react";
 import { inr, useView } from "../kit";
 import { useDesign } from "../design";
@@ -172,6 +172,10 @@ function FilterBody({ f, set, range }) {
       <div className="border-t border-divider pt-3">{head(Filter, "Room Type")}{["Refundable", "Non Refundable"].map((t) => <Box key={t} on={f.refund.includes(t)} onClick={() => set({ ...f, refund: toggle(f.refund, t) })}>{t}</Box>)}</div>
       <div className="border-t border-divider pt-3">{head(Star, "Star Rating")}{[5, 4, 3].map((n) => <Box key={n} on={f.stars.includes(n)} onClick={() => set({ ...f, stars: toggle(f.stars, n) })}>{n} Star {stars(n)}</Box>)}</div>
       <div className="border-t border-divider pt-3">
+        {head(MapPin, "Distance")}
+        <DistanceRows f={f} set={set} />
+      </div>
+      <div className="border-t border-divider pt-3">
         {head(IndianRupee, "Price Range", <span className="text-[11.5px] font-normal text-sub">(per night)</span>)}
         <div className="text-center text-[14px] font-semibold my-1">{inr(min)} – {inr(max)}</div>
         <input type="range" min={range[0]} max={range[1]} value={max} onChange={(e) => set({ ...f, max: +e.target.value })} className="w-full" style={{ accentColor: "var(--accent)" }} />
@@ -185,7 +189,47 @@ function FilterBody({ f, set, range }) {
 }
 
 export function activeCount(f) {
-  return f.type.length + f.refund.length + f.stars.length + (f.min ? 1 : 0) + (f.max ? 1 : 0);
+  return f.type.length + f.refund.length + f.stars.length + (f.min ? 1 : 0) + (f.max ? 1 : 0) + (f.nearTransit ? 1 : 0) + (f.nearMeeting ? 1 : 0);
+}
+
+// ─── Distance filter: tick a reference, then pick how far ───
+// Two rows, one per reference point. Ticking a row turns it on at 1 km; the
+// chips change the radius. Used in the left column and in the map's bar.
+export const DISTANCE_STEPS = [500, 1000, 2000, 5000];
+export const fmtM = (m) => (m >= 1000 ? `${m / 1000} km` : `${m} m`);
+export function DistanceRows({ f, set, compact }) {
+  const rows = [
+    ["nearTransit", TrainFront, "Near metro / transit"],
+    ["nearMeeting", MapPinned, "Near meeting point"],
+  ];
+  return (
+    <div className={compact ? "space-y-2" : "space-y-2.5"}>
+      {rows.map(([key, I, label]) => {
+        const on = !!f[key];
+        return (
+          <div key={key}>
+            <label className="flex items-center gap-2.5 text-[13.5px] py-0.5 cursor-pointer select-none">
+              <span onClick={() => set({ ...f, [key]: on ? 0 : 1000 })} className="w-4 h-4 border rounded flex items-center justify-center shrink-0" style={{ borderColor: on ? "var(--accent)" : "#D5D7DA", background: on ? "var(--accent)" : "#fff" }}>
+                {on && <Check size={11} color="#fff" strokeWidth={3} />}
+              </span>
+              <span onClick={() => set({ ...f, [key]: on ? 0 : 1000 })} className="flex items-center gap-1.5"><I size={14} className="text-sub" /> {label}</span>
+            </label>
+            {on && (
+              <div className="flex items-center gap-1 pl-[26px] mt-1 flex-wrap">
+                <span className="text-[11.5px] text-sub mr-0.5">within</span>
+                {DISTANCE_STEPS.map((m) => (
+                  <button key={m} onClick={() => set({ ...f, [key]: m })} className="px-2 py-0.5 text-[11.5px] font-semibold border whitespace-nowrap"
+                    style={{ borderRadius: "var(--rp)", borderColor: f[key] === m ? "var(--accent)" : "#E9EAEB", background: f[key] === m ? "var(--accent-soft)" : "#fff", color: f[key] === m ? "var(--accent-ink)" : "#535862" }}>
+                    {fmtM(m)}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 export function Filters({ v, f, set, range }) {

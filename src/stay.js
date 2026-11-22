@@ -13,7 +13,8 @@ const findRate = (h, rateId) => {
   return { room: h.rooms[0], r: h.rooms[0].rates[0] };
 };
 
-export const EMPTY_FILTERS = { type: [], refund: [], stars: [], min: 0, max: 0, q: "", sort: "best", byGuest: false };
+// nearTransit / nearMeeting: 0 = off, otherwise "within N metres" of the nearest stop / meeting point.
+export const EMPTY_FILTERS = { type: [], refund: [], stars: [], min: 0, max: 0, nearTransit: 0, nearMeeting: 0, q: "", sort: "best", byGuest: false };
 
 export function useStay(initialId = SAVED[0].hotelId) {
   const [openId, setOpenId] = useState(initialId);
@@ -65,6 +66,8 @@ export function useStay(initialId = SAVED[0].hotelId) {
       if (f.stars.length && !f.stars.includes(x.stars)) return false;
       if (f.min && x.ib.fromPrice < f.min) return false;
       if (f.max && x.ib.fromPrice > f.max) return false;
+      if (f.nearTransit && !(x.ib.metro && x.ib.metro.meters <= f.nearTransit)) return false;
+      if (f.nearMeeting && !(x.ib.meetingPoint && x.ib.meetingPoint.meters <= f.nearMeeting)) return false;
       if (f.q && !x.name.toLowerCase().includes(f.q.toLowerCase())) return false;
       return !!r0;
       // eslint-disable-next-line no-unreachable

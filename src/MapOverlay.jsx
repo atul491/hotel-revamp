@@ -4,6 +4,7 @@ import "leaflet/dist/leaflet.css";
 import { X, ChevronDown, Check } from "lucide-react";
 import { inr } from "./kit";
 import { PLACES, KINDS, nearest, fmtKm } from "./data/places";
+import { DistanceRows, fmtM } from "./blocks/screen";
 
 // ─── Hotels on a map (Booking.com / MakeMyTrip style) ───
 //
@@ -199,12 +200,15 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, filters
 // ─── Filters along the bottom of the map: same state as the list's left column ───
 function FilterBar({ f, set, range, count }) {
   const max = f.max || range[1];
-  const active = f.type.length + f.refund.length + f.stars.length + (f.max ? 1 : 0);
+  const active = f.type.length + f.refund.length + f.stars.length + (f.max ? 1 : 0) + (f.nearTransit ? 1 : 0) + (f.nearMeeting ? 1 : 0);
   return (
     <div className="absolute left-3 right-3 bottom-3 z-[500] flex items-center gap-2 flex-wrap bg-white/95 backdrop-blur border border-divider rounded-xl px-3 py-2 shadow-lg" style={{ fontFamily: "Figtree, Inter, system-ui, sans-serif" }}>
       <Dropdown label="Hotel Type" options={TYPE_OPTS} value={f.type} onToggle={(x) => set({ ...f, type: toggle(f.type, x) })} />
       <Dropdown label="Room Type" options={["Refundable", "Non Refundable"]} value={f.refund} onToggle={(x) => set({ ...f, refund: toggle(f.refund, x) })} />
       <Dropdown label="Star Rating" options={[5, 4, 3]} render={(n) => <span>{n} Star <span className="text-[#FDB022]">{"★".repeat(n)}</span></span>} value={f.stars} onToggle={(x) => set({ ...f, stars: toggle(f.stars, x) })} />
+      <Dropdown label="Distance" badge={[f.nearTransit && `🚌 ${fmtM(f.nearTransit)}`, f.nearMeeting && `📍 ${fmtM(f.nearMeeting)}`].filter(Boolean).join(" · ")} value={[]} wide>
+        <div className="p-2"><DistanceRows f={f} set={set} compact /></div>
+      </Dropdown>
       <div className="flex items-center gap-2 pl-2 border-l border-divider">
         <span className="text-[12.5px] font-semibold text-head whitespace-nowrap">Price <span className="text-sub font-normal">(per night)</span></span>
         <span className="text-[12.5px] text-sub whitespace-nowrap">₹0 – {inr(max)}</span>
@@ -212,13 +216,13 @@ function FilterBar({ f, set, range, count }) {
       </div>
       <span className="ml-auto text-[12.5px] text-sub whitespace-nowrap">{count} hotel{count === 1 ? "" : "s"} shown</span>
       {active > 0 && (
-        <button onClick={() => set({ ...f, type: [], refund: [], stars: [], min: 0, max: 0 })} className="text-[12.5px] font-semibold whitespace-nowrap" style={{ color: "var(--accent)" }}>Clear</button>
+        <button onClick={() => set({ ...f, type: [], refund: [], stars: [], min: 0, max: 0, nearTransit: 0, nearMeeting: 0 })} className="text-[12.5px] font-semibold whitespace-nowrap" style={{ color: "var(--accent)" }}>Clear</button>
       )}
     </div>
   );
 }
 
-function Dropdown({ label, options, value, onToggle, render }) {
+function Dropdown({ label, options = [], value = [], onToggle, render, children, badge, wide }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   useEffect(() => {
@@ -227,15 +231,16 @@ function Dropdown({ label, options, value, onToggle, render }) {
     document.addEventListener("mousedown", onDoc);
     return () => document.removeEventListener("mousedown", onDoc);
   }, [open]);
-  const n = value.length;
+  const n = badge ? 1 : value.length;
   return (
     <div ref={ref} className="relative">
       <button onClick={() => setOpen(!open)} className="h-8 px-3 inline-flex items-center gap-1.5 text-[12.5px] font-semibold border bg-white whitespace-nowrap"
         style={{ borderRadius: "var(--rp)", borderColor: n ? "var(--accent)" : "#D5D7DA", color: n ? "var(--accent-ink)" : "#181D27", background: n ? "var(--accent-soft)" : "#fff" }}>
-        {label}{n > 0 && <span className="text-[11px] text-white rounded-full px-1.5" style={{ background: "var(--accent)" }}>{n}</span>}<ChevronDown size={13} className={open ? "rotate-180" : ""} />
+        {label}{badge ? <span className="text-[11px] font-semibold" style={{ color: "var(--accent-ink)" }}>{badge}</span> : n > 0 && <span className="text-[11px] text-white rounded-full px-1.5" style={{ background: "var(--accent)" }}>{n}</span>}<ChevronDown size={13} className={open ? "rotate-180" : ""} />
       </button>
       {open && (
-        <div className="absolute bottom-full mb-1.5 left-0 min-w-[180px] bg-white border border-divider rounded-lg shadow-xl p-1.5 z-10">
+        <div className={`absolute bottom-full mb-1.5 left-0 ${wide ? "min-w-[300px]" : "min-w-[180px]"} bg-white border border-divider rounded-lg shadow-xl p-1.5 z-10`}>
+          {children}
           {options.map((o) => {
             const on = value.includes(o);
             return (
