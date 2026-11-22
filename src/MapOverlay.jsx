@@ -3,6 +3,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { X, ChevronDown, Check } from "lucide-react";
 import { inr } from "./kit";
+import { PLACES, KINDS, nearest, fmtKm } from "./data/places";
 
 // ─── Hotels on a map (Booking.com / MakeMyTrip style) ───
 //
@@ -13,6 +14,25 @@ import { inr } from "./kit";
 
 const NAVY = "#181e4c";
 const PINK = "#fd014f";
+
+// Small round markers for places; each kind has its own colour and glyph.
+const GLYPH = {
+  transit: '<path d="M4 16c0 .88.39 1.67 1 2.22V20a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-1h8v1a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4s-8 .5-8 4v10zm3.5 1a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm9 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm1.5-6H6V6h12v5z"/>',
+  meeting: '<path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/>',
+  activity: '<path d="M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.2 5.9 20.6l1.4-6.8L2.2 9.1l6.9-.8z"/>',
+  food: '<path d="M11 2v8a3 3 0 0 1-2 2.8V22H7v-9.2A3 3 0 0 1 5 10V2h2v7h1V2h1v7h1V2h1zm6 0c1.7 0 3 1.8 3 4v6h-2v10h-2V2h1z"/>',
+};
+function placeIcon(kind) {
+  const c = KINDS[kind].colour;
+  return L.divIcon({
+    className: "",
+    iconSize: [26, 26],
+    iconAnchor: [13, 13],
+    popupAnchor: [0, -12],
+    html: `<div class="hr-poi" style="background:${c}"><svg viewBox="0 0 24 24" width="14" height="14" fill="#fff">${GLYPH[kind]}</svg></div>`,
+  });
+}
+const EMOJI = { transit: "🚌", meeting: "📍", activity: "⭐", food: "🍽" };
 
 function pin(label, selected) {
   return L.divIcon({
@@ -30,11 +50,14 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, filters
   const box = useRef(null);
   const mapRef = useRef(null);
   const layerRef = useRef(null);
+  const placeLayers = useRef({});
   const fitted = useRef(false);
+  const [show, setShow] = useState({ transit: true, meeting: true, activity: true, food: true });
 
   // Map and tiles once; the centre marker never moves while the overlay is open.
   useEffect(() => {
-    const map = L.map(box.current, { zoomControl: true, attributionControl: true }).setView([centre.lat, centre.lng], 14);
+    const map = L.map(box.current, { zoomControl: false, attributionControl: true }).setView([centre.lat, centre.lng], 14);
+    L.control.zoom({ position: "topright" }).addTo(map);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
@@ -45,10 +68,31 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, filters
       zIndexOffset: -100,
     }).addTo(map);
     mapRef.current = map;
+    // Places first so hotel price pins sit on top of them.
+    placeLayers.current = {};
+    Object.keys(KINDS).forEach((kind) => {
+      const g = L.layerGroup();
+      (PLACES[city] || []).filter((p) => p.kind === kind).forEach((p) => {
+        L.marker([p.lat, p.lng], { icon: placeIcon(kind), zIndexOffset: -50 })
+          .bindPopup(`<div class="hr-poi-pop"><b>${p.name}</b><span style="color:${KINDS[kind].colour}">${KINDS[kind].label}</span></div>`, { closeButton: false })
+          .addTo(g);
+      });
+      placeLayers.current[kind] = g;
+      g.addTo(map);
+    });
     layerRef.current = L.layerGroup().addTo(map);
     setTimeout(() => map.invalidateSize(), 50);
     return () => { map.remove(); mapRef.current = null; fitted.current = false; };
   }, [city, centre]);
+
+  // Legend toggles add or remove a place layer.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    Object.entries(placeLayers.current).forEach(([kind, g]) => {
+      if (show[kind]) { if (!map.hasLayer(g)) g.addTo(map); } else if (map.hasLayer(g)) map.removeLayer(g);
+    });
+  }, [show, city]);
 
   // Price pins follow the filtered list; the view is fitted only the first time.
   useEffect(() => {
@@ -65,6 +109,14 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, filters
       const lat = h.coords.lat.toFixed(5);
       const lng = h.coords.lng.toFixed(5);
       const stars = "★".repeat(h.stars);
+      // Nearest of each kind, MakeMyTrip style: "4.6 km · 11 min drive to Monkey Forest".
+      const near = [
+        ...nearest(city, "transit", h.coords, 1),
+        ...nearest(city, "meeting", h.coords, 1),
+        ...nearest(city, "food", h.coords, 1),
+        ...nearest(city, "activity", h.coords, 2),
+      ];
+      const nearHtml = near.map((p) => `<div class="hr-near"><span>${EMOJI[p.kind]}</span><span class="hr-near-name">${p.name}</span><span class="hr-near-dist">${fmtKm(p.km)} · ${p.min} min ${p.mode}</span></div>`).join("");
       m.bindPopup(
         `<div class="hr-card">
           <img src="${h.photos[0].url}" alt="" />
@@ -73,12 +125,13 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, filters
             <div class="hr-meta"><span class="hr-stars">${stars}</span> <span class="hr-score">${h.ratings.booking.score.toFixed(1)}</span> ${h.ratings.booking.count.toLocaleString("en-IN")} reviews</div>
             <div class="hr-area">${h.neighbourhood} · ${h.distanceFromCenter} km from centre</div>
             <div class="hr-price">${inr(total)} <span>(${ctx.nights} nights) · ${inr(rate.pricing.selling_price)}/night</span></div>
+            <div class="hr-near-wrap">${nearHtml}</div>
             <div class="hr-coords">📍 ${lat}, ${lng}
               <a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank" rel="noopener noreferrer">Open in Google Maps ›</a>
             </div>
           </div>
         </div>`,
-        { maxWidth: 360, minWidth: 340, closeButton: true, offset: [0, -34] },
+        { maxWidth: 400, minWidth: 380, closeButton: true, offset: [0, -34] },
       );
       bounds.push([h.coords.lat, h.coords.lng]);
     });
@@ -104,6 +157,17 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, filters
         </div>
         <div className="flex-1 min-h-0 relative">
           <div ref={box} className="absolute inset-0" />
+          <div className="absolute left-3 top-3 z-[500] flex flex-col gap-1 bg-white/95 backdrop-blur border border-divider rounded-xl p-2 shadow-lg" style={{ fontFamily: "Figtree, Inter, system-ui, sans-serif" }}>
+            <div className="text-[11px] font-bold uppercase tracking-wide text-sub px-1">Show on map</div>
+            {Object.entries(KINDS).map(([kind, k]) => (
+              <button key={kind} onClick={() => setShow((x) => ({ ...x, [kind]: !x[kind] }))} className="flex items-center gap-2 px-2 py-1 rounded-md text-[12.5px] font-semibold hover:bg-surface text-left" style={{ opacity: show[kind] ? 1 : 0.45 }}>
+                <span className="w-3.5 h-3.5 rounded-full border-2 border-white shadow" style={{ background: k.colour }} /> {k.label}
+                <span className="ml-auto text-[11px] text-sub">{(PLACES[city] || []).filter((p) => p.kind === kind).length}</span>
+              </button>
+            ))}
+            <button className="flex items-center gap-2 px-2 py-1 text-[12.5px] font-semibold text-left cursor-default"><span className="w-3.5 h-3.5 rounded-sm" style={{ background: NAVY }} /> Hotels (price)</button>
+            <button className="flex items-center gap-2 px-2 py-1 text-[12.5px] font-semibold text-left cursor-default"><span className="w-3.5 h-3.5 rounded-full" style={{ background: "#D70143" }} /> City centre</button>
+          </div>
           {filters && <FilterBar f={filters} set={setFilters} range={priceRange} count={hotels.length} />}
         </div>
       </div>
@@ -115,13 +179,17 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, filters
         .hr-centre { transform: translate(-14px, -28px); display: flex; flex-direction: column; align-items: center; gap: 2px; font: 700 12px/1 Figtree, Inter, system-ui, sans-serif; color: #D70143; white-space: nowrap; filter: drop-shadow(0 2px 3px rgba(15,23,42,.35)); }
         .hr-centre b { background: rgba(255,255,255,.95); padding: 3px 8px; border-radius: 999px; }
         .leaflet-popup-content-wrapper { border-radius: 12px; padding: 0; overflow: hidden; } .leaflet-popup-content { margin: 0; }
-        .hr-card { display: flex; gap: 12px; padding: 12px; width: 340px; box-sizing: border-box; font-family: Figtree, Inter, system-ui, sans-serif; color: #181D27; }
+        .hr-card { display: flex; gap: 12px; padding: 12px; width: 380px; box-sizing: border-box; font-family: Figtree, Inter, system-ui, sans-serif; color: #181D27; }
         .hr-card img { width: 104px; height: 104px; object-fit: cover; border-radius: 8px; flex: none; }
         .hr-body { min-width: 0; } .hr-name { font-size: 15px; font-weight: 700; line-height: 1.25; }
         .hr-meta { font-size: 12px; color: #535862; margin-top: 3px; display: flex; align-items: center; gap: 6px; } .hr-stars { color: #FDB022; letter-spacing: -1px; }
         .hr-score { background: #003580; color: #fff; font-weight: 700; padding: 2px 6px; border-radius: 6px 6px 6px 2px; }
         .hr-area { font-size: 12px; color: #535862; margin-top: 3px; }
         .hr-price { font-size: 17px; font-weight: 800; color: ${NAVY}; margin-top: 6px; } .hr-price span { font-size: 11.5px; font-weight: 500; color: #535862; }
+        .hr-poi { width: 26px; height: 26px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(15,23,42,.35); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .hr-poi-pop { font: 12.5px/1.3 Figtree, Inter, system-ui, sans-serif; padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; } .hr-poi-pop span { font-size: 11px; font-weight: 600; }
+        .hr-near-wrap { margin-top: 8px; padding-top: 8px; border-top: 1px solid #E9EAEB; display: flex; flex-direction: column; gap: 3px; }
+        .hr-near { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: #181D27; } .hr-near-name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .hr-near-dist { color: #535862; white-space: nowrap; }
         .hr-coords { font-size: 11.5px; color: #535862; margin-top: 6px; } .hr-coords a { display: block; color: ${PINK}; font-weight: 600; text-decoration: none; margin-top: 2px; }
       `}</style>
     </div>

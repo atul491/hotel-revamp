@@ -195,12 +195,12 @@ function IBRow({ h, ctx, active, onOpen, onOpenAt, wished, onWish, expanded, onT
             <div className="text-[13px] text-[#64748b] mt-0.5 leading-[18px] space-y-0.5">
               {h.ib.metro && (
                 <div className="flex items-center gap-1.5" title="Nearest metro">
-                  <TrainFront size={13} className="shrink-0" style={{ color: "#E31B53" }} /> {h.ib.metro.name} · {h.ib.metro.walkMin} min walk{h.ib.metro.meters ? ` · ${h.ib.metro.meters} m` : ""}
+                  <TrainFront size={13} className="shrink-0" style={{ color: "#E31B53" }} /> {h.ib.metro.name} · {h.ib.metro.walkMin} min {h.ib.metro.mode === "drive" ? "drive" : "walk"}{h.ib.metro.meters ? ` · ${h.ib.metro.meters >= 1000 ? (h.ib.metro.meters / 1000).toFixed(1) + " km" : h.ib.metro.meters + " m"}` : ""}
                 </div>
               )}
               {h.ib.meetingPoint && (
                 <div className="flex items-center gap-1.5" title="Meeting point">
-                  <MapPinned size={13} className="shrink-0" style={{ color: "#E31B53" }} /> Meeting point: {h.ib.meetingPoint.name} · {h.ib.meetingPoint.walkMin} min walk{h.ib.meetingPoint.meters ? ` · ${h.ib.meetingPoint.meters} m` : ""}
+                  <MapPinned size={13} className="shrink-0" style={{ color: "#E31B53" }} /> Meeting point: {h.ib.meetingPoint.name} · {h.ib.meetingPoint.walkMin} min {h.ib.meetingPoint.mode === "drive" ? "drive" : "walk"}{h.ib.meetingPoint.meters ? ` · ${h.ib.meetingPoint.meters >= 1000 ? (h.ib.meetingPoint.meters / 1000).toFixed(1) + " km" : h.ib.meetingPoint.meters + " m"}` : ""}
                 </div>
               )}
             </div>

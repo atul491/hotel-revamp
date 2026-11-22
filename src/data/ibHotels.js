@@ -11,6 +11,7 @@
 // seller and the couple read the same hotel.
 
 import { HOTEL as RAW } from "./hotelDetailData";
+import { nearest } from "./places";
 
 // ─── Say each thing once ───
 // The app's hotel repeats facts across blocks (breakfast in rooms, amenities,
@@ -362,6 +363,9 @@ export const IB_STAY_META = { city: "Seminyak", checkIn: "20 Jun 2026", nights: 
 
 // ─── Join IB + app into one hotel the whole page reads from ───
 // Every field records where it came from so the /universal page can badge it.
+// Shape the list row reads: name, minutes, metres, and whether that is a walk or a drive.
+const toLine = (p) => (p ? { name: p.name.replace(/^Meeting point · /, ""), walkMin: p.min, mode: p.mode, meters: Math.round(p.km * 1000) } : null);
+
 export function toUniversal(ib) {
   const isAlila = ib.hotel === HOTEL.name;
   const similar = HOTEL.similar.find((s) => s.name === ib.hotel);
@@ -409,8 +413,8 @@ export function toUniversal(ib) {
       inclusions: ib.inclusions || [],
       // Nearest metro (Trailix nearby "transport" group) and the group pickup /
       // meeting point (fleet feed). Each is optional; the row skips a missing one.
-      metro: ib.metro || null,
-      meetingPoint: ib.meetingPoint || null,
+      metro: ib.metro || toLine(nearest(ib.city, "transit", ib.coords)[0]),
+      meetingPoint: ib.meetingPoint || toLine(nearest(ib.city, "meeting", ib.coords)[0]),
       // Same field the live IB reads (hotel.__rawHotel.google_map_link); when a
       // hotel has none, fall back to a Google Maps search like the app does.
       google_map_link:
