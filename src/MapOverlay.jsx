@@ -1,61 +1,76 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { X, ChevronDown, Check } from "lucide-react";
+import { X, ChevronDown, ChevronLeft, Check, ExternalLink } from "lucide-react";
 import { inr } from "./kit";
 import { PLACES, KINDS, nearest, fmtKm } from "./data/places";
 import { DistanceRows, fmtM } from "./blocks/screen";
 
 // ─── Hotels on a map (Booking.com / MakeMyTrip style) ───
 //
-// Opens over the seller screen at 90% size, centred on the city centre. Every
-// hotel in the current list gets a price pin (the same total shown on its row).
-// Clicking a pin shows the hotel card with its Google coordinates and a link to
-// Google Maps. Tiles come from OpenStreetMap, so no API key is needed.
+// Two modes:
+//  • Overview: every hotel as a price pin, every place around the city, and a
+//    hotel list on the left.
+//  • Focus: one hotel picked (from the list or its pin, or the one already
+//    selected for this city when the map opens). The map zooms to it, other
+//    hotels fade, dashed lines run to its nearest meeting point, transit stop,
+//    food place and activity, and the left panel lists every place by distance
+//    from it. Clicking a row draws the line to that place.
+// Tiles come from OpenStreetMap, so no API key is needed.
 
 const NAVY = "#181e4c";
 const PINK = "#fd014f";
+const ORDER = ["airport", "meeting", "transit", "food", "activity"];
 
-// Small round markers for places; each kind has its own colour and glyph.
 const GLYPH = {
+  airport: '<path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>',
   transit: '<path d="M4 16c0 .88.39 1.67 1 2.22V20a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-1h8v1a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4s-8 .5-8 4v10zm3.5 1a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm9 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm1.5-6H6V6h12v5z"/>',
   meeting: '<path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/>',
   activity: '<path d="M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.2 5.9 20.6l1.4-6.8L2.2 9.1l6.9-.8z"/>',
   food: '<path d="M11 2v8a3 3 0 0 1-2 2.8V22H7v-9.2A3 3 0 0 1 5 10V2h2v7h1V2h1v7h1V2h1zm6 0c1.7 0 3 1.8 3 4v6h-2v10h-2V2h1z"/>',
 };
+const glyph = (kind, size = 14) => `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="#fff">${GLYPH[kind]}</svg>`;
 function placeIcon(kind) {
-  const c = KINDS[kind].colour;
   return L.divIcon({
     className: "",
     iconSize: [26, 26],
     iconAnchor: [13, 13],
     popupAnchor: [0, -12],
-    html: `<div class="hr-poi" style="background:${c}"><svg viewBox="0 0 24 24" width="14" height="14" fill="#fff">${GLYPH[kind]}</svg></div>`,
+    html: `<div class="hr-poi" style="background:${KINDS[kind].colour}">${glyph(kind)}</div>`,
   });
 }
-const EMOJI = { transit: "🚌", meeting: "📍", activity: "⭐", food: "🍽" };
-
-function pin(label, selected) {
-  return L.divIcon({
-    className: "",
-    iconSize: null,
-    iconAnchor: [0, 0],
-    html: `<div class="hr-pin${selected ? " hr-pin-sel" : ""}">${label}</div>`,
-  });
+function pin(label, cls) {
+  return L.divIcon({ className: "", iconSize: null, iconAnchor: [0, 0], html: `<div class="hr-pin ${cls}">${label}</div>` });
 }
+const lowest = (h) => h.rooms.flatMap((r) => r.rates).sort((a, b) => a.pricing.selling_price - b.pricing.selling_price)[0];
+const placeKey = (p) => `${p.kind}|${p.name}`;
 
 const TYPE_OPTS = ["Private", "SIC", "Gold", "Silver", "Bronze"];
 const toggle = (arr, x) => (arr.includes(x) ? arr.filter((y) => y !== x) : [...arr, x]);
 
-export default function MapOverlay({ city, centre, hotels, ctx, onClose, filters, setFilters, priceRange }) {
+export default function MapOverlay({ city, centre, hotels, ctx, onClose, onOpenDetails, filters, setFilters, priceRange }) {
   const box = useRef(null);
   const mapRef = useRef(null);
-  const layerRef = useRef(null);
+  const pinLayer = useRef(null);
+  const lineLayer = useRef(null);
   const placeLayers = useRef({});
-  const fitted = useRef(false);
-  const [show, setShow] = useState({ transit: true, meeting: true, activity: true, food: true });
+  const [show, setShow] = useState(Object.fromEntries(Object.keys(KINDS).map((k) => [k, true])));
+  // Open focused on the hotel already selected for this city, if it is in the list.
+  const [focusId, setFocusId] = useState(() => (hotels.some((h) => h.id === ctx.currentId && h.coords) ? ctx.currentId : null));
+  const [picked, setPicked] = useState(null); // place row clicked in the focus panel
+  const focus = hotels.find((h) => h.id === focusId && h.coords) || null;
 
-  // Map and tiles once; the centre marker never moves while the overlay is open.
+  // A filter that hides the focused hotel drops back to the overview.
+  useEffect(() => { if (focusId && !focus) setFocusId(null); }, [focusId, focus]);
+  useEffect(() => setPicked(null), [focusId]);
+
+  // Every place around the focused hotel, nearest first, per kind.
+  const around = useMemo(() => {
+    if (!focus) return {};
+    return Object.fromEntries(ORDER.map((k) => [k, nearest(city, k, focus.coords, 99)]));
+  }, [focus, city]);
+
+  // ─── Map, tiles, city centre, place layers: once per city ───
   useEffect(() => {
     const map = L.map(box.current, { zoomControl: false, attributionControl: true }).setView([centre.lat, centre.lng], 14);
     L.control.zoom({ position: "topright" }).addTo(map);
@@ -68,8 +83,6 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, filters
       interactive: false,
       zIndexOffset: -100,
     }).addTo(map);
-    mapRef.current = map;
-    // Places first so hotel price pins sit on top of them.
     placeLayers.current = {};
     Object.keys(KINDS).forEach((kind) => {
       const g = L.layerGroup();
@@ -81,12 +94,14 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, filters
       placeLayers.current[kind] = g;
       g.addTo(map);
     });
-    layerRef.current = L.layerGroup().addTo(map);
+    lineLayer.current = L.layerGroup().addTo(map);
+    pinLayer.current = L.layerGroup().addTo(map);
+    mapRef.current = map;
     setTimeout(() => map.invalidateSize(), 50);
-    return () => { map.remove(); mapRef.current = null; fitted.current = false; };
+    return () => { map.remove(); mapRef.current = null; };
   }, [city, centre]);
 
-  // Legend toggles add or remove a place layer.
+  // Legend toggles.
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -95,105 +110,215 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, filters
     });
   }, [show, city]);
 
-  // Price pins follow the filtered list; the view is fitted only the first time.
+  // ─── Hotel price pins: the focused one stands out, the rest fade ───
   useEffect(() => {
-    const map = mapRef.current, layer = layerRef.current;
-    if (!map || !layer) return;
+    const layer = pinLayer.current;
+    if (!layer) return;
     layer.clearLayers();
-    const bounds = [[centre.lat, centre.lng]];
     hotels.forEach((h) => {
       if (!h.coords) return;
-      const rate = h.rooms.flatMap((r) => r.rates).sort((a, b) => a.pricing.selling_price - b.pricing.selling_price)[0];
-      const total = rate.pricing.selling_price * ctx.nights;
-      const selected = h.id === ctx.currentId;
-      const m = L.marker([h.coords.lat, h.coords.lng], { icon: pin(inr(total), selected), zIndexOffset: selected ? 1000 : 0 }).addTo(layer);
-      const lat = h.coords.lat.toFixed(5);
-      const lng = h.coords.lng.toFixed(5);
-      const stars = "★".repeat(h.stars);
-      // Nearest of each kind, MakeMyTrip style: "4.6 km · 11 min drive to Monkey Forest".
-      const near = [
-        ...nearest(city, "transit", h.coords, 1),
-        ...nearest(city, "meeting", h.coords, 1),
-        ...nearest(city, "food", h.coords, 1),
-        ...nearest(city, "activity", h.coords, 2),
-      ];
-      const nearHtml = near.map((p) => `<div class="hr-near"><span>${EMOJI[p.kind]}</span><span class="hr-near-name">${p.name}</span><span class="hr-near-dist">${fmtKm(p.km)} · ${p.min} min ${p.mode}</span></div>`).join("");
-      m.bindPopup(
-        `<div class="hr-card">
-          <img src="${h.photos[0].url}" alt="" />
-          <div class="hr-body">
-            <div class="hr-name">${h.name}</div>
-            <div class="hr-meta"><span class="hr-stars">${stars}</span> <span class="hr-score">${h.ratings.booking.score.toFixed(1)}</span> ${h.ratings.booking.count.toLocaleString("en-IN")} reviews</div>
-            <div class="hr-area">${h.neighbourhood} · ${h.distanceFromCenter} km from centre</div>
-            <div class="hr-price">${inr(total)} <span>(${ctx.nights} nights) · ${inr(rate.pricing.selling_price)}/night</span></div>
-            <div class="hr-near-wrap">${nearHtml}</div>
-            <div class="hr-coords">📍 ${lat}, ${lng}
-              <a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank" rel="noopener noreferrer">Open in Google Maps ›</a>
-            </div>
-          </div>
-        </div>`,
-        { maxWidth: 400, minWidth: 380, closeButton: true, offset: [0, -34] },
-      );
-      bounds.push([h.coords.lat, h.coords.lng]);
+      const total = lowest(h).pricing.selling_price * ctx.nights;
+      const isFocus = h.id === focusId;
+      const cls = isFocus ? "hr-pin-focus" : focusId ? "hr-pin-dim" : h.id === ctx.currentId ? "hr-pin-sel" : "";
+      L.marker([h.coords.lat, h.coords.lng], { icon: pin(isFocus ? `★ ${h.name} · ${inr(total)}` : inr(total), cls), zIndexOffset: isFocus ? 2000 : h.id === ctx.currentId ? 1000 : 0 })
+        .on("click", () => setFocusId(h.id))
+        .addTo(layer);
     });
-    if (!fitted.current && bounds.length > 1) {
-      map.fitBounds(bounds, { padding: [60, 60], maxZoom: 15 });
-      fitted.current = true;
+  }, [hotels, focusId, ctx.nights, ctx.currentId, city]);
+
+  // ─── Lines from the focused hotel, and where the camera goes ───
+  useEffect(() => {
+    const map = mapRef.current, layer = lineLayer.current;
+    if (!map || !layer) return;
+    layer.clearLayers();
+    const padL = 372; // room for the left panel
+    if (!focus) {
+      const pts = [[centre.lat, centre.lng], ...hotels.filter((h) => h.coords).map((h) => [h.coords.lat, h.coords.lng])];
+      // Wait a tick so the map knows its real size before framing.
+      const t = setTimeout(() => { map.invalidateSize(); if (pts.length > 1) map.fitBounds(pts, { paddingTopLeft: [padL, 40], paddingBottomRight: [200, 90], maxZoom: 15 }); }, 80);
+      return () => clearTimeout(t);
     }
-  }, [hotels, ctx.nights, ctx.currentId, centre]);
+    const from = [focus.coords.lat, focus.coords.lng];
+    const line = (p, strong) => {
+      const c = KINDS[p.kind].colour;
+      L.polyline([from, [p.lat, p.lng]], { color: c, weight: strong ? 4 : 2.5, opacity: strong ? 0.95 : 0.75, dashArray: strong ? null : "6 6" }).addTo(layer);
+      const mid = [(from[0] + p.lat) / 2, (from[1] + p.lng) / 2];
+      L.marker(mid, {
+        interactive: false,
+        icon: L.divIcon({ className: "", iconSize: null, iconAnchor: [0, 0], html: `<div class="hr-dist" style="border-color:${c};color:${c}">${fmtKm(p.km)} · ${p.min} min</div>` }),
+      }).addTo(layer);
+    };
+    // Default lines: nearest meeting point, transit, food and activity (not the airport, it is far).
+    const defaults = ["meeting", "transit", "food", "activity"].map((k) => around[k]?.[0]).filter(Boolean);
+    const target = picked ? Object.values(around).flat().find((p) => placeKey(p) === picked) : null;
+    defaults.forEach((p) => { if (!target || placeKey(p) !== placeKey(target)) line(p, false); });
+    if (target) line(target, true);
+    const pts = [from, ...(target ? [[target.lat, target.lng]] : defaults.map((p) => [p.lat, p.lng]))];
+    const t = setTimeout(() => { map.invalidateSize(); map.fitBounds(pts, { paddingTopLeft: [padL, 60], paddingBottomRight: [200, 100], maxZoom: target ? 15 : 16 }); }, 80);
+    return () => clearTimeout(t);
+  }, [focus, around, picked, hotels, centre]);
 
   useEffect(() => {
-    const onKey = (e) => e.key === "Escape" && onClose();
+    const onKey = (e) => { if (e.key !== "Escape") return; if (focusId) setFocusId(null); else onClose(); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  }, [onClose, focusId]);
+
+  const shown = hotels.filter((h) => h.coords);
 
   return (
     <div className="fixed inset-0 z-[70] bg-black/50 flex items-center justify-center" onClick={onClose}>
       <div className="bg-white rounded-2xl overflow-hidden flex flex-col shadow-2xl" style={{ width: "90vw", height: "90vh" }} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-3 px-4 py-2.5 border-b border-divider shrink-0">
           <b className="text-[15px]">{city} on the map</b>
-          <span className="text-[13px] text-sub">{hotels.filter((h) => h.coords).length} hotels · prices for {ctx.nights} nights · click a pin for details</span>
+          <span className="text-[13px] text-sub">
+            {focus ? <>Showing everything around <b className="text-head">{focus.name}</b></> : <>{shown.length} hotels · prices for {ctx.nights} nights · pick a hotel to see what's around it</>}
+          </span>
           <button onClick={onClose} className="ml-auto w-9 h-9 rounded-full hover:bg-surface flex items-center justify-center" title="Close map"><X size={18} /></button>
         </div>
         <div className="flex-1 min-h-0 relative">
           <div ref={box} className="absolute inset-0" />
-          <div className="absolute left-3 top-3 z-[500] flex flex-col gap-1 bg-white/95 backdrop-blur border border-divider rounded-xl p-2 shadow-lg" style={{ fontFamily: "Figtree, Inter, system-ui, sans-serif" }}>
-            <div className="text-[11px] font-bold uppercase tracking-wide text-sub px-1">Show on map</div>
+
+          {/* Left panel: hotel list (overview) or what's around the hotel (focus) */}
+          <div className="absolute left-3 top-3 bottom-[68px] w-[340px] z-[500] bg-white border border-divider rounded-xl shadow-lg flex flex-col overflow-hidden" style={{ fontFamily: "Figtree, Inter, system-ui, sans-serif" }}>
+            {focus ? (
+              <FocusPanel h={focus} ctx={ctx} around={around} picked={picked} setPicked={setPicked}
+                onBack={() => setFocusId(null)} onOpenDetails={() => onOpenDetails?.(focus.id)} />
+            ) : (
+              <HotelList hotels={shown} ctx={ctx} onPick={setFocusId} />
+            )}
+          </div>
+
+          {/* Legend: what kinds of places are drawn */}
+          <div className="absolute right-3 top-[88px] z-[500] flex flex-col gap-0.5 bg-white/95 backdrop-blur border border-divider rounded-xl p-2 shadow-lg" style={{ fontFamily: "Figtree, Inter, system-ui, sans-serif" }}>
+            <div className="text-[11px] font-bold uppercase tracking-wide text-sub px-1 mb-0.5">Show on map</div>
             {Object.entries(KINDS).map(([kind, k]) => (
               <button key={kind} onClick={() => setShow((x) => ({ ...x, [kind]: !x[kind] }))} className="flex items-center gap-2 px-2 py-1 rounded-md text-[12.5px] font-semibold hover:bg-surface text-left" style={{ opacity: show[kind] ? 1 : 0.45 }}>
                 <span className="w-3.5 h-3.5 rounded-full border-2 border-white shadow" style={{ background: k.colour }} /> {k.label}
-                <span className="ml-auto text-[11px] text-sub">{(PLACES[city] || []).filter((p) => p.kind === kind).length}</span>
               </button>
             ))}
-            <button className="flex items-center gap-2 px-2 py-1 text-[12.5px] font-semibold text-left cursor-default"><span className="w-3.5 h-3.5 rounded-sm" style={{ background: NAVY }} /> Hotels (price)</button>
-            <button className="flex items-center gap-2 px-2 py-1 text-[12.5px] font-semibold text-left cursor-default"><span className="w-3.5 h-3.5 rounded-full" style={{ background: "#D70143" }} /> City centre</button>
+            <div className="flex items-center gap-2 px-2 py-1 text-[12.5px] font-semibold"><span className="w-3.5 h-3.5 rounded-sm" style={{ background: NAVY }} /> Hotels</div>
+            <div className="flex items-center gap-2 px-2 py-1 text-[12.5px] font-semibold"><span className="w-3.5 h-3.5 rounded-full" style={{ background: "#D70143" }} /> City centre</div>
           </div>
-          {filters && <FilterBar f={filters} set={setFilters} range={priceRange} count={hotels.length} />}
+
+          {filters && <FilterBar f={filters} set={setFilters} range={priceRange} count={shown.length} />}
         </div>
       </div>
       <style>{`
-        .hr-pin { transform: translate(-50%, -100%); background: ${NAVY}; color: #fff; font: 600 13px/1 Figtree, Inter, system-ui, sans-serif; padding: 7px 10px; border-radius: 8px; white-space: nowrap; box-shadow: 0 2px 8px rgba(15,23,42,.35); position: relative; cursor: pointer; }
+        .hr-pin { transform: translate(-50%, -100%); background: ${NAVY}; color: #fff; font: 600 13px/1 Figtree, Inter, system-ui, sans-serif; padding: 7px 10px; border-radius: 8px; white-space: nowrap; box-shadow: 0 2px 8px rgba(15,23,42,.35); position: relative; cursor: pointer; transition: opacity .15s; }
         .hr-pin::after { content: ""; position: absolute; left: 50%; bottom: -6px; transform: translateX(-50%); border: 6px solid transparent; border-top-color: ${NAVY}; border-bottom: 0; }
-        .hr-pin:hover { background: ${PINK}; } .hr-pin:hover::after { border-top-color: ${PINK}; }
+        .hr-pin:hover { background: ${PINK}; opacity: 1; } .hr-pin:hover::after { border-top-color: ${PINK}; }
         .hr-pin-sel { background: ${PINK}; outline: 2px solid #fff; } .hr-pin-sel::after { border-top-color: ${PINK}; }
+        .hr-pin-dim { opacity: .45; font-size: 12px; padding: 5px 8px; }
+        .hr-pin-focus { background: ${PINK}; font-size: 14px; padding: 9px 12px; outline: 3px solid #fff; box-shadow: 0 4px 16px rgba(253,1,79,.45); } .hr-pin-focus::after { border-top-color: ${PINK}; }
+        .hr-dist { transform: translate(-50%, -50%); background: #fff; border: 1.5px solid; border-radius: 999px; padding: 2px 7px; font: 700 11px/1.2 Figtree, Inter, system-ui, sans-serif; white-space: nowrap; box-shadow: 0 1px 4px rgba(15,23,42,.2); }
         .hr-centre { transform: translate(-14px, -28px); display: flex; flex-direction: column; align-items: center; gap: 2px; font: 700 12px/1 Figtree, Inter, system-ui, sans-serif; color: #D70143; white-space: nowrap; filter: drop-shadow(0 2px 3px rgba(15,23,42,.35)); }
         .hr-centre b { background: rgba(255,255,255,.95); padding: 3px 8px; border-radius: 999px; }
-        .leaflet-popup-content-wrapper { border-radius: 12px; padding: 0; overflow: hidden; } .leaflet-popup-content { margin: 0; }
-        .hr-card { display: flex; gap: 12px; padding: 12px; width: 380px; box-sizing: border-box; font-family: Figtree, Inter, system-ui, sans-serif; color: #181D27; }
-        .hr-card img { width: 104px; height: 104px; object-fit: cover; border-radius: 8px; flex: none; }
-        .hr-body { min-width: 0; } .hr-name { font-size: 15px; font-weight: 700; line-height: 1.25; }
-        .hr-meta { font-size: 12px; color: #535862; margin-top: 3px; display: flex; align-items: center; gap: 6px; } .hr-stars { color: #FDB022; letter-spacing: -1px; }
-        .hr-score { background: #003580; color: #fff; font-weight: 700; padding: 2px 6px; border-radius: 6px 6px 6px 2px; }
-        .hr-area { font-size: 12px; color: #535862; margin-top: 3px; }
-        .hr-price { font-size: 17px; font-weight: 800; color: ${NAVY}; margin-top: 6px; } .hr-price span { font-size: 11.5px; font-weight: 500; color: #535862; }
+        .leaflet-popup-content-wrapper { border-radius: 10px; padding: 0; overflow: hidden; } .leaflet-popup-content { margin: 0; }
         .hr-poi { width: 26px; height: 26px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(15,23,42,.35); display: flex; align-items: center; justify-content: center; cursor: pointer; }
         .hr-poi-pop { font: 12.5px/1.3 Figtree, Inter, system-ui, sans-serif; padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; } .hr-poi-pop span { font-size: 11px; font-weight: 600; }
-        .hr-near-wrap { margin-top: 8px; padding-top: 8px; border-top: 1px solid #E9EAEB; display: flex; flex-direction: column; gap: 3px; }
-        .hr-near { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: #181D27; } .hr-near-name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .hr-near-dist { color: #535862; white-space: nowrap; }
-        .hr-coords { font-size: 11.5px; color: #535862; margin-top: 6px; } .hr-coords a { display: block; color: ${PINK}; font-weight: 600; text-decoration: none; margin-top: 2px; }
       `}</style>
     </div>
+  );
+}
+
+// ─── Overview panel: the hotels on the map ───
+function HotelList({ hotels, ctx, onPick }) {
+  return (
+    <>
+      <div className="px-3 py-2.5 border-b border-divider shrink-0">
+        <div className="text-[14px] font-bold">Hotels on the map</div>
+        <div className="text-[12px] text-sub">Pick one to see the airport, meeting points, food and activities around it</div>
+      </div>
+      <div className="flex-1 overflow-y-auto">
+        {hotels.length === 0 && <div className="p-4 text-[13px] text-sub">No hotels match these filters.</div>}
+        {hotels.map((h) => {
+          const r = lowest(h);
+          const sel = h.id === ctx.currentId;
+          const near = nearest(h.city, "meeting", h.coords, 1)[0];
+          return (
+            <button key={h.id} onClick={() => onPick(h.id)} className="w-full flex gap-2.5 px-3 py-2.5 border-b border-divider text-left hover:bg-[#F9FAFB] transition-colors group">
+              <img src={h.photos[0].url} alt="" className="w-[64px] h-[64px] rounded-md object-cover shrink-0" />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[13.5px] font-bold truncate group-hover:text-[#E31B53]">{h.name}</span>
+                  {sel && <span className="text-[10px] font-bold text-white bg-[#E31B53] rounded px-1 shrink-0">SELECTED</span>}
+                </div>
+                <div className="text-[11.5px] text-sub flex items-center gap-1">
+                  <span className="text-[#FDB022]">{"★".repeat(h.stars)}</span>
+                  <span className="text-white bg-[#003580] rounded px-1 font-bold">{h.ratings.booking.score.toFixed(1)}</span>
+                  <span className="truncate">{h.neighbourhood}</span>
+                </div>
+                {near && <div className="text-[11.5px] text-sub truncate">📍 {fmtKm(near.km)} to meeting point</div>}
+                <div className="text-[13px] font-extrabold" style={{ color: NAVY }}>{inr(r.pricing.selling_price * ctx.nights)} <span className="text-[11px] font-medium text-sub">({ctx.nights} nights)</span></div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
+// ─── Focus panel: one hotel and everything around it ───
+function FocusPanel({ h, ctx, around, picked, setPicked, onBack, onOpenDetails }) {
+  const r = lowest(h);
+  const sel = h.id === ctx.currentId;
+  const lat = h.coords.lat.toFixed(5), lng = h.coords.lng.toFixed(5);
+  const [open, setOpen] = useState({ airport: true, meeting: true, transit: true, food: true, activity: true });
+  return (
+    <>
+      <div className="shrink-0 border-b border-divider">
+        <button onClick={onBack} className="flex items-center gap-1 px-3 pt-2.5 text-[12.5px] font-semibold" style={{ color: "var(--accent)" }}><ChevronLeft size={15} /> All hotels</button>
+        <div className="flex gap-2.5 px-3 py-2.5">
+          <img src={h.photos[0].url} alt="" className="w-[76px] h-[76px] rounded-md object-cover shrink-0" />
+          <div className="min-w-0 flex-1">
+            <div className="text-[14.5px] font-bold leading-tight">{h.name}</div>
+            <div className="text-[11.5px] text-sub flex items-center gap-1 mt-0.5">
+              <span className="text-[#FDB022]">{"★".repeat(h.stars)}</span>
+              <span className="text-white bg-[#003580] rounded px-1 font-bold">{h.ratings.booking.score.toFixed(1)}</span>
+              {h.ratings.booking.count.toLocaleString("en-IN")} reviews
+            </div>
+            <div className="text-[14px] font-extrabold mt-0.5" style={{ color: NAVY }}>{inr(r.pricing.selling_price * ctx.nights)} <span className="text-[11px] font-medium text-sub">({ctx.nights} nights)</span></div>
+            <a href={`https://www.google.com/maps?q=${lat},${lng}`} target="_blank" rel="noopener noreferrer" className="text-[11px] text-sub hover:underline inline-flex items-center gap-1">📍 {lat}, {lng} <ExternalLink size={10} /></a>
+          </div>
+        </div>
+        <div className="flex gap-2 px-3 pb-2.5">
+          <button onClick={() => ctx.book?.(h)} className="flex-1 h-8 rounded-full text-[12.5px] font-bold border" style={{ borderColor: "#E31B53", background: sel ? "#E31B53" : "#fff", color: sel ? "#fff" : "#E31B53" }}>{sel ? "✓ Selected" : "Select"}</button>
+          <button onClick={onOpenDetails} className="flex-1 h-8 rounded-full text-[12.5px] font-semibold bg-[#F2F4F7] hover:bg-[#E4E7EC]">View details ›</button>
+        </div>
+      </div>
+      <div className="flex-1 overflow-y-auto pb-2">
+        <div className="px-3 pt-2.5 pb-1 text-[11px] font-bold uppercase tracking-wide text-sub">Distance from this hotel</div>
+        {ORDER.map((kind) => {
+          const list = around[kind] || [];
+          if (!list.length) return null;
+          const k = KINDS[kind];
+          return (
+            <div key={kind} className="px-2">
+              <button onClick={() => setOpen((o) => ({ ...o, [kind]: !o[kind] }))} className="w-full flex items-center gap-2 px-1.5 py-1.5 text-[12.5px] font-bold">
+                <span className="w-5 h-5 rounded-full flex items-center justify-center shrink-0" style={{ background: k.colour }} dangerouslySetInnerHTML={{ __html: `<svg viewBox="0 0 24 24" width="11" height="11" fill="#fff">${GLYPH[kind]}</svg>` }} />
+                {k.label} <span className="text-sub font-normal">{list.length}</span>
+                <ChevronDown size={13} className={`ml-auto text-sub ${open[kind] ? "rotate-180" : ""}`} />
+              </button>
+              {open[kind] && list.map((p, i) => {
+                const on = picked === placeKey(p);
+                return (
+                  <button key={p.name} onClick={() => setPicked(on ? null : placeKey(p))}
+                    className="w-full flex items-start gap-2 pl-8 pr-1.5 py-1 rounded-md text-left text-[12.5px] hover:bg-[#F9FAFB]"
+                    style={{ background: on ? `${k.colour}14` : undefined, outline: on ? `1.5px solid ${k.colour}` : "none" }}>
+                    <span className="flex-1 min-w-0">
+                      <span className="block truncate">{p.name.replace(/^Meeting point · /, "")}{i === 0 && <span className="ml-1 text-[10px] font-bold uppercase" style={{ color: k.colour }}>nearest</span>}</span>
+                    </span>
+                    <span className="text-right shrink-0 text-sub whitespace-nowrap"><b className="text-head">{fmtKm(p.km)}</b> · {p.min} min {p.mode}</span>
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })}
+      </div>
+    </>
   );
 }
 

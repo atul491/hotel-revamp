@@ -11,7 +11,7 @@ export const PLACES = {
   Seminyak: [
     { kind: "transit", name: "Kura-Kura bus stop, Seminyak Square", lat: -8.6888, lng: 115.1632 },
     { kind: "transit", name: "Petitenget bus stop", lat: -8.6790, lng: 115.1570 },
-    { kind: "transit", name: "Ngurah Rai International Airport", lat: -8.7467, lng: 115.1668 },
+    { kind: "airport", name: "Ngurah Rai International Airport (DPS)", lat: -8.7467, lng: 115.1668 },
     { kind: "meeting", name: "Meeting point · Seminyak Square", lat: -8.6885, lng: 115.1630 },
     { kind: "meeting", name: "Meeting point · Petitenget Temple car park", lat: -8.6780, lng: 115.1530 },
     { kind: "activity", name: "Petitenget Temple", lat: -8.6775, lng: 115.1520 },
@@ -25,6 +25,7 @@ export const PLACES = {
     { kind: "food", name: "Sisterfields", lat: -8.6875, lng: 115.1630 },
   ],
   Ubud: [
+    { kind: "airport", name: "Ngurah Rai International Airport (DPS)", lat: -8.7467, lng: 115.1668 },
     { kind: "transit", name: "Perama bus stop, Jl. Hanoman", lat: -8.5200, lng: 115.2650 },
     { kind: "transit", name: "Kubu Bus Terminal (Ubud)", lat: -8.4975, lng: 115.2740 },
     { kind: "meeting", name: "Meeting point · Ubud Palace", lat: -8.5063, lng: 115.2625 },
@@ -41,6 +42,8 @@ export const PLACES = {
     { kind: "food", name: "Sari Organik (pure veg)", lat: -8.4985, lng: 115.2600 },
   ],
   "Nusa Penida": [
+    // No airport on the island: fast boat to Sanur, then about 30 min by road.
+    { kind: "airport", name: "Ngurah Rai International Airport (DPS)", lat: -8.7467, lng: 115.1668, fixed: { mode: "boat + drive", min: 90 } },
     { kind: "transit", name: "Toya Pakeh Harbour", lat: -8.6750, lng: 115.4825 },
     { kind: "transit", name: "Banjar Nyuh Harbour", lat: -8.6831, lng: 115.4577 },
     { kind: "transit", name: "Sampalan Harbour", lat: -8.6760, lng: 115.5460 },
@@ -59,6 +62,7 @@ export const PLACES = {
 };
 
 export const KINDS = {
+  airport: { label: "Airport", colour: "#344054" },
   transit: { label: "Metro / transit", colour: "#1570EF" },
   meeting: { label: "Meeting points", colour: "#FD014F" },
   activity: { label: "Activities", colour: "#7F56D9" },
@@ -82,6 +86,7 @@ export function travel(km) {
 
 export const fmtKm = (km) => (km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`);
 
+// Every place of a kind, nearest first (n = Infinity for all).
 // Nearest `n` places of a kind to a point, with distance and travel time.
 export function nearest(city, kind, from, n = 1) {
   if (!from) return [];
@@ -90,5 +95,5 @@ export function nearest(city, kind, from, n = 1) {
     .map((p) => ({ ...p, km: distanceKm(from, p) }))
     .sort((a, b) => a.km - b.km)
     .slice(0, n)
-    .map((p) => ({ ...p, ...travel(p.km) }));
+    .map((p) => ({ ...p, ...(p.fixed || travel(p.km)) }));
 }
