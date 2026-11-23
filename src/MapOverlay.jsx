@@ -29,7 +29,7 @@ const GLYPH = {
   activity: '<path d="M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.2 5.9 20.6l1.4-6.8L2.2 9.1l6.9-.8z"/>',
   food: '<path d="M11 2v8a3 3 0 0 1-2 2.8V22H7v-9.2A3 3 0 0 1 5 10V2h2v7h1V2h1v7h1V2h1zm6 0c1.7 0 3 1.8 3 4v6h-2v10h-2V2h1z"/>',
 };
-const glyph = (kind, size = 14) => `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="#fff">${GLYPH[kind]}</svg>`;
+const glyph = (kind, size = 14, fill = "#fff") => `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="${fill}">${GLYPH[kind]}</svg>`;
 function placeIcon(kind) {
   return L.divIcon({
     className: "",
@@ -88,6 +88,7 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onOpenD
       const g = L.layerGroup();
       (PLACES[city] || []).filter((p) => p.kind === kind).forEach((p) => {
         L.marker([p.lat, p.lng], { icon: placeIcon(kind), zIndexOffset: -50 })
+          .bindTooltip(`<b>${p.name}</b><br><span style="color:${KINDS[kind].colour}">${KINDS[kind].label}${p.trailix ? " · Trailix activity" : ""}</span>`, { direction: "top", offset: [0, -12], className: "hr-tip" })
           .bindPopup(`<div class="hr-poi-pop"><b>${p.name}</b><span style="color:${KINDS[kind].colour}">${KINDS[kind].label}</span></div>`, { closeButton: false })
           .addTo(g);
       });
@@ -120,7 +121,7 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onOpenD
       const total = lowest(h).pricing.selling_price * ctx.nights;
       const isFocus = h.id === focusId;
       const cls = isFocus ? "hr-pin-focus" : focusId ? "hr-pin-dim" : h.id === ctx.currentId ? "hr-pin-sel" : "";
-      L.marker([h.coords.lat, h.coords.lng], { icon: pin(isFocus ? `★ ${h.name} · ${inr(total)}` : inr(total), cls), zIndexOffset: isFocus ? 2000 : h.id === ctx.currentId ? 1000 : 0 })
+      L.marker([h.coords.lat, h.coords.lng], { icon: pin(isFocus ? `★ ${h.name}` : inr(total), cls), zIndexOffset: isFocus ? 2000 : h.id === ctx.currentId ? 1000 : 0 })
         .on("click", () => setFocusId(h.id))
         .addTo(layer);
     });
@@ -141,22 +142,35 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onOpenD
     const from = [focus.coords.lat, focus.coords.lng];
     const line = (p, strong) => {
       const c = KINDS[p.kind].colour;
-      L.polyline([from, [p.lat, p.lng]], { color: c, weight: strong ? 4 : 2.5, opacity: strong ? 0.95 : 0.75, dashArray: strong ? null : "6 6" }).addTo(layer);
-      const mid = [(from[0] + p.lat) / 2, (from[1] + p.lng) / 2];
-      L.marker(mid, {
-        interactive: false,
-        icon: L.divIcon({ className: "", iconSize: null, iconAnchor: [0, 0], html: `<div class="hr-dist" style="border-color:${c};color:${c}">${fmtKm(p.km)} · ${p.min} min</div>` }),
-      }).addTo(layer);
+      L.polyline([from, [p.lat, p.lng]], { color: c, weight: strong ? 4 : 2, opacity: strong ? 0.95 : 0.7, dashArray: strong ? null : "5 6", interactive: false }).addTo(layer);
+      // Label sits next to the place it measures (so labels spread out with the places);
+      // the airport is far, so its label stays about 1 km out from the hotel, in view.
+      const t = p.kind === "airport" ? Math.min(0.5, 1.1 / p.km) : 0.82;
+      const at = [from[0] + (p.lat - from[0]) * t, from[1] + (p.lng - from[1]) * t];
+      L.marker(at, {
+        zIndexOffset: strong ? 900 : 500,
+        icon: L.divIcon({ className: "", iconSize: null, iconAnchor: [0, 0], html: `<div class="hr-dist${strong ? " hr-dist-strong" : ""}" style="border-color:${c};color:${c}">${glyph(p.kind, 11, c)}${fmtKm(p.km)} · ${p.min} min</div>` }),
+      })
+        .bindTooltip(`<b>${p.name.replace(/^Meeting point · /, "")}</b><br>${fmtKm(p.km)} · ${p.min} min ${p.mode}${p.trailix ? "<br><span style='color:#7F56D9'>Trailix activity</span>" : ""}`, { direction: "top", offset: [0, -10], className: "hr-tip" })
+        .on("click", () => setPicked(placeKey(p)))
+        .addTo(layer);
     };
-    // Default lines: nearest meeting point, transit, food and activity (not the airport, it is far).
-    const defaults = ["meeting", "transit", "food", "activity"].map((k) => around[k]?.[0]).filter(Boolean);
+    const drawn = [
+      ...(around.airport || []).slice(0, 1),
+      ...(around.meeting || []).slice(0, 1),
+      ...(around.transit || []).slice(0, 1),
+      ...(around.food || []).slice(0, 3),
+      ...(around.activity || []),
+    ].filter((p) => show[p.kind]);
     const target = picked ? Object.values(around).flat().find((p) => placeKey(p) === picked) : null;
-    defaults.forEach((p) => { if (!target || placeKey(p) !== placeKey(target)) line(p, false); });
+    drawn.forEach((p) => { if (!target || placeKey(p) !== placeKey(target)) line(p, false); });
     if (target) line(target, true);
-    const pts = [from, ...(target ? [[target.lat, target.lng]] : defaults.map((p) => [p.lat, p.lng]))];
-    const t = setTimeout(() => { map.invalidateSize(); map.fitBounds(pts, { paddingTopLeft: [padL, 60], paddingBottomRight: [200, 100], maxZoom: target ? 15 : 16 }); }, 80);
-    return () => clearTimeout(t);
-  }, [focus, around, picked, hotels, centre]);
+    // Frame everything drawn except the airport (it is far); a picked row frames just that pair.
+    const near = drawn.filter((p) => p.kind !== "airport");
+    const pts = [from, ...(target ? [[target.lat, target.lng]] : near.map((p) => [p.lat, p.lng]))];
+    const tm = setTimeout(() => { map.invalidateSize(); map.fitBounds(pts, { paddingTopLeft: [padL, 60], paddingBottomRight: [200, 100], maxZoom: target ? 15 : 16 }); }, 80);
+    return () => clearTimeout(tm);
+  }, [focus, around, picked, hotels, centre, show]);
 
   useEffect(() => {
     const onKey = (e) => { if (e.key !== "Escape") return; if (focusId) setFocusId(null); else onClose(); };
@@ -210,8 +224,10 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onOpenD
         .hr-pin:hover { background: ${PINK}; opacity: 1; } .hr-pin:hover::after { border-top-color: ${PINK}; }
         .hr-pin-sel { background: ${PINK}; outline: 2px solid #fff; } .hr-pin-sel::after { border-top-color: ${PINK}; }
         .hr-pin-dim { opacity: .45; font-size: 12px; padding: 5px 8px; }
-        .hr-pin-focus { background: ${PINK}; font-size: 14px; padding: 9px 12px; outline: 3px solid #fff; box-shadow: 0 4px 16px rgba(253,1,79,.45); } .hr-pin-focus::after { border-top-color: ${PINK}; }
-        .hr-dist { transform: translate(-50%, -50%); background: #fff; border: 1.5px solid; border-radius: 999px; padding: 2px 7px; font: 700 11px/1.2 Figtree, Inter, system-ui, sans-serif; white-space: nowrap; box-shadow: 0 1px 4px rgba(15,23,42,.2); }
+        .hr-pin-focus { background: rgba(253,1,79,.72); font-size: 11.5px; font-weight: 700; padding: 4px 8px; border-radius: 6px; outline: 1.5px solid rgba(255,255,255,.9); box-shadow: 0 2px 8px rgba(253,1,79,.3); backdrop-filter: blur(1px); } .hr-pin-focus::after { border-top-color: rgba(253,1,79,.72); }
+        .hr-dist { transform: translate(-50%, -50%); display: inline-flex; align-items: center; gap: 3px; background: rgba(255,255,255,.88); border: 1.5px solid; border-radius: 999px; padding: 1px 6px; font: 700 10.5px/1.3 Figtree, Inter, system-ui, sans-serif; white-space: nowrap; box-shadow: 0 1px 3px rgba(15,23,42,.18); cursor: pointer; }
+        .hr-dist:hover, .hr-dist-strong { background: #fff; font-size: 11.5px; z-index: 1; }
+        .hr-tip { font: 12px/1.35 Figtree, Inter, system-ui, sans-serif; padding: 5px 8px; border-radius: 8px; }
         .hr-centre { transform: translate(-14px, -28px); display: flex; flex-direction: column; align-items: center; gap: 2px; font: 700 12px/1 Figtree, Inter, system-ui, sans-serif; color: #D70143; white-space: nowrap; filter: drop-shadow(0 2px 3px rgba(15,23,42,.35)); }
         .hr-centre b { background: rgba(255,255,255,.95); padding: 3px 8px; border-radius: 999px; }
         .leaflet-popup-content-wrapper { border-radius: 10px; padding: 0; overflow: hidden; } .leaflet-popup-content { margin: 0; }

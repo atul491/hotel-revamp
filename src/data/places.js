@@ -36,6 +36,12 @@ export const PLACES = {
     { kind: "activity", name: "Campuhan Ridge Walk", lat: -8.5020, lng: 115.2560 },
     { kind: "activity", name: "Tegallalang Rice Terrace", lat: -8.4320, lng: 115.2790 },
     { kind: "activity", name: "Tirta Empul Temple", lat: -8.4155, lng: 115.3150 },
+    // From Trailix's approved Bali activity list (scripts/create-and-enrich-activities.ts); positions approximate.
+    { kind: "activity", name: "Goa Gajah (Elephant Cave)", lat: -8.5235, lng: 115.2871, trailix: true },
+    { kind: "activity", name: "Tjampuhan Spa", lat: -8.5045, lng: 115.2560, trailix: true },
+    { kind: "activity", name: "Balinese Massage at Lumera Spa Ubud", lat: -8.5118, lng: 115.2612, trailix: true },
+    { kind: "activity", name: "Heaven Swing", lat: -8.4560, lng: 115.2780, trailix: true },
+    { kind: "activity", name: "Teraz Swing", lat: -8.4335, lng: 115.2790, trailix: true },
     { kind: "food", name: "Bali Buda (Indian options, veg)", lat: -8.5050, lng: 115.2640 },
     { kind: "food", name: "Queen's of India Ubud (Indian)", lat: -8.5075, lng: 115.2610 },
     { kind: "food", name: "Locavore", lat: -8.5085, lng: 115.2590 },
