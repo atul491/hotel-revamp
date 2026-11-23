@@ -343,10 +343,10 @@ export const IB_SAVED_STAY = [
 ];
 
 // The whole trip, one stay per city (the stepper in the IB top bar).
-// Rooms already saved on the itinerary are keyed by stay index (IB hotels["0"], ["1"]...).
+// A city has a hotel only once the seller presses Select (saved: null = nothing chosen yet).
 export const TRIP_STAYS = [
-  { city: "Seminyak", nights: 3, from: "20 Jun", to: "23 Jun", checkIn: "Sat, 20 Jun", checkOut: "Tue, 23 Jun", dayRange: "Day 1–4", saved: { hotelId: String(IB_SAVED_STAY[0]), rateId: IB_SAVED_STAY[7].travclan_room_id } },
-  { city: "Ubud", nights: 2, from: "23 Jun", to: "25 Jun", checkIn: "Tue, 23 Jun", checkOut: "Thu, 25 Jun", dayRange: "Day 4–6", saved: { hotelId: "ub-komaneka", rateId: "r-ub1-bb" } },
+  { city: "Seminyak", nights: 3, from: "20 Jun", to: "23 Jun", checkIn: "Sat, 20 Jun", checkOut: "Tue, 23 Jun", dayRange: "Day 1–4", saved: null },
+  { city: "Ubud", nights: 2, from: "23 Jun", to: "25 Jun", checkIn: "Tue, 23 Jun", checkOut: "Thu, 25 Jun", dayRange: "Day 4–6", saved: null },
   { city: "Nusa Penida", nights: 1, from: "25 Jun", to: "26 Jun", checkIn: "Thu, 25 Jun", checkOut: "Fri, 26 Jun", dayRange: "Day 6–7", saved: null },
 ];
 export const TRIP_PRICES = { addOns: 0, flights: 105156, activities: 86016, gstRate: 0.05, tcsRate: 0.02 };

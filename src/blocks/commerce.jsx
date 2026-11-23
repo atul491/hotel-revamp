@@ -131,9 +131,9 @@ function RateCard({ c, h, ctx, nights, onOpenRoom }) {
             Room details <ChevronRight size={13} />
           </button>
         ) : <span />}
-        <button onClick={(e) => { e.stopPropagation(); ctx.book?.(h, chosen.rate_id); }} className="rounded-full px-4"
+        <button onClick={(e) => { e.stopPropagation(); ctx.book?.(h, chosen.rate_id); }} className="group/sel rounded-full px-4" title={selected ? "Click again to unselect" : "Choose this room for the itinerary"}
           style={{ height: 30, fontSize: 13, fontWeight: 600, border: `1px solid ${IB.pink}`, background: selected ? IB.pink : "#fff", color: selected ? "#fff" : IB.pink }}>
-          {selected ? "Selected" : "Select"}
+          {selected ? <><span className="group-hover/sel:hidden">Selected</span><span className="hidden group-hover/sel:inline">✕ Unselect</span></> : "Select"}
         </button>
       </div>
     </div>
@@ -303,7 +303,8 @@ export function Cta({ h, v, ctx }) {
   const oldTotal = ctx.baseNightly * ctx.nights;
   const newTotal = rate.pricing.selling_price * ctx.nights;
   const isCurrent = h.id === ctx.currentId;
-  const label = isCurrent ? (mode === "seller" ? "Save room to itinerary" : "Replace room") : mode === "seller" ? "Select for itinerary" : "Replace hotel";
+  const isChosenRate = isCurrent && rate.rate_id === ctx.bookedRateId;
+  const label = isChosenRate ? "✓ Selected · click to unselect" : isCurrent ? "Switch to this room" : ctx.currentId ? "Replace with this hotel" : "Select for itinerary";
   const wrap = "sticky bottom-0 z-20 bg-white border-t border-divider -mx-[var(--pad)] px-[var(--pad)] py-3";
   if (v === "delta")
     return (
@@ -329,11 +330,11 @@ export function Cta({ h, v, ctx }) {
   }
   return (
     <div className={wrap}>
-      {!isCurrent && <div className="text-[11.5px] text-sub flex items-center gap-1 mb-1"><ArrowLeftRight size={12} /> Replacing {ctx.currentName}</div>}
+      {!isCurrent && ctx.currentId && <div className="text-[11.5px] text-sub flex items-center gap-1 mb-1"><ArrowLeftRight size={12} /> Replacing {ctx.currentName}</div>}
       <div className="flex items-center gap-3">
         <div className="flex-1">
-          {d !== 0 && <div className="text-[12px] text-inact line-through">{inr(oldTotal)}</div>}
-          <div className="text-[18px] font-extrabold leading-tight">{inr(newTotal)} <span className="text-[12px] font-semibold" style={{ color: d > 0 ? "#B42318" : "#027A48" }}>{d === 0 ? "" : `${d > 0 ? "+" : "−"}${inr(d)}`}</span></div>
+          {d !== 0 && ctx.currentId && <div className="text-[12px] text-inact line-through">{inr(oldTotal)}</div>}
+          <div className="text-[18px] font-extrabold leading-tight">{inr(newTotal)} {ctx.currentId && <span className="text-[12px] font-semibold" style={{ color: d > 0 ? "#B42318" : "#027A48" }}>{d === 0 ? "" : `${d > 0 ? "+" : "−"}${inr(d)}`}</span>}</div>
           <div className="text-[11px] text-sub">for {ctx.nights} nights · {ctx.adults} travellers</div>
         </div>
         <Btn onClick={() => ctx.book?.(h, rate.rate_id)}>{label}</Btn>

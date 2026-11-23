@@ -161,7 +161,7 @@ export default function Screen({ stay, onOpenHotel, sources = false, fixedSuppor
             </div>
             {showRail && (
               <div className="w-[270px] shrink-0 space-y-3 sticky top-4 hidden lg:block">
-                {picks.rail !== "bar" && <Slot k="rail" s={S}><PriceDetails v={picks.rail} trip={trip} delta={h.id !== ctx.currentId ? openedDelta : null} /></Slot>}
+                {picks.rail !== "bar" && <Slot k="rail" s={S}><PriceDetails v={picks.rail} trip={trip} delta={ctx.currentId && h.id !== ctx.currentId ? openedDelta : null} /></Slot>}
                 <Slot k="bookings" s={S}><Bookings v={picks.bookings} stays={stays} city={city} setCity={goCity} /></Slot>
               </div>
             )}

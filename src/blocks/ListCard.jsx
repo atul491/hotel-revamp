@@ -168,7 +168,7 @@ function IBRow({ h, ctx, active, onOpen, onOpenAt, wished, onWish, expanded, onT
     // Clicking anywhere on the row opens the hotel, except Select, Show rooms and the heart.
     <div onClick={onOpen} title="Open hotel details"
       className="group/card bg-white p-4 cursor-pointer border border-transparent transition-all duration-150 hover:-translate-y-0.5 hover:shadow-xl hover:border-[#D0D5DD]"
-      style={{ borderRadius: "var(--r)", boxShadow: "var(--shadow)", outline: active ? "2px solid var(--accent)" : "none", outlineOffset: 1 }}>
+      style={{ borderRadius: "var(--r)", boxShadow: "var(--shadow)", outline: isCurrent ? "2px solid var(--accent)" : "none", outlineOffset: 1 }}>
       <div className="flex gap-4 flex-wrap">
         {show("photo") && (
           <button onClick={(e) => { e.stopPropagation(); onOpen?.(); }} className="relative shrink-0 overflow-hidden" style={{ borderRadius: "var(--rw)" }}>
@@ -233,9 +233,10 @@ function IBRow({ h, ctx, active, onOpen, onOpenAt, wished, onWish, expanded, onT
           <div className="flex-1" />
           {show("actions") && (
             <div className="flex gap-2 mt-3">
-              <button onClick={(e) => { e.stopPropagation(); onSelect?.(); }} className="h-7 px-3 text-[12px] font-semibold border inline-flex items-center gap-1"
+              <button onClick={(e) => { e.stopPropagation(); onSelect?.(); }} title={isCurrent ? "Click again to unselect" : "Choose this hotel for the itinerary"}
+                className="group/sel h-7 px-3 text-[12px] font-semibold border inline-flex items-center gap-1"
                 style={{ borderRadius: "var(--rp)", borderColor: "#E31B53", background: isCurrent ? "#E31B53" : "#fff", color: isCurrent ? "#fff" : "#E31B53" }}>
-                {isCurrent ? <><Tick size={12} strokeWidth={3} /> Selected</> : "Select"}
+                {isCurrent ? <><span className="inline-flex items-center gap-1 group-hover/sel:hidden"><Tick size={12} strokeWidth={3} /> Selected</span><span className="hidden group-hover/sel:inline">✕ Unselect</span></> : "Select"}
               </button>
               <button onClick={(e) => { e.stopPropagation(); onToggleRooms?.(); }} className="h-7 px-3 text-[12px] font-semibold border border-divider inline-flex items-center gap-1.5 shadow-sm" style={{ borderRadius: "var(--rp)", color: "#181D27" }}>
                 <Down size={13} className={expanded ? "rotate-180" : ""} /> {expanded ? "Hide rooms" : "Show rooms"}

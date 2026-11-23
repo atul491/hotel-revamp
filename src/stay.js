@@ -16,7 +16,7 @@ const findRate = (h, rateId) => {
 // nearTransit / nearMeeting: 0 = off, otherwise "within N metres" of the nearest stop / meeting point.
 export const EMPTY_FILTERS = { type: [], refund: [], stars: [], min: 0, max: 0, nearTransit: 0, nearMeeting: 0, q: "", sort: "best", byGuest: false };
 
-export function useStay(initialId = SAVED[0].hotelId) {
+export function useStay(initialId = null) {
   const [openId, setOpenId] = useState(initialId);
   const [sels, setSels] = useState({});
   const [bookings, setBookings] = useState(SAVED);
@@ -43,7 +43,14 @@ export function useStay(initialId = SAVED[0].hotelId) {
   };
   const selOf = (x) => sels[x.id] || defaultSel(x);
 
+  // Select is a toggle. Same hotel (and, for a room card, same rate) again = unselect.
+  // Opening a hotel, its rooms or a room panel never selects anything.
   const book = (x, rateId) => {
+    const same = booking.hotelId === x.id && (!rateId || booking.rateId === rateId);
+    if (same) {
+      setBooking({ byGuest: false });
+      return;
+    }
     const id = rateId || selOf(x).rateId;
     setBooking({ hotelId: x.id, rateId: id, byGuest: false });
     setFilters((f) => ({ ...f, byGuest: false }));

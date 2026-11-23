@@ -284,7 +284,7 @@ function FocusPanel({ h, ctx, around, picked, setPicked, onBack, onOpenDetails }
           </div>
         </div>
         <div className="flex gap-2 px-3 pb-2.5">
-          <button onClick={() => ctx.book?.(h)} className="flex-1 h-8 rounded-full text-[12.5px] font-bold border" style={{ borderColor: "#E31B53", background: sel ? "#E31B53" : "#fff", color: sel ? "#fff" : "#E31B53" }}>{sel ? "✓ Selected" : "Select"}</button>
+          <button onClick={() => ctx.book?.(h)} title={sel ? "Click again to unselect" : "Choose this hotel for the itinerary"} className="group/sel flex-1 h-8 rounded-full text-[12.5px] font-bold border" style={{ borderColor: "#E31B53", background: sel ? "#E31B53" : "#fff", color: sel ? "#fff" : "#E31B53" }}>{sel ? <><span className="group-hover/sel:hidden">✓ Selected</span><span className="hidden group-hover/sel:inline">✕ Unselect</span></> : "Select"}</button>
           <button onClick={onOpenDetails} className="flex-1 h-8 rounded-full text-[12.5px] font-semibold bg-[#F2F4F7] hover:bg-[#E4E7EC]">View details ›</button>
         </div>
       </div>
