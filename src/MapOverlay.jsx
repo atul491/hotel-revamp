@@ -3,7 +3,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { X, ChevronDown, ChevronLeft, Check, ExternalLink, Search, MapPin, Route as RouteIco } from "lucide-react";
 import { inr, Ico, amenityIcon } from "./kit";
-import { PLACES, KINDS, nearest, fmtKm, findPlace, placeName } from "./data/places";
+import { PLACES, KINDS, nearest, fmtKm, findPlace, placeName, distanceKm } from "./data/places";
 import { PlacePicker, ReachTag, clearNear } from "./blocks/NearPlace";
 import { DistanceRows, fmtM } from "./blocks/screen";
 
@@ -45,6 +45,29 @@ function pin(label, cls) {
 }
 const lowest = (h) => h.rooms.flatMap((r) => r.rates).sort((a, b) => a.pricing.selling_price - b.pricing.selling_price)[0];
 const placeKey = (p) => `${p.kind}|${p.name}`;
+
+// ─── Real road routes for Route view (OpenStreetMap routing, free, no key) ───
+// Car routes for drives, footpaths for walks; Nusa Penida's airport trip is drive → fast boat → drive.
+const ROUTES = new Map();
+function road(profile, a, b) {
+  const key = `${profile}|${a.lat},${a.lng}|${b.lat},${b.lng}`;
+  if (!ROUTES.has(key)) {
+    ROUTES.set(key, fetch(`https://routing.openstreetmap.de/routed-${profile}/route/v1/driving/${a.lng},${a.lat};${b.lng},${b.lat}?overview=full&geometries=geojson`)
+      .then((r) => r.json())
+      .then((d) => { const r = d.routes?.[0]; if (!r) throw new Error("no route"); return { path: r.geometry.coordinates.map(([x, y]) => [y, x]), km: r.distance / 1000, min: Math.max(1, Math.round(r.duration / 60)) }; })
+      .catch(() => { ROUTES.delete(key); return null; }));
+  }
+  return ROUTES.get(key);
+}
+const SANUR = { lat: -8.6785, lng: 115.2630, name: "Sanur Harbour" };
+const VEHICLE = {
+  car: '<path d="M5 11l1.5-4.5A2 2 0 0 1 8.4 5h7.2a2 2 0 0 1 1.9 1.5L19 11v6a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1v-1H8v1a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-6zm2.2 0h9.6l-1-3.2a.8.8 0 0 0-.8-.6H9a.8.8 0 0 0-.8.6zM7.5 14.5a1.2 1.2 0 1 0 0-2.4 1.2 1.2 0 0 0 0 2.4zm9 0a1.2 1.2 0 1 0 0-2.4 1.2 1.2 0 0 0 0 2.4z"/>',
+  foot: '<path d="M13.5 5.5a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM9.8 8.9L7 23h2.1l1.8-8 2.1 2v6h2v-7.5l-2.1-2 .6-3A7.3 7.3 0 0 0 19 13v-2a5.1 5.1 0 0 1-4.4-2.4l-1-1.6a2 2 0 0 0-1.7-1c-.3 0-.5.1-.8.1L6 8.3V13h2V9.6l1.8-.7"/>',
+  boat: '<path d="M20 21c-1.4 0-2.8-.5-4-1.3-2.4 1.7-5.6 1.7-8 0C6.8 20.5 5.4 21 4 21H2v2h2c1.4 0 2.7-.3 4-1 2.5 1.3 5.5 1.3 8 0 1.3.7 2.6 1 4 1h2v-2h-2zM3.9 19H4c1.6 0 3-.9 4-2 1 1.1 2.4 2 4 2s3-.9 4-2c1 1.1 2.4 2 4 2h.1l1.9-6.7c.1-.3 0-.6-.1-.8-.2-.2-.4-.3-.7-.4L20 10.6V6c0-1.1-.9-2-2-2h-3V1H9v3H6c-1.1 0-2 .9-2 2v4.6l-1.3.4c-.3.1-.5.2-.7.4-.1.3-.2.5-.1.8L3.9 19zM6 6h12v4l-6-2-6 2V6z"/>',
+};
+const vehicleIcon = (kind, colour) => L.divIcon({ className: "", iconSize: [26, 26], iconAnchor: [13, 13], html: `<div class="hr-veh" style="border-color:${colour}"><svg viewBox="0 0 24 24" width="15" height="15" fill="${colour}">${VEHICLE[kind]}</svg></div>` });
+// Straight line split into points, so a boat can sail along it.
+const straight = (a, b, n = 40) => Array.from({ length: n + 1 }, (_, i) => [a.lat + ((b.lat - a.lat) * i) / n, a.lng + ((b.lng - a.lng) * i) / n]);
 // Hover card for a place: name, kind, a one-line "what it is / famous for", and the distance when measured from a hotel.
 function tipHtml(p, d) {
   const k = KINDS[p.kind];
@@ -161,7 +184,7 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onSelec
     layer.clearLayers();
     (focusId ? hotels : nearList).forEach((h) => {
       if (!h.coords) return;
-      if (route && h.id !== focusId) return;
+      if (focusId && h.id !== focusId) return; // at hotel level, other hotels and their prices go
       const total = lowest(h).pricing.selling_price * ctx.nights;
       const isFocus = h.id === focusId;
       const cls = isFocus ? "hr-pin-focus" : focusId ? "hr-pin-dim" : h.id === ctx.currentId ? "hr-pin-sel" : "";
@@ -193,24 +216,17 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onSelec
     }
     const from = [focus.coords.lat, focus.coords.lng];
     const nameOf = (p) => p.name.replace(/^Meeting point · /, "");
+    const routeJobs = [];
     const line = (p, strong) => {
       const c = KINDS[p.kind].colour;
       if (route) {
-        // Solid line, the place itself, its name, and distance · time on the line.
-        L.polyline([from, [p.lat, p.lng]], { color: "#fff", weight: strong ? 9 : 6, opacity: 0.9, interactive: false }).addTo(layer);
-        L.polyline([from, [p.lat, p.lng]], { color: c, weight: strong ? 6 : 3.5, opacity: strong ? 1 : 0.85, interactive: false }).addTo(layer);
+        // The place, its name; the road route itself is drawn once the router answers (below).
+        routeJobs.push({ p, strong });
         L.marker([p.lat, p.lng], { icon: placeIcon(p.kind), zIndexOffset: 400 })
           .bindTooltip(tipHtml(p, p), { direction: "top", offset: [0, -12], className: "hr-tip" })
           .on("click", () => setPicked(placeKey(p)))
           .addTo(layer);
         L.marker([p.lat, p.lng], { interactive: false, icon: L.divIcon({ className: "", iconSize: null, iconAnchor: [0, 0], html: `<div class="hr-rname">${nameOf(p)}</div>` }) }).addTo(layer);
-        const t = p.kind === "airport" ? Math.min(0.5, 1.1 / p.km) : 0.5;
-        const at = [from[0] + (p.lat - from[0]) * t, from[1] + (p.lng - from[1]) * t];
-        L.marker(at, {
-          zIndexOffset: strong ? 900 : 500,
-          icon: L.divIcon({ className: "", iconSize: null, iconAnchor: [0, 0], html: `<div class="hr-dist hr-dist-route${strong ? " hr-dist-strong" : ""}">${glyph(p.kind, 11, c)}${p.min} min · ${fmtKm(p.km)}</div>` }),
-        }).bindTooltip(tipHtml(p, p), { direction: "top", offset: [0, -10], className: "hr-tip" })
-          .on("click", () => setPicked(placeKey(p))).addTo(layer);
         return;
       }
       L.polyline([from, [p.lat, p.lng]], { color: c, weight: strong ? 4 : 2, opacity: strong ? 0.95 : 0.7, dashArray: strong ? null : "5 6", interactive: false }).addTo(layer);
@@ -240,7 +256,56 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onSelec
     const near = drawn.filter((p) => p.kind !== "airport");
     const pts = [from, ...(target ? [[target.lat, target.lng]] : near.map((p) => [p.lat, p.lng]))];
     const tm = setTimeout(() => { map.invalidateSize(); map.fitBounds(pts, { paddingTopLeft: [padL, 60], paddingBottomRight: [200, 100], maxZoom: target ? 15 : 16 }); }, 80);
-    return () => clearTimeout(tm);
+
+    // Route view: real roads with a car / walker / boat moving along each one.
+    let dead = false, timer = null;
+    if (route && routeJobs.length) {
+      const H = { lat: from[0], lng: from[1] };
+      const legsFor = async (p) => {
+        if (p.fixed && /boat/.test(p.fixed.mode)) {
+          const harbour = (around.transit || []).find((t) => /harbour/i.test(t.name)) || around.transit?.[0];
+          if (!harbour) return null;
+          const [a, b] = await Promise.all([road("car", H, harbour), road("car", SANUR, p)]);
+          return [
+            a && { kind: "car", ...a },
+            { kind: "boat", path: straight(harbour, SANUR), km: distanceKm(harbour, SANUR), min: 45, note: `Fast boat ${harbour.name.replace(/ Harbour$/, "")} → Sanur` },
+            b && { kind: "car", ...b },
+          ].filter(Boolean);
+        }
+        const r = await road(p.mode === "walk" ? "foot" : "car", H, p);
+        return r ? [{ kind: p.mode === "walk" ? "foot" : "car", ...r }] : [{ kind: p.mode === "walk" ? "foot" : "car", path: [from, [p.lat, p.lng]], km: p.km, min: p.min, guess: true }];
+      };
+      Promise.all(routeJobs.map(({ p, strong }) => legsFor(p).then((legs) => ({ p, strong, legs })))).then((all) => {
+        if (dead) return;
+        const movers = [];
+        // Weaker routes first, the picked one on top.
+        all.sort((x, y) => x.strong - y.strong).forEach(({ p, strong, legs }) => {
+          if (!legs || !legs.length) return;
+          const c = KINDS[p.kind].colour;
+          legs.forEach((leg) => {
+            const boat = leg.kind === "boat";
+            L.polyline(leg.path, { color: "#fff", weight: strong ? 10 : 7, opacity: 0.95, interactive: false }).addTo(layer);
+            L.polyline(leg.path, { color: boat ? "#1570EF" : c, weight: strong ? 6 : 4, opacity: strong ? 1 : 0.9, dashArray: boat ? "10 8" : leg.guess ? "4 6" : null, lineCap: "round", interactive: false }).addTo(layer);
+            const m = L.marker(leg.path[0], { icon: vehicleIcon(leg.kind, boat ? "#1570EF" : c), interactive: false, zIndexOffset: 700 }).addTo(layer);
+            movers.push({ m, path: leg.path, i: Math.floor(Math.random() * leg.path.length) });
+          });
+          // One label per place: road time · road distance, how you get there.
+          const km = legs.reduce((n, l) => n + l.km, 0), min = legs.reduce((n, l) => n + l.min, 0);
+          const how = legs.length > 1 ? "car + boat" : legs[0].kind === "foot" ? "walk" : "drive";
+          const longest = legs.reduce((a, b) => (b.path.length > a.path.length ? b : a));
+          const at = p.kind === "airport" && legs.length === 1 ? longest.path[Math.min(longest.path.length - 1, Math.round(longest.path.length * Math.min(0.5, 1.2 / km)))] : longest.path[Math.floor(longest.path.length / 2)];
+          const tip = tipHtml(p, { km, min, mode: how }) + (legs.length > 1 ? `<div class="hr-tipabout" style="margin-top:3px">${legs.map((l) => (l.kind === "boat" ? `⛴ ${l.note} · ~${l.min} min` : `🚗 ${fmtKm(l.km)} · ${l.min} min`)).join("<br>")}</div>` : "");
+          L.marker(at, {
+            zIndexOffset: strong ? 900 : 600,
+            icon: L.divIcon({ className: "", iconSize: null, iconAnchor: [0, 0], html: `<div class="hr-dist hr-dist-route${strong ? " hr-dist-strong" : ""}">${glyph(p.kind, 11, c)}${min} min · ${fmtKm(km)}${legs.length > 1 ? " · ⛴" : ""}</div>` }),
+          }).bindTooltip(tip, { direction: "top", offset: [0, -10], className: "hr-tip" })
+            .on("click", () => setPicked(placeKey(p))).addTo(layer);
+        });
+        // Vehicles drive along their roads, looping (about 6 s end to end).
+        timer = setInterval(() => movers.forEach((v) => { v.i = (v.i + Math.max(1, v.path.length / 75)) % v.path.length; v.m.setLatLng(v.path[Math.floor(v.i)]); }), 80);
+      });
+    }
+    return () => { dead = true; clearTimeout(tm); if (timer) clearInterval(timer); };
   }, [focus, around, picked, hotels, centre, show, route, anchor, radius, nearList]);
 
   useEffect(() => {
@@ -293,6 +358,7 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onSelec
         .hr-pin-km { margin-left: 6px; padding-left: 6px; border-left: 1px solid rgba(255,255,255,.35); font-weight: 500; font-size: 11.5px; opacity: .9; }
         .hr-anchor { transform: translate(-13px, -13px); display: inline-flex; align-items: center; gap: 5px; color: #fff; font: 700 12px/1 Figtree, Inter, system-ui, sans-serif; padding: 6px 10px 6px 7px; border-radius: 999px; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(15,23,42,.35); white-space: nowrap; }
         .z-\\[70\\] .leaflet-bottom { bottom: 50px; }
+        .hr-veh { width: 26px; height: 26px; border-radius: 50%; background: #fff; border: 2px solid; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(15,23,42,.35); }
         .hr-tipcard { display: flex; flex-direction: column; gap: 2px; width: 230px; white-space: normal; }
         .hr-tipkind { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; }
         .hr-tipabout { color: #475467; font-size: 12px; line-height: 1.35; }
@@ -384,6 +450,13 @@ function FocusPanel({ h, ctx, around, picked, setPicked, onBack, onOpenDetails, 
         <div className="flex gap-2 px-3 pb-2.5">
           <button onClick={onSelect} title={sel ? "Click again to unselect" : "Select this hotel and go to its rooms to pick the room"} className="group/sel flex-1 h-8 rounded-full text-[12.5px] font-bold border" style={{ borderColor: "#E31B53", background: sel ? "#E31B53" : "#fff", color: sel ? "#fff" : "#E31B53" }}>{sel ? <><span className="group-hover/sel:hidden">✓ Selected</span><span className="hidden group-hover/sel:inline">✕ Unselect</span></> : "Select"}</button>
           <button onClick={onOpenDetails} className="flex-1 h-8 rounded-full text-[12.5px] font-semibold bg-[#F2F4F7] hover:bg-[#E4E7EC]">View details ›</button>
+        </div>
+        <div className="px-3 pb-2.5 -mt-1">
+          <a href={h.ib.google_map_link || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${h.name}, ${h.city || ""}, Bali`)}`} target="_blank" rel="noopener noreferrer"
+            title="Open this hotel in Google Maps (new tab)"
+            className="w-full h-8 rounded-full text-[12.5px] font-semibold border border-divider hover:border-[#98A2B3] hover:bg-[#F9FAFB] inline-flex items-center justify-center gap-1.5 text-head">
+            <MapPin size={13} style={{ color: "#1A73E8" }} /> Open in Google Maps <ExternalLink size={11} className="text-sub" />
+          </a>
         </div>
       </div>
       <div className="flex-1 overflow-y-auto pb-2">

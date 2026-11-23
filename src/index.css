@@ -9,3 +9,6 @@ img { background: #F4F2F0; }
 
 /* No focus box after a mouse click; keyboard focus still shows a ring. */
 button:focus:not(:focus-visible), a:focus:not(:focus-visible) { outline: none; }
+
+/* Thin scrollbar for the filter column */
+.hr-thin-scroll { scrollbar-width: thin; scrollbar-color: #D0D5DD transparent; }

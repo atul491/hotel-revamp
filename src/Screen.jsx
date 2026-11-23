@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { X, ExternalLink, Hotel, ChevronLeft } from "lucide-react";
 import { useDesign } from "./design";
 import { ViewCtx, inr } from "./kit";
@@ -21,6 +21,17 @@ export default function Screen({ stay, onOpenHotel, sources = false, fixedSuppor
   // Room open in the drawer: { roomId, rateId } or null (then the drawer shows the hotel).
   const [room, setRoom] = useState(null);
   const [mapOpen, setMapOpen] = useState(false);
+  // The filter column scrolls on its own: fit it to the visible height of the list's scroll area.
+  const scrollRef = useRef(null);
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const fit = () => el.style.setProperty("--filter-h", `${el.clientHeight - 32}px`);
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   const [tierTab, setTierTab] = useState("gold");
   const userGrouping = usePickedUser("grouping");
   const S = stay;
@@ -147,10 +158,10 @@ export default function Screen({ stay, onOpenHotel, sources = false, fixedSuppor
     <ViewCtx.Provider value={{ mode: "seller", sources }}>
       <div className="relative h-full flex flex-col min-h-0" style={{ ...vars, background: "var(--page)" }}>
         <Slot k="topBar" s={S}><TopBar v={picks.topBar} city={city} setCity={goCity} stays={stays} support={picks.support} /></Slot>
-        <div className="flex-1 min-h-0 overflow-y-auto">
+        <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto">
           <div className="flex gap-4 p-4 items-start">
             {picks.filters === "column" && (
-              <div className="w-[240px] shrink-0 sticky top-4 hidden md:block space-y-3">
+              <div data-filter-col className="w-[240px] shrink-0 sticky top-4 hidden md:block space-y-3 overflow-y-auto overscroll-contain pr-1 -mr-1 hr-thin-scroll" style={{ maxHeight: "var(--filter-h, calc(100vh - 160px))" }}>
                 <MapCard key={city} city={TRIP_STAYS[city].city} centre={CITY_CENTRE[TRIP_STAYS[city].city] || CITY_CENTRE.Seminyak} hotels={list} onOpen={() => setMapOpen(true)} />
                 <Slot k="filters" s={S}><Filters v="column" f={filters} set={setF} range={priceRange} city={TRIP_STAYS[city].city} count={list.length} /></Slot></div>
             )}
