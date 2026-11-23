@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { X, ChevronDown, ChevronLeft, Check, ExternalLink, Search, MapPin } from "lucide-react";
-import { inr } from "./kit";
+import { inr, Ico, amenityIcon } from "./kit";
 import { PLACES, KINDS, nearest, fmtKm, distanceKm, travel } from "./data/places";
 import { DistanceRows, fmtM } from "./blocks/screen";
 
@@ -480,7 +480,51 @@ function FocusPanel({ h, ctx, around, picked, setPicked, onBack, onOpenDetails }
           );
         })}
       </div>
+      <AmenityDock h={h} />
     </>
+  );
+}
+
+// ─── Amenities, fixed at the bottom of the hotel card: answer "does it have…?" without leaving the map ───
+function AmenityDock({ h }) {
+  const [all, setAll] = useState(false);
+  const r = lowest(h);
+  const rate = [r.board_basis?.description, ...(h.ib.inclusions || []).filter((i) => !/breakfast/i.test(i))].filter(Boolean);
+  const top = (h.facilityTop || []).map((f) => f.label);
+  const groups = (h.facilityGroups || []).filter((g) => g.items.length);
+  return (
+    <div className="shrink-0 border-t-2 border-divider bg-[#FCFCFD] flex flex-col" style={{ maxHeight: all ? "55%" : 168 }}>
+      <div className="flex items-center gap-2 px-3 pt-2 pb-1">
+        <span className="text-[11px] font-bold uppercase tracking-wide text-sub">Amenities</span>
+        {groups.length > 0 && (
+          <button onClick={() => setAll((x) => !x)} className="ml-auto text-[11.5px] font-bold hover:underline" style={{ color: PINK }}>
+            {all ? "Show less" : `All ${groups.reduce((n, g) => n + g.items.length, 0)} ›`}
+          </button>
+        )}
+      </div>
+      <div className="overflow-y-auto px-3 pb-2.5 space-y-2">
+        {rate.length > 0 && (
+          <div>
+            <div className="text-[11px] font-semibold text-sub mb-1">In this rate</div>
+            <div className="flex flex-wrap gap-1">
+              {rate.map((x) => <span key={x} className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-[#027A48] bg-[#ECFDF3] rounded-md px-1.5 py-0.5"><Ico name={amenityIcon(x).icon} size={12} />{x}</span>)}
+            </div>
+          </div>
+        )}
+        {!all ? (
+          <div className="flex flex-wrap gap-1">
+            {top.map((x) => <span key={x} className="inline-flex items-center gap-1 text-[11.5px] font-medium text-head bg-white border border-divider rounded-md px-1.5 py-0.5"><Ico name={amenityIcon(x).icon} size={12} />{x}</span>)}
+          </div>
+        ) : groups.map((g) => (
+          <div key={g.key || g.title}>
+            <div className="text-[11.5px] font-bold text-head mb-0.5">{g.title}</div>
+            <div className="text-[11.5px] text-sub leading-snug">
+              {g.items.map((i, n) => <span key={i.label}>{i.label}{i.note ? <span className="text-[#98A2B3]"> ({i.note})</span> : null}{n < g.items.length - 1 ? " · " : ""}</span>)}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -540,5 +584,30 @@ function Dropdown({ label, options = [], value = [], onToggle, render, children,
         </div>
       )}
     </div>
+  );
+}
+
+// ─── Small map at the top of the filter column (MakeMyTrip / Booking.com style) ───
+// A still preview of the city with every hotel as a dot; clicking anywhere opens the full map.
+export function MapCard({ city, centre, hotels, onOpen }) {
+  const box = useRef(null);
+  useEffect(() => {
+    const map = L.map(box.current, { zoomControl: false, attributionControl: false, dragging: false, scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false, keyboard: false, touchZoom: false })
+      .setView([centre.lat, centre.lng], 13);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map);
+    const pts = hotels.filter((h) => h.coords).map((h) => [h.coords.lat, h.coords.lng]);
+    pts.forEach((p) => L.circleMarker(p, { radius: 5, color: "#fff", weight: 1.5, fillColor: NAVY, fillOpacity: 1, interactive: false }).addTo(map));
+    const t = setTimeout(() => { map.invalidateSize(); if (pts.length > 1) map.fitBounds(pts, { padding: [18, 18], maxZoom: 14, animate: false }); }, 60);
+    return () => { clearTimeout(t); map.remove(); };
+  }, [city, centre, hotels]);
+  return (
+    <button onClick={onOpen} title={`See ${city} hotels on a map`} className="group relative block w-full h-[132px] rounded-xl overflow-hidden border border-divider bg-white text-left">
+      <div ref={box} className="absolute inset-0 pointer-events-none" />
+      <div className="absolute inset-0 bg-white/10 group-hover:bg-transparent transition-colors" />
+      <span className="absolute left-3 right-3 bottom-3 z-[500] flex items-center justify-center gap-1.5 h-9 rounded-lg bg-white border-2 text-[13px] font-extrabold tracking-wide shadow-sm group-hover:shadow-md transition-shadow"
+        style={{ borderColor: PINK, color: PINK }}>
+        <MapPin size={15} /> EXPLORE ON MAP
+      </span>
+    </button>
   );
 }
