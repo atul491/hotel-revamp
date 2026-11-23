@@ -54,6 +54,10 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onOpenD
   const pinLayer = useRef(null);
   const lineLayer = useRef(null);
   const placeLayers = useRef({});
+  const tileRef = useRef(null);
+  const centreRef = useRef(null);
+  // "stops" = street map with every place; "route" = plain canvas with only the hotel, the places and the lines.
+  const [view, setView] = useState("stops");
   const [show, setShow] = useState(Object.fromEntries(Object.keys(KINDS).map((k) => [k, true])));
   // Open focused on the hotel already selected for this city, if it is in the list.
   const [focusId, setFocusId] = useState(() => (hotels.some((h) => h.id === ctx.currentId && h.coords) ? ctx.currentId : null));
@@ -74,11 +78,11 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onOpenD
   useEffect(() => {
     const map = L.map(box.current, { zoomControl: false, attributionControl: true }).setView([centre.lat, centre.lng], 14);
     L.control.zoom({ position: "topright" }).addTo(map);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    tileRef.current = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     }).addTo(map);
-    L.marker([centre.lat, centre.lng], {
+    centreRef.current = L.marker([centre.lat, centre.lng], {
       icon: L.divIcon({ className: "", iconSize: null, iconAnchor: [0, 0], html: `<div class="hr-centre"><svg viewBox="0 0 24 24" width="28" height="28"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7z" fill="#D70143" stroke="#fff" stroke-width="1.5"/><circle cx="12" cy="9" r="2.6" fill="#fff"/></svg><b>${city} centre</b></div>` }),
       interactive: false,
       zIndexOffset: -100,
@@ -102,14 +106,27 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onOpenD
     return () => { map.remove(); mapRef.current = null; };
   }, [city, centre]);
 
-  // Legend toggles.
+  const route = view === "route" && !!focus;
+
+  // Legend toggles; route view draws its own places, so the street-map layers go.
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
     Object.entries(placeLayers.current).forEach(([kind, g]) => {
-      if (show[kind]) { if (!map.hasLayer(g)) g.addTo(map); } else if (map.hasLayer(g)) map.removeLayer(g);
+      if (show[kind] && !route) { if (!map.hasLayer(g)) g.addTo(map); } else if (map.hasLayer(g)) map.removeLayer(g);
     });
-  }, [show, city]);
+  }, [show, city, route]);
+
+  // Route view: no streets, no labels, no city centre — just a plain canvas.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    [tileRef.current, centreRef.current].forEach((l) => {
+      if (!l) return;
+      if (route) { if (map.hasLayer(l)) map.removeLayer(l); } else if (!map.hasLayer(l)) l.addTo(map);
+    });
+    box.current.style.background = route ? "#F5F3EE" : "";
+  }, [route, city]);
 
   // ─── Hotel price pins: the focused one stands out, the rest fade ───
   useEffect(() => {
@@ -118,6 +135,7 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onOpenD
     layer.clearLayers();
     hotels.forEach((h) => {
       if (!h.coords) return;
+      if (route && h.id !== focusId) return;
       const total = lowest(h).pricing.selling_price * ctx.nights;
       const isFocus = h.id === focusId;
       const cls = isFocus ? "hr-pin-focus" : focusId ? "hr-pin-dim" : h.id === ctx.currentId ? "hr-pin-sel" : "";
@@ -125,7 +143,7 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onOpenD
         .on("click", () => setFocusId(h.id))
         .addTo(layer);
     });
-  }, [hotels, focusId, ctx.nights, ctx.currentId, city]);
+  }, [hotels, focusId, ctx.nights, ctx.currentId, city, route]);
 
   // ─── Lines from the focused hotel, and where the camera goes ───
   useEffect(() => {
@@ -140,8 +158,26 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onOpenD
       return () => clearTimeout(t);
     }
     const from = [focus.coords.lat, focus.coords.lng];
+    const nameOf = (p) => p.name.replace(/^Meeting point · /, "");
     const line = (p, strong) => {
       const c = KINDS[p.kind].colour;
+      if (route) {
+        // Solid line, the place itself, its name, and distance · time on the line.
+        L.polyline([from, [p.lat, p.lng]], { color: c, weight: strong ? 4.5 : 2.5, opacity: strong ? 1 : 0.85, interactive: false }).addTo(layer);
+        L.marker([p.lat, p.lng], { icon: placeIcon(p.kind), zIndexOffset: 400 })
+          .bindTooltip(`<b>${nameOf(p)}</b><br>${fmtKm(p.km)} · ${p.min} min ${p.mode}${p.trailix ? "<br><span style='color:#7F56D9'>Trailix activity</span>" : ""}`, { direction: "top", offset: [0, -12], className: "hr-tip" })
+          .on("click", () => setPicked(placeKey(p)))
+          .addTo(layer);
+        L.marker([p.lat, p.lng], { interactive: false, icon: L.divIcon({ className: "", iconSize: null, iconAnchor: [0, 0], html: `<div class="hr-rname" style="color:${c}">${nameOf(p)}</div>` }) }).addTo(layer);
+        const t = p.kind === "airport" ? Math.min(0.5, 1.1 / p.km) : 0.5;
+        const at = [from[0] + (p.lat - from[0]) * t, from[1] + (p.lng - from[1]) * t];
+        L.marker(at, {
+          zIndexOffset: strong ? 900 : 500,
+          icon: L.divIcon({ className: "", iconSize: null, iconAnchor: [0, 0], html: `<div class="hr-dist hr-dist-route${strong ? " hr-dist-strong" : ""}" style="border-color:${c};color:${c}">${fmtKm(p.km)} · ${p.min} min ${p.mode}</div>` }),
+        }).bindTooltip(`<b>${nameOf(p)}</b>`, { direction: "top", offset: [0, -10], className: "hr-tip" })
+          .on("click", () => setPicked(placeKey(p))).addTo(layer);
+        return;
+      }
       L.polyline([from, [p.lat, p.lng]], { color: c, weight: strong ? 4 : 2, opacity: strong ? 0.95 : 0.7, dashArray: strong ? null : "5 6", interactive: false }).addTo(layer);
       // Label sits next to the place it measures (so labels spread out with the places);
       // the airport is far, so its label stays about 1 km out from the hotel, in view.
@@ -170,7 +206,7 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onOpenD
     const pts = [from, ...(target ? [[target.lat, target.lng]] : near.map((p) => [p.lat, p.lng]))];
     const tm = setTimeout(() => { map.invalidateSize(); map.fitBounds(pts, { paddingTopLeft: [padL, 60], paddingBottomRight: [200, 100], maxZoom: target ? 15 : 16 }); }, 80);
     return () => clearTimeout(tm);
-  }, [focus, around, picked, hotels, centre, show]);
+  }, [focus, around, picked, hotels, centre, show, route]);
 
   useEffect(() => {
     const onKey = (e) => { if (e.key !== "Escape") return; if (focusId) setFocusId(null); else onClose(); };
@@ -203,6 +239,17 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onOpenD
             )}
           </div>
 
+          {/* Stops / Route switch, only around a selected hotel */}
+          {focus && (
+            <div className="absolute left-1/2 top-3 z-[500] flex bg-white border border-divider rounded-full p-1 shadow-lg" style={{ transform: "translateX(calc(-50% + 170px))", fontFamily: "Figtree, Inter, system-ui, sans-serif" }}>
+              {[["stops", "Stops", "Street map with every place around"], ["route", "Route", "Plain map: only the hotel, the places, and distance · time"]].map(([k, label, tip]) => (
+                <button key={k} onClick={() => setView(k)} title={tip}
+                  className={`px-4 py-1.5 rounded-full text-[13px] font-bold transition-colors ${view === k ? "text-white" : "text-sub hover:text-head"}`}
+                  style={view === k ? { background: NAVY } : undefined}>{label}</button>
+              ))}
+            </div>
+          )}
+
           {/* Legend: what kinds of places are drawn */}
           <div className="absolute right-3 top-[88px] z-[500] flex flex-col gap-0.5 bg-white/95 backdrop-blur border border-divider rounded-xl p-2 shadow-lg" style={{ fontFamily: "Figtree, Inter, system-ui, sans-serif" }}>
             <div className="text-[11px] font-bold uppercase tracking-wide text-sub px-1 mb-0.5">Show on map</div>
@@ -227,6 +274,8 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onOpenD
         .hr-pin-focus { background: rgba(253,1,79,.72); font-size: 11.5px; font-weight: 700; padding: 4px 8px; border-radius: 6px; outline: 1.5px solid rgba(255,255,255,.9); box-shadow: 0 2px 8px rgba(253,1,79,.3); backdrop-filter: blur(1px); } .hr-pin-focus::after { border-top-color: rgba(253,1,79,.72); }
         .hr-dist { transform: translate(-50%, -50%); display: inline-flex; align-items: center; gap: 3px; background: rgba(255,255,255,.88); border: 1.5px solid; border-radius: 999px; padding: 1px 6px; font: 700 10.5px/1.3 Figtree, Inter, system-ui, sans-serif; white-space: nowrap; box-shadow: 0 1px 3px rgba(15,23,42,.18); cursor: pointer; }
         .hr-dist:hover, .hr-dist-strong { background: #fff; font-size: 11.5px; z-index: 1; }
+        .hr-dist-route { font-size: 11px; padding: 2px 7px; background: #fff; }
+        .hr-rname { transform: translate(-50%, 15px); font: 700 11px/1.2 Figtree, Inter, system-ui, sans-serif; white-space: nowrap; text-shadow: 0 0 3px #F5F3EE, 0 0 3px #F5F3EE, 0 0 3px #F5F3EE; pointer-events: none; }
         .hr-tip { font: 12px/1.35 Figtree, Inter, system-ui, sans-serif; padding: 5px 8px; border-radius: 8px; }
         .hr-centre { transform: translate(-14px, -28px); display: flex; flex-direction: column; align-items: center; gap: 2px; font: 700 12px/1 Figtree, Inter, system-ui, sans-serif; color: #D70143; white-space: nowrap; filter: drop-shadow(0 2px 3px rgba(15,23,42,.35)); }
         .hr-centre b { background: rgba(255,255,255,.95); padding: 3px 8px; border-radius: 999px; }
