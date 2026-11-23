@@ -3,7 +3,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { X, ChevronDown, ChevronLeft, Check, ExternalLink, Search, MapPin, Route as RouteIco } from "lucide-react";
 import { inr, Ico, amenityIcon } from "./kit";
-import { PLACES, KINDS, nearest, fmtKm, findPlace, placeName } from "./data/places";
+import { PLACES, KINDS, nearest, fmtKm, findPlace, placeName, span, tripText } from "./data/places";
 import { PlacePicker, ReachTag, clearNear } from "./blocks/NearPlace";
 import { DistanceRows, fmtM } from "./blocks/screen";
 
@@ -51,7 +51,7 @@ function tipHtml(p, d) {
   return `<div class="hr-tipcard"><b>${p.name.replace(/^Meeting point · /, "")}</b>`
     + `<span class="hr-tipkind" style="color:${k.colour}">${k.label.replace(/s$/, "")}${p.trailix ? " · Trailix activity" : ""}</span>`
     + (p.about ? `<span class="hr-tipabout">${p.about}</span>` : "")
-    + (d && d.km != null ? `<span class="hr-tipdist">${fmtKm(d.km)} · ${d.min} min ${d.mode} from the hotel</span>` : "")
+    + (d && d.km != null ? `<span class="hr-tipdist">${fmtKm(d.km)} · ${tripText(d)} from the hotel${d.via ? ` (fast boat from ${d.via})` : ""}${d.road ? "" : " · straight line"}</span>` : "")
     + `</div>`;
 }
 
@@ -208,7 +208,7 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onSelec
         const at = [from[0] + (p.lat - from[0]) * t, from[1] + (p.lng - from[1]) * t];
         L.marker(at, {
           zIndexOffset: strong ? 900 : 500,
-          icon: L.divIcon({ className: "", iconSize: null, iconAnchor: [0, 0], html: `<div class="hr-dist hr-dist-route${strong ? " hr-dist-strong" : ""}">${glyph(p.kind, 11, c)}${p.min} min · ${fmtKm(p.km)}</div>` }),
+          icon: L.divIcon({ className: "", iconSize: null, iconAnchor: [0, 0], html: `<div class="hr-dist hr-dist-route${strong ? " hr-dist-strong" : ""}">${glyph(p.kind, 11, c)}${span(p)} · ${fmtKm(p.km)}</div>` }),
         }).bindTooltip(tipHtml(p, p), { direction: "top", offset: [0, -10], className: "hr-tip" })
           .on("click", () => setPicked(placeKey(p))).addTo(layer);
         return;
@@ -220,7 +220,7 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onSelec
       const at = [from[0] + (p.lat - from[0]) * t, from[1] + (p.lng - from[1]) * t];
       L.marker(at, {
         zIndexOffset: strong ? 900 : 500,
-        icon: L.divIcon({ className: "", iconSize: null, iconAnchor: [0, 0], html: `<div class="hr-dist${strong ? " hr-dist-strong" : ""}" style="border-color:${c};color:${c}">${glyph(p.kind, 11, c)}${fmtKm(p.km)} · ${p.min} min</div>` }),
+        icon: L.divIcon({ className: "", iconSize: null, iconAnchor: [0, 0], html: `<div class="hr-dist${strong ? " hr-dist-strong" : ""}" style="border-color:${c};color:${c}">${glyph(p.kind, 11, c)}${fmtKm(p.km)} · ${span(p)}</div>` }),
       })
         .bindTooltip(tipHtml(p, p), { direction: "top", offset: [0, -10], className: "hr-tip" })
         .on("click", () => setPicked(placeKey(p)))
@@ -346,7 +346,7 @@ function HotelList({ hotels, ctx, onPick, city, anchor, f, set }) {
                   <span className="truncate">{h.neighbourhood}</span>
                 </div>
                 {h.near ? (
-                  <div className="flex items-center gap-1.5 min-w-0"><span className="text-[11.5px] font-semibold truncate" style={{ color: KINDS[h.near.place.kind].colour }}>{fmtKm(h.near.km)} · {h.near.min} min {h.near.mode} to {name(h.near.place)}</span><ReachTag d={h.near} /></div>
+                  <div className="flex items-center gap-1.5 min-w-0"><span className="text-[11.5px] font-semibold truncate" style={{ color: KINDS[h.near.place.kind].colour }}>{fmtKm(h.near.km)} · {tripText(h.near)} to {name(h.near.place)}</span><ReachTag d={h.near} /></div>
                 ) : near && <div className="flex items-center gap-1.5 min-w-0"><span className="text-[11.5px] text-sub truncate">📍 {fmtKm(near.km)} to meeting point</span><ReachTag d={near} /></div>}
                 <div className="text-[13px] font-extrabold" style={{ color: NAVY }}>{inr(r.pricing.selling_price * ctx.nights)} <span className="text-[11px] font-medium text-sub">({ctx.nights} nights)</span></div>
               </div>
@@ -415,7 +415,7 @@ function FocusPanel({ h, ctx, around, picked, setPicked, onBack, onOpenDetails, 
                     <span className="flex-1 min-w-0">
                       <span className="block truncate">{p.name.replace(/^Meeting point · /, "")}{i === 0 && <span className="ml-1 text-[10px] font-bold uppercase" style={{ color: k.colour }}>nearest</span>}</span>
                     </span>
-                    <span className="text-right shrink-0 text-sub whitespace-nowrap flex flex-col items-end gap-0.5"><span><b className="text-head">{fmtKm(p.km)}</b> · {p.min} min {p.mode}</span><ReachTag d={p} /></span>
+                    <span className="text-right shrink-0 text-sub whitespace-nowrap flex flex-col items-end gap-0.5"><span><b className="text-head">{fmtKm(p.km)}</b> · {tripText(p)}</span><ReachTag d={p} /></span>
                   </button>
                 );
               })}

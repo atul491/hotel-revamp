@@ -11,7 +11,7 @@
 // seller and the couple read the same hotel.
 
 import { HOTEL as RAW } from "./hotelDetailData";
-import { nearest } from "./places";
+import { nearest, tripText } from "./places";
 
 // ─── Say each thing once ───
 // The app's hotel repeats facts across blocks (breakfast in rooms, amenities,
@@ -364,7 +364,7 @@ export const IB_STAY_META = { city: "Seminyak", checkIn: "20 Jun 2026", nights: 
 // ─── Join IB + app into one hotel the whole page reads from ───
 // Every field records where it came from so the /universal page can badge it.
 // Shape the list row reads: name, minutes, metres, and whether that is a walk or a drive.
-const toLine = (p) => (p ? { name: p.name.replace(/^Meeting point · /, ""), walkMin: p.min, mode: p.mode, meters: Math.round(p.km * 1000) } : null);
+const toLine = (p) => (p ? { name: p.name.replace(/^Meeting point · /, ""), walkMin: p.min, maxMin: p.max, mode: p.mode, meters: Math.round(p.km * 1000), time: tripText(p) } : null);
 
 export function toUniversal(ib) {
   const isAlila = ib.hotel === HOTEL.name;

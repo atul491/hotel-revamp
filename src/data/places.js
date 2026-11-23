@@ -7,6 +7,8 @@
 //   food     → Restaurant / HotelDiningOutlet (nearby "eatAndDrink")
 // Names are real; coordinates are approximate until Trailix's database is wired in.
 
+import { ROAD } from "./roadDistances.js";
+
 export const PLACES = {
   Seminyak: [
     { kind: "transit", name: "Kura-Kura bus stop, Seminyak Square", about: "Stop for the Kura-Kura tourist shuttle. Runs between Seminyak, Kuta, Legian and Nusa Dua.", lat: -8.6888, lng: 115.1632 },
@@ -92,16 +94,42 @@ export function travel(km) {
 
 export const fmtKm = (km) => (km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`);
 
-// Every place of a kind, nearest first (n = Infinity for all).
-// Nearest `n` places of a kind to a point, with distance and travel time.
+// ─── Real road trips (precomputed by scripts/road-distances.mjs) ───
+// Walk when the footpath is 2 km or less; otherwise drive. Drive times are a traffic range:
+// road km at 25 km/h (light traffic) to 13 km/h (Bali peak), never under the empty-road time;
+// trips over 20 km use 32 → 20 km/h (bypass / main roads).
+// Example: Alila Seminyak → DPS is 12.8 km by road, 30–60 min (Google: 13 km, 30–60 min).
+const round5 = (m) => (m > 20 ? Math.round(m / 5) * 5 : m);
+const fmtMin = (m) => (m < 60 ? `${m} min` : `${Math.floor(m / 60)} h${m % 60 ? ` ${m % 60} min` : ""}`);
+// "8 min", "30–60 min", "1 h 25 min – 2 h"
+export function span(t) {
+  if (!t.max || t.max === t.min) return fmtMin(t.min);
+  if (t.max <= 90) return `${t.min}–${t.max} min`;
+  return `${fmtMin(t.min)} – ${fmtMin(t.max)}`;
+}
+export const tripText = (t) => `${span(t)} ${t.mode === "walk" ? "walk" : t.mode === "boat + drive" ? "by car + boat" : "drive"}`;
+export function roadTrip(from, p) {
+  const r = from && ROAD[`${from.lat},${from.lng}|${p.name}`];
+  if (!r || !r.car) return null;
+  if (r.foot && r.foot.km <= 2) return { km: r.foot.km, min: Math.max(1, r.foot.min), max: null, mode: "walk", road: true };
+  const far = r.car.km > 20; // long trips are mostly on bigger roads
+  const lo = Math.max(r.car.min, Math.round((r.car.km / (far ? 32 : 25)) * 60)), hi = Math.round((r.car.km / (far ? 20 : 13)) * 60);
+  const boat = r.car.boat || 0;
+  return { km: r.car.km, min: round5(lo + boat), max: round5(Math.max(hi, lo + 2) + boat), mode: boat ? "boat + drive" : "drive", via: r.car.via, road: true };
+}
+// Fallback when a pair isn't precomputed: straight line, rough time.
+export function trip(from, p) {
+  return roadTrip(from, p) || (() => { const km = distanceKm(from, p); return { km, ...(p.fixed || travel(km)), road: false }; })();
+}
+
+// Nearest `n` places of a kind to a point, by road, with distance and travel time.
 export function nearest(city, kind, from, n = 1) {
   if (!from) return [];
   return (PLACES[city] || [])
     .filter((p) => p.kind === kind)
-    .map((p) => ({ ...p, km: distanceKm(from, p) }))
+    .map((p) => ({ ...p, ...trip(from, p) }))
     .sort((a, b) => a.km - b.km)
-    .slice(0, n)
-    .map((p) => ({ ...p, ...(p.fixed || travel(p.km)) }));
+    .slice(0, n);
 }
 
 // ─── "Near a place" filter: a place is stored in the filters as "kind|name" ───

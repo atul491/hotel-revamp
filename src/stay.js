@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { UNIVERSAL_HOTELS, IB_SAVED_STAY, TRIP_STAYS, TRIP_PRICES } from "./data/ibHotels";
-import { findPlace, distanceKm, travel } from "./data/places";
+import { findPlace, trip } from "./data/places";
 
 // One stay per city; the active tab decides which one is being edited.
 const stayOf = (i) => ({ ...TRIP_STAYS[i], adults: 2 });
@@ -63,7 +63,7 @@ export function useStay(initialId = null) {
     // Near a place: every hotel gets its distance to it; the radius filters, "near" sorts.
     const anchor = findPlace(STAY.city, f.near);
     const withNear = anchor
-      ? cityHotels.map((x) => { if (!x.coords) return x; const km = distanceKm(anchor, x.coords); return { ...x, near: { km, ...travel(km), place: anchor } }; })
+      ? cityHotels.map((x) => { if (!x.coords) return x; return { ...x, near: { ...trip(x.coords, anchor), place: anchor } }; })
       : cityHotels;
     let out = withNear.filter((x) => {
       if (anchor && f.nearR && !(x.near && x.near.km * 1000 <= f.nearR)) return false;
