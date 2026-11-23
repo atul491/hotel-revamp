@@ -3,7 +3,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { X, ChevronDown, ChevronLeft, Check, ExternalLink, Search, MapPin, Route as RouteIco } from "lucide-react";
 import { inr, Ico, amenityIcon } from "./kit";
-import { PLACES, KINDS, nearest, fmtKm, findPlace, placeName, span, tripText } from "./data/places";
+import { PLACES, KINDS, nearest, fmtKm, findPlace, placeName, span, tripText, trip } from "./data/places";
 import { PlacePicker, ReachTag, clearNear } from "./blocks/NearPlace";
 import { DistanceRows, fmtM } from "./blocks/screen";
 
@@ -56,7 +56,7 @@ function tipHtml(p, d) {
 }
 
 const TYPE_OPTS = ["Private", "SIC", "Gold", "Silver", "Bronze"];
-const SHORT = { airport: "Airport", transit: "Metro", meeting: "Meeting", activity: "Activities", food: "Food" };
+const SHORT = { airport: "Airport", transit: "Metro / bus stand", meeting: "Meeting", activity: "Activities", food: "Food" };
 const toggle = (arr, x) => (arr.includes(x) ? arr.filter((y) => y !== x) : [...arr, x]);
 
 export default function MapOverlay({ city, centre, hotels, ctx, onClose, onSelected, onOpenDetails, filters, setFilters, priceRange }) {
@@ -65,6 +65,7 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onSelec
   const pinLayer = useRef(null);
   const lineLayer = useRef(null);
   const placeLayers = useRef({});
+  const placeMarkers = useRef([]);
   const tileRef = useRef(null);
   const centreRef = useRef(null);
   const outlineRef = useRef(null);
@@ -113,11 +114,13 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onSelec
       zIndexOffset: -100,
     }).addTo(map);
     placeLayers.current = {};
+    placeMarkers.current = [];
     Object.keys(KINDS).forEach((kind) => {
       const g = L.layerGroup();
       (PLACES[city] || []).filter((p) => p.kind === kind).forEach((p) => {
-        L.marker([p.lat, p.lng], { icon: placeIcon(kind), zIndexOffset: -50 })
-          .bindTooltip(tipHtml(p), { direction: "top", offset: [0, -12], className: "hr-tip" })
+        const mk = L.marker([p.lat, p.lng], { icon: placeIcon(kind), zIndexOffset: -50 });
+        placeMarkers.current.push({ mk, p });
+        mk.bindTooltip(tipHtml(p), { direction: "top", offset: [0, -12], className: "hr-tip" })
           .bindPopup(`<div class="hr-poi-pop"><b>${p.name}</b><span style="color:${KINDS[kind].colour}">${KINDS[kind].label}</span></div>`, { closeButton: false })
           .addTo(g);
       });
@@ -132,6 +135,11 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onSelec
   }, [city, centre]);
 
   const route = view === "route" && !!focus;
+
+  // Hover cards on the city's places: once a hotel is picked, they also say how far it is from that hotel.
+  useEffect(() => {
+    placeMarkers.current.forEach(({ mk, p }) => mk.setTooltipContent(tipHtml(p, focus ? trip(focus.coords, p) : null)));
+  }, [focus, city]);
 
   // Legend toggles; route view draws its own places, so the street-map layers go.
   useEffect(() => {
@@ -226,13 +234,8 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onSelec
         .on("click", () => setPicked(placeKey(p)))
         .addTo(layer);
     };
-    const drawn = [
-      ...(around.airport || []).slice(0, 1),
-      ...(around.meeting || []).slice(0, 1),
-      ...(around.transit || []).slice(0, 1),
-      ...(around.food || []).slice(0, 3),
-      ...(around.activity || []),
-    ].filter((p) => show[p.kind]);
+    // Every place of each kind that is switched on in the bottom bar.
+    const drawn = ORDER.flatMap((k) => around[k] || []).filter((p) => show[p.kind]);
     const target = picked ? Object.values(around).flat().find((p) => placeKey(p) === picked) : null;
     drawn.forEach((p) => { if (!target || placeKey(p) !== placeKey(target)) line(p, false); });
     if (target) line(target, true);

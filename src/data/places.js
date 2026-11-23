@@ -71,7 +71,7 @@ export const PLACES = {
 
 export const KINDS = {
   airport: { label: "Airport", colour: "#344054" },
-  transit: { label: "Metro / transit", colour: "#1570EF" },
+  transit: { label: "Metro / bus stand", colour: "#1570EF" },
   meeting: { label: "Meeting points", colour: "#FD014F" },
   activity: { label: "Activities", colour: "#7F56D9" },
   food: { label: "Food", colour: "#F79009" },
@@ -112,8 +112,10 @@ export function roadTrip(from, p) {
   const r = from && ROAD[`${from.lat},${from.lng}|${p.name}`];
   if (!r || !r.car) return null;
   if (r.foot && r.foot.km <= 2) return { km: r.foot.km, min: Math.max(1, r.foot.min), max: null, mode: "walk", road: true };
+  // Cab time = pickup / parking overhead + road km at town speed (light → peak traffic).
+  // Checked against Google: Alila → DPS 12.8 km ≈ 30–55 min; Alila → Kura-Kura stop 4.1 km ≈ 15–20 min.
   const far = r.car.km > 20; // long trips are mostly on bigger roads
-  const lo = Math.max(r.car.min, Math.round((r.car.km / (far ? 32 : 25)) * 60)), hi = Math.round((r.car.km / (far ? 20 : 13)) * 60);
+  const lo = Math.max(r.car.min, Math.round(6 + (r.car.km / (far ? 38 : 30)) * 60)), hi = Math.round(8 + (r.car.km / (far ? 22 : 17)) * 60);
   const boat = r.car.boat || 0;
   return { km: r.car.km, min: round5(lo + boat), max: round5(Math.max(hi, lo + 2) + boat), mode: boat ? "boat + drive" : "drive", via: r.car.via, road: true };
 }
