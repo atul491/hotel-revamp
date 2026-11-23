@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { X, ChevronDown, ChevronLeft, Check, ExternalLink, Search, MapPin } from "lucide-react";
+import { X, ChevronDown, ChevronLeft, Check, ExternalLink, Search, MapPin, Route as RouteIco } from "lucide-react";
 import { inr, Ico, amenityIcon } from "./kit";
 import { PLACES, KINDS, nearest, fmtKm, findPlace, placeName } from "./data/places";
 import { PlacePicker, ReachTag, clearNear } from "./blocks/NearPlace";
@@ -45,8 +45,18 @@ function pin(label, cls) {
 }
 const lowest = (h) => h.rooms.flatMap((r) => r.rates).sort((a, b) => a.pricing.selling_price - b.pricing.selling_price)[0];
 const placeKey = (p) => `${p.kind}|${p.name}`;
+// Hover card for a place: name, kind, a one-line "what it is / famous for", and the distance when measured from a hotel.
+function tipHtml(p, d) {
+  const k = KINDS[p.kind];
+  return `<div class="hr-tipcard"><b>${p.name.replace(/^Meeting point · /, "")}</b>`
+    + `<span class="hr-tipkind" style="color:${k.colour}">${k.label.replace(/s$/, "")}${p.trailix ? " · Trailix activity" : ""}</span>`
+    + (p.about ? `<span class="hr-tipabout">${p.about}</span>` : "")
+    + (d && d.km != null ? `<span class="hr-tipdist">${fmtKm(d.km)} · ${d.min} min ${d.mode} from the hotel</span>` : "")
+    + `</div>`;
+}
 
 const TYPE_OPTS = ["Private", "SIC", "Gold", "Silver", "Bronze"];
+const SHORT = { airport: "Airport", transit: "Metro", meeting: "Meeting", activity: "Activities", food: "Food" };
 const toggle = (arr, x) => (arr.includes(x) ? arr.filter((y) => y !== x) : [...arr, x]);
 
 export default function MapOverlay({ city, centre, hotels, ctx, onClose, onOpenDetails, filters, setFilters, priceRange }) {
@@ -107,7 +117,7 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onOpenD
       const g = L.layerGroup();
       (PLACES[city] || []).filter((p) => p.kind === kind).forEach((p) => {
         L.marker([p.lat, p.lng], { icon: placeIcon(kind), zIndexOffset: -50 })
-          .bindTooltip(`<b>${p.name}</b><br><span style="color:${KINDS[kind].colour}">${KINDS[kind].label}${p.trailix ? " · Trailix activity" : ""}</span>`, { direction: "top", offset: [0, -12], className: "hr-tip" })
+          .bindTooltip(tipHtml(p), { direction: "top", offset: [0, -12], className: "hr-tip" })
           .bindPopup(`<div class="hr-poi-pop"><b>${p.name}</b><span style="color:${KINDS[kind].colour}">${KINDS[kind].label}</span></div>`, { closeButton: false })
           .addTo(g);
       });
@@ -190,7 +200,7 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onOpenD
         L.polyline([from, [p.lat, p.lng]], { color: "#fff", weight: strong ? 9 : 6, opacity: 0.9, interactive: false }).addTo(layer);
         L.polyline([from, [p.lat, p.lng]], { color: c, weight: strong ? 6 : 3.5, opacity: strong ? 1 : 0.85, interactive: false }).addTo(layer);
         L.marker([p.lat, p.lng], { icon: placeIcon(p.kind), zIndexOffset: 400 })
-          .bindTooltip(`<b>${nameOf(p)}</b><br>${fmtKm(p.km)} · ${p.min} min ${p.mode}${p.trailix ? "<br><span style='color:#7F56D9'>Trailix activity</span>" : ""}`, { direction: "top", offset: [0, -12], className: "hr-tip" })
+          .bindTooltip(tipHtml(p, p), { direction: "top", offset: [0, -12], className: "hr-tip" })
           .on("click", () => setPicked(placeKey(p)))
           .addTo(layer);
         L.marker([p.lat, p.lng], { interactive: false, icon: L.divIcon({ className: "", iconSize: null, iconAnchor: [0, 0], html: `<div class="hr-rname">${nameOf(p)}</div>` }) }).addTo(layer);
@@ -199,7 +209,7 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onOpenD
         L.marker(at, {
           zIndexOffset: strong ? 900 : 500,
           icon: L.divIcon({ className: "", iconSize: null, iconAnchor: [0, 0], html: `<div class="hr-dist hr-dist-route${strong ? " hr-dist-strong" : ""}">${glyph(p.kind, 11, c)}${p.min} min · ${fmtKm(p.km)}</div>` }),
-        }).bindTooltip(`<b>${nameOf(p)}</b>`, { direction: "top", offset: [0, -10], className: "hr-tip" })
+        }).bindTooltip(tipHtml(p, p), { direction: "top", offset: [0, -10], className: "hr-tip" })
           .on("click", () => setPicked(placeKey(p))).addTo(layer);
         return;
       }
@@ -212,7 +222,7 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onOpenD
         zIndexOffset: strong ? 900 : 500,
         icon: L.divIcon({ className: "", iconSize: null, iconAnchor: [0, 0], html: `<div class="hr-dist${strong ? " hr-dist-strong" : ""}" style="border-color:${c};color:${c}">${glyph(p.kind, 11, c)}${fmtKm(p.km)} · ${p.min} min</div>` }),
       })
-        .bindTooltip(`<b>${p.name.replace(/^Meeting point · /, "")}</b><br>${fmtKm(p.km)} · ${p.min} min ${p.mode}${p.trailix ? "<br><span style='color:#7F56D9'>Trailix activity</span>" : ""}`, { direction: "top", offset: [0, -10], className: "hr-tip" })
+        .bindTooltip(tipHtml(p, p), { direction: "top", offset: [0, -10], className: "hr-tip" })
         .on("click", () => setPicked(placeKey(p)))
         .addTo(layer);
     };
@@ -255,7 +265,7 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onOpenD
           <div ref={box} className="absolute inset-0" />
 
           {/* Left panel: hotel list (overview) or what's around the hotel (focus) */}
-          <div className="absolute left-3 top-3 bottom-[68px] w-[340px] z-[500] bg-white border border-divider rounded-xl shadow-lg flex flex-col overflow-hidden" style={{ fontFamily: "Figtree, Inter, system-ui, sans-serif" }}>
+          <div className="absolute left-3 top-3 bottom-[64px] w-[340px] z-[500] bg-white border border-divider rounded-xl shadow-lg flex flex-col overflow-hidden" style={{ fontFamily: "Figtree, Inter, system-ui, sans-serif" }}>
             {focus ? (
               <FocusPanel h={focus} ctx={ctx} around={around} picked={picked} setPicked={setPicked}
                 onBack={() => setFocusId(null)} onOpenDetails={() => onOpenDetails?.(focus.id)} />
@@ -264,30 +274,8 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onOpenD
             )}
           </div>
 
-          {/* Stops / Route switch, only around a selected hotel */}
-          {focus && (
-            <div className="absolute left-1/2 top-3 z-[500] flex bg-white border border-divider rounded-full p-1 shadow-lg" style={{ transform: "translateX(calc(-50% + 170px))", fontFamily: "Figtree, Inter, system-ui, sans-serif" }}>
-              {[["stops", "Stops", "Street map with every place around"], ["route", "Route", "Plain map: only the hotel, the places, and distance · time"]].map(([k, label, tip]) => (
-                <button key={k} onClick={() => setView(k)} title={tip}
-                  className={`px-4 py-1.5 rounded-full text-[13px] font-bold transition-colors ${view === k ? "text-white" : "text-sub hover:text-head"}`}
-                  style={view === k ? { background: NAVY } : undefined}>{label}</button>
-              ))}
-            </div>
-          )}
-
-          {/* Legend: what kinds of places are drawn */}
-          <div className="absolute right-3 top-[88px] z-[500] flex flex-col gap-0.5 bg-white/95 backdrop-blur border border-divider rounded-xl p-2 shadow-lg" style={{ fontFamily: "Figtree, Inter, system-ui, sans-serif" }}>
-            <div className="text-[11px] font-bold uppercase tracking-wide text-sub px-1 mb-0.5">Show on map</div>
-            {Object.entries(KINDS).map(([kind, k]) => (
-              <button key={kind} onClick={() => setShow((x) => ({ ...x, [kind]: !x[kind] }))} className="flex items-center gap-2 px-2 py-1 rounded-md text-[12.5px] font-semibold hover:bg-surface text-left" style={{ opacity: show[kind] ? 1 : 0.45 }}>
-                <span className="w-3.5 h-3.5 rounded-full border-2 border-white shadow" style={{ background: k.colour }} /> {k.label}
-              </button>
-            ))}
-            <div className="flex items-center gap-2 px-2 py-1 text-[12.5px] font-semibold"><span className="w-3.5 h-3.5 rounded-sm" style={{ background: NAVY }} /> Hotels</div>
-            <div className="flex items-center gap-2 px-2 py-1 text-[12.5px] font-semibold"><span className="w-3.5 h-3.5 rounded-full" style={{ background: "#D70143" }} /> City centre</div>
-          </div>
-
-          {filters && <FilterBar f={filters} set={setFilters} range={priceRange} count={focus ? shown.length : nearList.length} />}
+          {filters && <FilterBar f={filters} set={setFilters} range={priceRange} count={focus ? shown.length : nearList.length}
+            show={show} setShow={setShow} route={view === "route"} canRoute={!!focus} toggleRoute={() => setView((v) => (v === "route" ? "stops" : "route"))} />}
         </div>
       </div>
       <style>{`
@@ -303,6 +291,11 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onOpenD
         .hr-rname { transform: translate(-50%, 16px); background: #fff; color: ${NAVY}; font: 700 11px/1.2 Figtree, Inter, system-ui, sans-serif; padding: 3px 8px; border-radius: 6px; white-space: nowrap; box-shadow: 0 1px 4px rgba(15,23,42,.2); pointer-events: none; }
         .hr-pin-km { margin-left: 6px; padding-left: 6px; border-left: 1px solid rgba(255,255,255,.35); font-weight: 500; font-size: 11.5px; opacity: .9; }
         .hr-anchor { transform: translate(-13px, -13px); display: inline-flex; align-items: center; gap: 5px; color: #fff; font: 700 12px/1 Figtree, Inter, system-ui, sans-serif; padding: 6px 10px 6px 7px; border-radius: 999px; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(15,23,42,.35); white-space: nowrap; }
+        .z-\\[70\\] .leaflet-bottom { bottom: 50px; }
+        .hr-tipcard { display: flex; flex-direction: column; gap: 2px; width: 230px; white-space: normal; }
+        .hr-tipkind { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; }
+        .hr-tipabout { color: #475467; font-size: 12px; line-height: 1.35; }
+        .hr-tipdist { color: #181e4c; font-weight: 700; font-size: 11.5px; margin-top: 1px; }
         .hr-tip { font: 12px/1.35 Figtree, Inter, system-ui, sans-serif; padding: 5px 8px; border-radius: 8px; }
         .hr-centre { transform: translate(-14px, -28px); display: flex; flex-direction: column; align-items: center; gap: 2px; font: 700 12px/1 Figtree, Inter, system-ui, sans-serif; color: #D70143; white-space: nowrap; filter: drop-shadow(0 2px 3px rgba(15,23,42,.35)); }
         .hr-centre b { background: rgba(255,255,255,.95); padding: 3px 8px; border-radius: 999px; }
@@ -408,7 +401,7 @@ function FocusPanel({ h, ctx, around, picked, setPicked, onBack, onOpenDetails }
               {open[kind] && list.map((p, i) => {
                 const on = picked === placeKey(p);
                 return (
-                  <button key={p.name} onClick={() => setPicked(on ? null : placeKey(p))}
+                  <button key={p.name} onClick={() => setPicked(on ? null : placeKey(p))} title={p.about || undefined}
                     className="w-full flex items-start gap-2 pl-8 pr-1.5 py-1 rounded-md text-left text-[12.5px] hover:bg-[#F9FAFB]"
                     style={{ background: on ? `${k.colour}14` : undefined, outline: on ? `1.5px solid ${k.colour}` : "none" }}>
                     <span className="flex-1 min-w-0">
@@ -471,11 +464,11 @@ function AmenityDock({ h }) {
 }
 
 // ─── Filters along the bottom of the map: same state as the list's left column ───
-function FilterBar({ f, set, range, count }) {
+function FilterBar({ f, set, range, count, show, setShow, route, canRoute, toggleRoute }) {
   const max = f.max || range[1];
   const active = f.type.length + f.refund.length + f.stars.length + (f.max ? 1 : 0) + (f.nearTransit ? 1 : 0) + (f.nearMeeting ? 1 : 0);
   return (
-    <div className="absolute left-3 right-3 bottom-3 z-[500] flex items-center gap-2 flex-wrap bg-white/95 backdrop-blur border border-divider rounded-xl px-3 py-2 shadow-lg" style={{ fontFamily: "Figtree, Inter, system-ui, sans-serif" }}>
+    <div className="absolute left-0 right-0 bottom-0 z-[500] flex items-center gap-2 flex-wrap bg-white border-t border-divider px-3 py-2 shadow-[0_-2px_8px_rgba(15,23,42,.08)]" style={{ fontFamily: "Figtree, Inter, system-ui, sans-serif" }}>
       <Dropdown label="Hotel Type" options={TYPE_OPTS} value={f.type} onToggle={(x) => set({ ...f, type: toggle(f.type, x) })} />
       <Dropdown label="Room Type" options={["Refundable", "Non Refundable"]} value={f.refund} onToggle={(x) => set({ ...f, refund: toggle(f.refund, x) })} />
       <Dropdown label="Star Rating" options={[5, 4, 3]} render={(n) => <span>{n} Star <span className="text-[#FDB022]">{"★".repeat(n)}</span></span>} value={f.stars} onToggle={(x) => set({ ...f, stars: toggle(f.stars, x) })} />
@@ -483,11 +476,33 @@ function FilterBar({ f, set, range, count }) {
         <div className="p-2"><DistanceRows f={f} set={set} compact /></div>
       </Dropdown>
       <div className="flex items-center gap-2 pl-2 border-l border-divider">
-        <span className="text-[12.5px] font-semibold text-head whitespace-nowrap">Price <span className="text-sub font-normal">(per night)</span></span>
+        <span className="text-[12.5px] font-semibold text-head whitespace-nowrap" title="Per night">Price</span>
         <span className="text-[12.5px] text-sub whitespace-nowrap">₹0 – {inr(max)}</span>
-        <input type="range" min={0} max={range[1]} step={100} value={max} onChange={(e) => set({ ...f, max: +e.target.value === range[1] ? 0 : +e.target.value })} className="w-[160px]" style={{ accentColor: "var(--accent)" }} />
+        <input type="range" min={0} max={range[1]} step={100} value={max} onChange={(e) => set({ ...f, max: +e.target.value === range[1] ? 0 : +e.target.value })} className="w-[110px]" style={{ accentColor: "var(--accent)" }} />
       </div>
-      <span className="ml-auto text-[12.5px] text-sub whitespace-nowrap">{count} hotel{count === 1 ? "" : "s"} shown</span>
+      {/* What's drawn on the map: each kind toggles on / off */}
+      {show && (
+        <div className="flex items-center gap-1 pl-2 border-l border-divider">
+          <span className="text-[11px] font-bold uppercase tracking-wide text-sub mr-0.5">Show</span>
+          {Object.entries(KINDS).map(([kind, k]) => (
+            <button key={kind} onClick={() => setShow((x) => ({ ...x, [kind]: !x[kind] }))} title={`${show[kind] ? "Hide" : "Show"} ${k.label.toLowerCase()}`}
+              className="flex items-center gap-1 h-7 px-2 rounded-full border text-[12px] font-semibold whitespace-nowrap transition-colors"
+              style={{ borderColor: show[kind] ? k.colour : "#E9EAEB", background: show[kind] ? `${k.colour}14` : "#fff", color: show[kind] ? "#181D27" : "#98A2B3" }}>
+              <span className="w-2.5 h-2.5 rounded-full" style={{ background: show[kind] ? k.colour : "#D0D5DD" }} /> {SHORT[kind]}
+            </button>
+          ))}
+        </div>
+      )}
+      <span className="ml-auto text-[12.5px] text-sub whitespace-nowrap">{count} hotel{count === 1 ? "" : "s"}</span>
+      {/* Route: plain outline map with only the hotel, its places and the distances. Click again to go back. */}
+      {toggleRoute && (
+        <button onClick={canRoute ? toggleRoute : undefined} disabled={!canRoute}
+          title={canRoute ? (route ? "Back to the street map" : "Show only the routes from this hotel on a plain map") : "Pick a hotel first to see its routes"}
+          className={`flex items-center gap-1.5 h-7 px-3 rounded-full border text-[12.5px] font-bold whitespace-nowrap transition-colors ${canRoute ? "" : "opacity-40 cursor-not-allowed"}`}
+          style={route && canRoute ? { background: NAVY, borderColor: NAVY, color: "#fff" } : { borderColor: NAVY, color: NAVY, background: "#fff" }}>
+          {route && canRoute ? <Check size={13} strokeWidth={3} /> : <RouteIco size={13} />} Route
+        </button>
+      )}
       {active > 0 && (
         <button onClick={() => set(clearNear({ ...f, type: [], refund: [], stars: [], min: 0, max: 0, nearTransit: 0, nearMeeting: 0 }))} className="text-[12.5px] font-semibold whitespace-nowrap" style={{ color: "var(--accent)" }}>Clear</button>
       )}
