@@ -57,8 +57,16 @@ export default function Screen({ stay, onOpenHotel, sources = false, fixedSuppor
     return (r.pricing.selling_price - ctx.baseNightly) * ctx.nights;
   })();
 
+  // Selected on the map: close it, open that hotel's rooms (its room already ticked) and scroll there.
+  const selectedOnMap = (id) => {
+    setMapOpen(false);
+    setOpenId(id);
+    setExpanded((e) => ({ ...e, [id]: "rooms" }));
+    setTimeout(() => document.querySelector(`[data-hotel-row="${id}"]`)?.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
+  };
+
   const card = (x) => (
-    <div key={x.id}>
+    <div key={x.id} data-hotel-row={x.id} style={{ scrollMarginTop: 12 }}>
       <Slot k="listCard" s={{ ...S, h: x }}>
       <ListCard
         h={x}
@@ -166,7 +174,7 @@ export default function Screen({ stay, onOpenHotel, sources = false, fixedSuppor
         {picks.rail === "bar" && <PriceDetails v="bar" trip={trip} />}
         <Slot k="support" s={S}><Support v={picks.support} absolute={!fixedSupport} /></Slot>
         {mapOpen && (
-          <MapOverlay city={TRIP_STAYS[city].city} centre={CITY_CENTRE[TRIP_STAYS[city].city] || CITY_CENTRE.Seminyak} hotels={list} ctx={ctx} onClose={() => setMapOpen(false)} onOpenDetails={(id) => { setMapOpen(false); const x = list.find((y) => y.id === id); if (x) open(x); }} filters={filters} setFilters={setF} priceRange={priceRange} />
+          <MapOverlay city={TRIP_STAYS[city].city} centre={CITY_CENTRE[TRIP_STAYS[city].city] || CITY_CENTRE.Seminyak} hotels={list} ctx={ctx} onClose={() => setMapOpen(false)} onSelected={selectedOnMap} onOpenDetails={(id) => { setMapOpen(false); const x = list.find((y) => y.id === id); if (x) open(x); }} filters={filters} setFilters={setF} priceRange={priceRange} />
         )}
 
         {drawer && picks.detail !== "inline" && (

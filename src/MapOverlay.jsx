@@ -59,7 +59,7 @@ const TYPE_OPTS = ["Private", "SIC", "Gold", "Silver", "Bronze"];
 const SHORT = { airport: "Airport", transit: "Metro", meeting: "Meeting", activity: "Activities", food: "Food" };
 const toggle = (arr, x) => (arr.includes(x) ? arr.filter((y) => y !== x) : [...arr, x]);
 
-export default function MapOverlay({ city, centre, hotels, ctx, onClose, onOpenDetails, filters, setFilters, priceRange }) {
+export default function MapOverlay({ city, centre, hotels, ctx, onClose, onSelected, onOpenDetails, filters, setFilters, priceRange }) {
   const box = useRef(null);
   const mapRef = useRef(null);
   const pinLayer = useRef(null);
@@ -268,6 +268,7 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onOpenD
           <div className="absolute left-3 top-3 bottom-[64px] w-[340px] z-[500] bg-white border border-divider rounded-xl shadow-lg flex flex-col overflow-hidden" style={{ fontFamily: "Figtree, Inter, system-ui, sans-serif" }}>
             {focus ? (
               <FocusPanel h={focus} ctx={ctx} around={around} picked={picked} setPicked={setPicked}
+                onSelect={() => { const was = focus.id === ctx.currentId; ctx.book?.(focus); if (!was) onSelected?.(focus.id); }}
                 onBack={() => setFocusId(null)} onOpenDetails={() => onOpenDetails?.(focus.id)} />
             ) : (
               <HotelList hotels={nearList} ctx={ctx} onPick={setFocusId} city={city} anchor={anchor} f={filters} set={setFilters} />
@@ -358,7 +359,7 @@ function HotelList({ hotels, ctx, onPick, city, anchor, f, set }) {
 }
 
 // ─── Focus panel: one hotel and everything around it ───
-function FocusPanel({ h, ctx, around, picked, setPicked, onBack, onOpenDetails }) {
+function FocusPanel({ h, ctx, around, picked, setPicked, onBack, onOpenDetails, onSelect }) {
   const r = lowest(h);
   const sel = h.id === ctx.currentId;
   const lat = h.coords.lat.toFixed(5), lng = h.coords.lng.toFixed(5);
@@ -381,7 +382,7 @@ function FocusPanel({ h, ctx, around, picked, setPicked, onBack, onOpenDetails }
           </div>
         </div>
         <div className="flex gap-2 px-3 pb-2.5">
-          <button onClick={() => ctx.book?.(h)} title={sel ? "Click again to unselect" : "Choose this hotel for the itinerary"} className="group/sel flex-1 h-8 rounded-full text-[12.5px] font-bold border" style={{ borderColor: "#E31B53", background: sel ? "#E31B53" : "#fff", color: sel ? "#fff" : "#E31B53" }}>{sel ? <><span className="group-hover/sel:hidden">✓ Selected</span><span className="hidden group-hover/sel:inline">✕ Unselect</span></> : "Select"}</button>
+          <button onClick={onSelect} title={sel ? "Click again to unselect" : "Select this hotel and go to its rooms to pick the room"} className="group/sel flex-1 h-8 rounded-full text-[12.5px] font-bold border" style={{ borderColor: "#E31B53", background: sel ? "#E31B53" : "#fff", color: sel ? "#fff" : "#E31B53" }}>{sel ? <><span className="group-hover/sel:hidden">✓ Selected</span><span className="hidden group-hover/sel:inline">✕ Unselect</span></> : "Select"}</button>
           <button onClick={onOpenDetails} className="flex-1 h-8 rounded-full text-[12.5px] font-semibold bg-[#F2F4F7] hover:bg-[#E4E7EC]">View details ›</button>
         </div>
       </div>
