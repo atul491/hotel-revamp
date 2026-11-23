@@ -49,11 +49,26 @@ const placeKey = (p) => `${p.kind}|${p.name}`;
 // ─── Real road routes for Route view (OpenStreetMap routing, free, no key) ───
 // Car routes for drives, footpaths for walks; Nusa Penida's airport trip is drive → fast boat → drive.
 const ROUTES = new Map();
+// The free router allows only a few calls at a time, so ask one by one (a 429 means "too many").
+let queue = Promise.resolve();
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+function ask(url) {
+  const job = queue.then(async () => {
+    for (let t = 0; t < 4; t++) {
+      const r = await fetch(url);
+      if (r.status === 429) { await wait(700 * (t + 1)); continue; }
+      if (!r.ok) throw new Error(`router ${r.status}`);
+      return r.json();
+    }
+    throw new Error("router busy");
+  });
+  queue = job.catch(() => {}).then(() => wait(120));
+  return job;
+}
 function road(profile, a, b) {
   const key = `${profile}|${a.lat},${a.lng}|${b.lat},${b.lng}`;
   if (!ROUTES.has(key)) {
-    ROUTES.set(key, fetch(`https://routing.openstreetmap.de/routed-${profile}/route/v1/driving/${a.lng},${a.lat};${b.lng},${b.lat}?overview=full&geometries=geojson`)
-      .then((r) => r.json())
+    ROUTES.set(key, ask(`https://routing.openstreetmap.de/routed-${profile}/route/v1/driving/${a.lng},${a.lat};${b.lng},${b.lat}?overview=full&geometries=geojson`)
       .then((d) => { const r = d.routes?.[0]; if (!r) throw new Error("no route"); return { path: r.geometry.coordinates.map(([x, y]) => [y, x]), km: r.distance / 1000, min: Math.max(1, Math.round(r.duration / 60)) }; })
       .catch(() => { ROUTES.delete(key); return null; }));
   }
@@ -275,12 +290,12 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onSelec
         const r = await road(p.mode === "walk" ? "foot" : "car", H, p);
         return r ? [{ kind: p.mode === "walk" ? "foot" : "car", ...r }] : [{ kind: p.mode === "walk" ? "foot" : "car", path: [from, [p.lat, p.lng]], km: p.km, min: p.min, guess: true }];
       };
-      Promise.all(routeJobs.map(({ p, strong }) => legsFor(p).then((legs) => ({ p, strong, legs })))).then((all) => {
-        if (dead) return;
-        const movers = [];
-        // Weaker routes first, the picked one on top.
-        all.sort((x, y) => x.strong - y.strong).forEach(({ p, strong, legs }) => {
-          if (!legs || !legs.length) return;
+      const movers = [];
+      // Vehicles drive along their roads, looping (about 6 s end to end).
+      timer = setInterval(() => movers.forEach((v) => { v.i = (v.i + Math.max(1, v.path.length / 75)) % v.path.length; v.m.setLatLng(v.path[Math.floor(v.i)]); }), 80);
+      // Nearest first, so the routes that matter most appear first; each one draws as soon as it arrives.
+      [...routeJobs].sort((x, y) => (y.strong - x.strong) || (x.p.km - y.p.km)).forEach(({ p, strong }) => legsFor(p).then((legs) => {
+          if (dead || !legs || !legs.length) return;
           const c = KINDS[p.kind].colour;
           legs.forEach((leg) => {
             const boat = leg.kind === "boat";
@@ -300,10 +315,7 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onSelec
             icon: L.divIcon({ className: "", iconSize: null, iconAnchor: [0, 0], html: `<div class="hr-dist hr-dist-route${strong ? " hr-dist-strong" : ""}">${glyph(p.kind, 11, c)}${min} min · ${fmtKm(km)}${legs.length > 1 ? " · ⛴" : ""}</div>` }),
           }).bindTooltip(tip, { direction: "top", offset: [0, -10], className: "hr-tip" })
             .on("click", () => setPicked(placeKey(p))).addTo(layer);
-        });
-        // Vehicles drive along their roads, looping (about 6 s end to end).
-        timer = setInterval(() => movers.forEach((v) => { v.i = (v.i + Math.max(1, v.path.length / 75)) % v.path.length; v.m.setLatLng(v.path[Math.floor(v.i)]); }), 80);
-      });
+      }));
     }
     return () => { dead = true; clearTimeout(tm); if (timer) clearInterval(timer); };
   }, [focus, around, picked, hotels, centre, show, route, anchor, radius, nearList]);
