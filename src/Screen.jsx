@@ -34,7 +34,7 @@ export default function Screen({ stay, onOpenHotel, sources = false, fixedSuppor
     setDrawer(false);
     setRoom(null);
     setCity(i);
-    setFilters((f) => ({ ...f, byGuest: !!stay.bookings?.[i]?.byGuest, q: "" }));
+    setFilters((f) => ({ ...f, byGuest: !!stay.bookings?.[i]?.byGuest, q: "", near: null, nearR: 0, sort: f.sort === "near" ? "best" : f.sort }));
   };
   const openRoom = (x, roomId, rateId) => {
     setOpenId(x.id);
@@ -97,7 +97,7 @@ export default function Screen({ stay, onOpenHotel, sources = false, fixedSuppor
     body = (
       <div className="text-center py-12 text-sub text-[14px]">
         Nothing matches those filters.{" "}
-        <button className="font-bold underline" style={{ color: "var(--accent)" }} onClick={() => setFilters({ ...filters, type: [], refund: [], stars: [], min: 0, max: 0, nearTransit: 0, nearMeeting: 0, q: "" })}>Clear filters</button>
+        <button className="font-bold underline" style={{ color: "var(--accent)" }} onClick={() => setFilters({ ...filters, type: [], refund: [], stars: [], min: 0, max: 0, nearTransit: 0, nearMeeting: 0, near: null, nearR: 0, sort: filters.sort === "near" ? "best" : filters.sort, q: "" })}>Clear filters</button>
       </div>
     );
   } else if (picks.grouping === "headers") {
@@ -144,7 +144,7 @@ export default function Screen({ stay, onOpenHotel, sources = false, fixedSuppor
             {picks.filters === "column" && (
               <div className="w-[240px] shrink-0 sticky top-4 hidden md:block space-y-3">
                 <MapCard key={city} city={TRIP_STAYS[city].city} centre={CITY_CENTRE[TRIP_STAYS[city].city] || CITY_CENTRE.Seminyak} hotels={list} onOpen={() => setMapOpen(true)} />
-                <Slot k="filters" s={S}><Filters v="column" f={filters} set={setF} range={priceRange} /></Slot></div>
+                <Slot k="filters" s={S}><Filters v="column" f={filters} set={setF} range={priceRange} city={TRIP_STAYS[city].city} count={list.length} /></Slot></div>
             )}
             <div className="flex-1 min-w-0 space-y-3">
               {toolbarPanel}

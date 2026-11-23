@@ -3,7 +3,8 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { X, ChevronDown, ChevronLeft, Check, ExternalLink, Search, MapPin } from "lucide-react";
 import { inr, Ico, amenityIcon } from "./kit";
-import { PLACES, KINDS, nearest, fmtKm, distanceKm, travel } from "./data/places";
+import { PLACES, KINDS, nearest, fmtKm, findPlace, placeName } from "./data/places";
+import { PlacePicker, ReachTag, clearNear } from "./blocks/NearPlace";
 import { DistanceRows, fmtM } from "./blocks/screen";
 
 // ─── Hotels on a map (Booking.com / MakeMyTrip style) ───
@@ -65,18 +66,13 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onOpenD
   const [picked, setPicked] = useState(null); // place row clicked in the focus panel
   const focus = hotels.find((h) => h.id === focusId && h.coords) || null;
   // "Near a place" (overview only): any landmark, activity, food place or stop, plus a radius (0 = any distance).
-  const [anchorKey, setAnchorKey] = useState(null);
-  const [radius, setRadius] = useState(0);
-  useEffect(() => { setAnchorKey(null); setRadius(0); }, [city]);
-  const anchor = (PLACES[city] || []).find((p) => placeKey(p) === anchorKey) || null;
+  // Shared with the list's filters: the list already arrives filtered, sorted and with each hotel's distance.
+  const anchor = findPlace(city, filters?.near);
+  const radius = filters?.nearR || 0;
   const nearList = useMemo(() => {
     const hs = hotels.filter((h) => h.coords);
-    if (!anchor) return hs;
-    return hs
-      .map((h) => { const km = distanceKm(anchor, h.coords); return { ...h, near: { km, ...travel(km) } }; })
-      .filter((h) => !radius || h.near.km * 1000 <= radius)
-      .sort((a, b) => a.near.km - b.near.km);
-  }, [hotels, anchor, radius]);
+    return anchor ? [...hs].sort((a, b) => (a.near?.km ?? 1e9) - (b.near?.km ?? 1e9)) : hs;
+  }, [hotels, anchor]);
 
   // A filter that hides the focused hotel drops back to the overview.
   useEffect(() => { if (focusId && !focus) setFocusId(null); }, [focusId, focus]);
@@ -264,8 +260,7 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onOpenD
               <FocusPanel h={focus} ctx={ctx} around={around} picked={picked} setPicked={setPicked}
                 onBack={() => setFocusId(null)} onOpenDetails={() => onOpenDetails?.(focus.id)} />
             ) : (
-              <HotelList hotels={nearList} ctx={ctx} onPick={setFocusId} city={city}
-                anchor={anchor} setAnchorKey={setAnchorKey} radius={radius} setRadius={setRadius} />
+              <HotelList hotels={nearList} ctx={ctx} onPick={setFocusId} city={city} anchor={anchor} f={filters} set={setFilters} />
             )}
           </div>
 
@@ -323,75 +318,22 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onOpenD
 const RADII = [0, 500, 1000, 2000, 5000];
 const PICK_ORDER = ["activity", "food", "transit", "meeting", "airport"];
 
-function HotelList({ hotels, ctx, onPick, city, anchor, setAnchorKey, radius, setRadius }) {
-  const [open, setOpen] = useState(false);
-  const [q, setQ] = useState("");
-  const ref = useRef(null);
-  useEffect(() => {
-    if (!open) return;
-    const off = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
-    document.addEventListener("mousedown", off);
-    return () => document.removeEventListener("mousedown", off);
-  }, [open]);
-  const places = (PLACES[city] || []).filter((p) => p.name.toLowerCase().includes(q.toLowerCase()));
-  const name = (p) => p.name.replace(/^Meeting point · /, "");
+function HotelList({ hotels, ctx, onPick, city, anchor, f, set }) {
+  const name = (p) => placeName(p);
   return (
     <>
       <div className="px-3 py-2.5 border-b border-divider shrink-0">
         <div className="text-[14px] font-bold">Hotels on the map</div>
         <div className="text-[12px] text-sub">Pick one to see the airport, meeting points, food and activities around it</div>
-
-        {/* Near a place: pick any landmark / activity / food / stop, then how far */}
-        <div ref={ref} className="relative mt-2.5">
-          <div className="text-[11px] font-bold uppercase tracking-wide text-sub mb-1">Near a place</div>
-          <button onClick={() => setOpen((o) => !o)} className={`w-full flex items-center gap-2 border rounded-lg px-2.5 py-2 text-left text-[13px] ${anchor ? "border-[#181e4c] bg-[#F5F6FA]" : "border-divider hover:border-[#98A2B3]"}`}>
-            {anchor ? <span className="w-5 h-5 rounded-full flex items-center justify-center shrink-0" style={{ background: KINDS[anchor.kind].colour }} dangerouslySetInnerHTML={{ __html: glyph(anchor.kind, 11) }} /> : <MapPin size={16} className="text-sub shrink-0" />}
-            <span className={`flex-1 truncate ${anchor ? "font-bold text-head" : "text-sub"}`}>{anchor ? name(anchor) : "Any activity, restaurant, metro or landmark"}</span>
-            {anchor ? <X size={15} className="text-sub hover:text-head shrink-0" onClick={(e) => { e.stopPropagation(); setAnchorKey(null); setRadius(0); }} /> : <ChevronDown size={15} className="text-sub shrink-0" />}
-          </button>
-          {open && (
-            <div className="absolute left-0 right-0 top-full mt-1 z-10 bg-white border border-divider rounded-lg shadow-xl overflow-hidden">
-              <div className="flex items-center gap-2 px-2.5 py-2 border-b border-divider">
-                <Search size={14} className="text-sub" />
-                <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder={`Search places in ${city}`} className="flex-1 text-[13px] outline-none" />
-              </div>
-              <div className="max-h-[300px] overflow-y-auto py-1">
-                {PICK_ORDER.map((k) => {
-                  const ps = places.filter((p) => p.kind === k);
-                  if (!ps.length) return null;
-                  return (
-                    <div key={k}>
-                      <div className="px-3 pt-2 pb-1 text-[10.5px] font-bold uppercase tracking-wide" style={{ color: KINDS[k].colour }}>{KINDS[k].label}</div>
-                      {ps.map((p) => (
-                        <button key={p.name} onClick={() => { setAnchorKey(placeKey(p)); setOpen(false); setQ(""); if (!radius) setRadius(1000); }}
-                          className="w-full flex items-center gap-2 px-3 py-1.5 text-[13px] text-left hover:bg-[#F9FAFB]">
-                          <span className="w-4 h-4 rounded-full flex items-center justify-center shrink-0" style={{ background: KINDS[k].colour }} dangerouslySetInnerHTML={{ __html: glyph(k, 9) }} />
-                          <span className="truncate">{name(p)}</span>
-                          {p.trailix && <span className="ml-auto text-[10px] font-bold text-[#7F56D9] shrink-0">Trailix</span>}
-                        </button>
-                      ))}
-                    </div>
-                  );
-                })}
-                {!places.length && <div className="px-3 py-3 text-[12.5px] text-sub">No place called "{q}"</div>}
-              </div>
-            </div>
-          )}
-          {anchor && (
-            <div className="mt-2 flex items-center gap-1 flex-wrap">
-              <span className="text-[12px] text-sub mr-0.5">Within</span>
-              {RADII.map((m) => (
-                <button key={m} onClick={() => setRadius(m)} className={`px-2 py-0.5 rounded-full text-[12px] font-semibold border ${radius === m ? "text-white border-transparent" : "border-divider text-head hover:border-[#98A2B3]"}`} style={radius === m ? { background: NAVY } : undefined}>
-                  {m ? fmtM(m) : "Any"}
-                </button>
-              ))}
-            </div>
-          )}
-          {anchor && <div className="mt-1.5 text-[12px] font-semibold" style={{ color: NAVY }}>{hotels.length} hotel{hotels.length === 1 ? "" : "s"} {radius ? `within ${fmtM(radius)} of` : "sorted by distance from"} {name(anchor)}</div>}
-        </div>
+        {f && set && (
+          <div className="mt-2.5">
+            <div className="text-[11px] font-bold uppercase tracking-wide text-sub mb-1">Near a place</div>
+            <PlacePicker city={city} f={f} set={set} count={hotels.length} accent={NAVY} />
+          </div>
+        )}
       </div>
       <div className="flex-1 overflow-y-auto">
-        {hotels.length === 0 && <div className="p-4 text-[13px] text-sub">{anchor ? <>No hotels this close. Try a bigger distance.</> : "No hotels match these filters."}</div>}
+        {hotels.length === 0 && <div className="p-4 text-[13px] text-sub">{anchor ? <>No hotels this close to {name(anchor)}. Try a bigger distance.</> : "No hotels match these filters."}</div>}
         {hotels.map((h) => {
           const r = lowest(h);
           const sel = h.id === ctx.currentId;
@@ -410,8 +352,8 @@ function HotelList({ hotels, ctx, onPick, city, anchor, setAnchorKey, radius, se
                   <span className="truncate">{h.neighbourhood}</span>
                 </div>
                 {h.near ? (
-                  <div className="text-[11.5px] font-semibold truncate" style={{ color: KINDS[anchor.kind].colour }}>{fmtKm(h.near.km)} · {h.near.min} min {h.near.mode} to {name(anchor)}</div>
-                ) : near && <div className="text-[11.5px] text-sub truncate">📍 {fmtKm(near.km)} to meeting point</div>}
+                  <div className="flex items-center gap-1.5 min-w-0"><span className="text-[11.5px] font-semibold truncate" style={{ color: KINDS[h.near.place.kind].colour }}>{fmtKm(h.near.km)} · {h.near.min} min {h.near.mode} to {name(h.near.place)}</span><ReachTag d={h.near} /></div>
+                ) : near && <div className="flex items-center gap-1.5 min-w-0"><span className="text-[11.5px] text-sub truncate">📍 {fmtKm(near.km)} to meeting point</span><ReachTag d={near} /></div>}
                 <div className="text-[13px] font-extrabold" style={{ color: NAVY }}>{inr(r.pricing.selling_price * ctx.nights)} <span className="text-[11px] font-medium text-sub">({ctx.nights} nights)</span></div>
               </div>
             </button>
@@ -472,7 +414,7 @@ function FocusPanel({ h, ctx, around, picked, setPicked, onBack, onOpenDetails }
                     <span className="flex-1 min-w-0">
                       <span className="block truncate">{p.name.replace(/^Meeting point · /, "")}{i === 0 && <span className="ml-1 text-[10px] font-bold uppercase" style={{ color: k.colour }}>nearest</span>}</span>
                     </span>
-                    <span className="text-right shrink-0 text-sub whitespace-nowrap"><b className="text-head">{fmtKm(p.km)}</b> · {p.min} min {p.mode}</span>
+                    <span className="text-right shrink-0 text-sub whitespace-nowrap flex flex-col items-end gap-0.5"><span><b className="text-head">{fmtKm(p.km)}</b> · {p.min} min {p.mode}</span><ReachTag d={p} /></span>
                   </button>
                 );
               })}
@@ -547,7 +489,7 @@ function FilterBar({ f, set, range, count }) {
       </div>
       <span className="ml-auto text-[12.5px] text-sub whitespace-nowrap">{count} hotel{count === 1 ? "" : "s"} shown</span>
       {active > 0 && (
-        <button onClick={() => set({ ...f, type: [], refund: [], stars: [], min: 0, max: 0, nearTransit: 0, nearMeeting: 0 })} className="text-[12.5px] font-semibold whitespace-nowrap" style={{ color: "var(--accent)" }}>Clear</button>
+        <button onClick={() => set(clearNear({ ...f, type: [], refund: [], stars: [], min: 0, max: 0, nearTransit: 0, nearMeeting: 0 }))} className="text-[12.5px] font-semibold whitespace-nowrap" style={{ color: "var(--accent)" }}>Clear</button>
       )}
     </div>
   );
@@ -605,7 +547,7 @@ export function MapCard({ city, centre, hotels, onOpen }) {
       <div ref={box} className="absolute inset-0 pointer-events-none" />
       <div className="absolute inset-0 bg-white/10 group-hover:bg-transparent transition-colors" />
       <span className="absolute left-3 right-3 bottom-3 z-[500] flex items-center justify-center gap-1.5 h-9 rounded-lg bg-white border-2 text-[13px] font-extrabold tracking-wide shadow-sm group-hover:shadow-md transition-shadow"
-        style={{ borderColor: PINK, color: PINK }}>
+        style={{ borderColor: NAVY, color: NAVY }}>
         <MapPin size={15} /> EXPLORE ON MAP
       </span>
     </button>

@@ -5,6 +5,8 @@ import {
 import { inr, useView } from "../kit";
 import { useDesign } from "../design";
 import { TRIP_STAYS } from "../data/ibHotels";
+import { PlacePicker } from "./NearPlace";
+import { placeName } from "../data/places";
 import { usePickedUser, UserVariantView } from "../user";
 
 // ─── Tier look (30 Sundays Gold / Silver / Bronze) ───
@@ -159,7 +161,7 @@ function Box({ on, onClick, children }) {
   );
 }
 
-function FilterBody({ f, set, range }) {
+function FilterBody({ f, set, range, city, count }) {
   const stars = (n) => <span className="inline-flex ml-1">{Array.from({ length: n }).map((_, i) => <Star key={i} size={15} fill="#FDB022" color="#FDB022" strokeWidth={0} />)}</span>;
   const head = (I, t, extra) => (
     <div className="flex items-center gap-2 text-[14.5px] font-bold mb-1.5"><I size={15} style={{ color: "var(--accent)" }} /> {t} {extra}</div>
@@ -171,6 +173,12 @@ function FilterBody({ f, set, range }) {
       <div>{head(Filter, "Hotel Type")}{TYPE_OPTS.map((t) => <Box key={t} on={f.type.includes(t)} onClick={() => set({ ...f, type: toggle(f.type, t) })}>{t}</Box>)}</div>
       <div className="border-t border-divider pt-3">{head(Filter, "Room Type")}{["Refundable", "Non Refundable"].map((t) => <Box key={t} on={f.refund.includes(t)} onClick={() => set({ ...f, refund: toggle(f.refund, t) })}>{t}</Box>)}</div>
       <div className="border-t border-divider pt-3">{head(Star, "Star Rating")}{[5, 4, 3].map((n) => <Box key={n} on={f.stars.includes(n)} onClick={() => set({ ...f, stars: toggle(f.stars, n) })}>{n} Star {stars(n)}</Box>)}</div>
+      {city && (
+        <div className="border-t border-divider pt-3">
+          {head(MapPin, "Near a place")}
+          <PlacePicker city={city} f={f} set={set} count={count} />
+        </div>
+      )}
       <div className="border-t border-divider pt-3">
         {head(MapPin, "Distance")}
         <DistanceRows f={f} set={set} />
@@ -189,7 +197,7 @@ function FilterBody({ f, set, range }) {
 }
 
 export function activeCount(f) {
-  return f.type.length + f.refund.length + f.stars.length + (f.min ? 1 : 0) + (f.max ? 1 : 0) + (f.nearTransit ? 1 : 0) + (f.nearMeeting ? 1 : 0);
+  return f.type.length + f.refund.length + f.stars.length + (f.min ? 1 : 0) + (f.max ? 1 : 0) + (f.nearTransit ? 1 : 0) + (f.nearMeeting ? 1 : 0) + (f.near ? 1 : 0);
 }
 
 // ─── Distance filter: tick a reference, then pick how far ───
@@ -232,13 +240,13 @@ export function DistanceRows({ f, set, compact }) {
   );
 }
 
-export function Filters({ v, f, set, range }) {
+export function Filters({ v, f, set, range, city, count }) {
   const [open, setOpen] = useState(false);
   const n = activeCount(f);
   if (v === "column")
     return (
       <aside className="bg-white border border-divider p-4 self-start" style={{ borderRadius: "var(--r)" }}>
-        <FilterBody f={f} set={set} range={range} />
+        <FilterBody f={f} set={set} range={range} city={city} count={count} />
       </aside>
     );
   if (v === "chips") {
@@ -287,7 +295,7 @@ export function Toolbar({ v, count, f, set, extra }) {
   );
   const sort = (
     <select value={f.sort} onChange={(e) => set({ ...f, sort: e.target.value })} className="border border-divider bg-white px-3 py-2 text-[14px]" style={{ borderRadius: "var(--rw)" }}>
-      <option value="best">Sort By Best</option><option value="low">Price: low to high</option><option value="high">Price: high to low</option><option value="rating">Rating</option>
+      <option value="best">Sort By Best</option><option value="low">Price: low to high</option><option value="high">Price: high to low</option><option value="rating">Rating</option>{f.near && <option value="near">Nearest to {placeName(f.near)}</option>}
     </select>
   );
   const guest = (

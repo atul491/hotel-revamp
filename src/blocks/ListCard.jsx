@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Images, MapPin, Utensils, Car, RotateCcw, Ban, LogIn, ChevronRight, ThumbsUp, Star, ArrowLeftRight } from "lucide-react";
 import { Heart, Image as ImageIco, ChevronDown as Down, Check as Tick, MapPinned, TrainFront } from "lucide-react";
 import { Stars, BookingB, inr, scoreColor, SellerNote, AmenityIcons, ContractedBadge } from "../kit";
+import { ReachTag, KindDot } from "./NearPlace";
+import { fmtKm, placeName } from "../data/places";
 import { useDesign } from "../design";
 import { Tags, NOTE } from "./screen";
 
@@ -196,13 +198,21 @@ function IBRow({ h, ctx, active, onOpen, onOpenAt, wished, onWish, expanded, onT
               {h.ib.metro && (
                 <div className="flex items-center gap-1.5" title="Nearest metro">
                   <TrainFront size={13} className="shrink-0" style={{ color: "#E31B53" }} /> {h.ib.metro.name} · {h.ib.metro.walkMin} min {h.ib.metro.mode === "drive" ? "drive" : "walk"}{h.ib.metro.meters ? ` · ${h.ib.metro.meters >= 1000 ? (h.ib.metro.meters / 1000).toFixed(1) + " km" : h.ib.metro.meters + " m"}` : ""}
+                  <ReachTag d={{ mode: h.ib.metro.mode === "drive" ? "drive" : "walk", min: h.ib.metro.walkMin }} />
                 </div>
               )}
               {h.ib.meetingPoint && (
                 <div className="flex items-center gap-1.5" title="Meeting point">
                   <MapPinned size={13} className="shrink-0" style={{ color: "#E31B53" }} /> Meeting point: {h.ib.meetingPoint.name} · {h.ib.meetingPoint.walkMin} min {h.ib.meetingPoint.mode === "drive" ? "drive" : "walk"}{h.ib.meetingPoint.meters ? ` · ${h.ib.meetingPoint.meters >= 1000 ? (h.ib.meetingPoint.meters / 1000).toFixed(1) + " km" : h.ib.meetingPoint.meters + " m"}` : ""}
+                  <ReachTag d={{ mode: h.ib.meetingPoint.mode === "drive" ? "drive" : "walk", min: h.ib.meetingPoint.walkMin }} />
                 </div>
               )}
+            </div>
+          )}
+          {h.near && (
+            <div className="flex items-center gap-1.5 text-[13px] mt-0.5 leading-[18px] font-semibold text-head" title={`Distance to ${placeName(h.near.place)} (Near a place filter)`}>
+              <KindDot kind={h.near.place.kind} size={14} /> {placeName(h.near.place)} · {h.near.min} min {h.near.mode} · {fmtKm(h.near.km)}
+              <ReachTag d={h.near} />
             </div>
           )}
           {show("amenities") && (

@@ -103,3 +103,15 @@ export function nearest(city, kind, from, n = 1) {
     .slice(0, n)
     .map((p) => ({ ...p, ...(p.fixed || travel(p.km)) }));
 }
+
+// ─── "Near a place" filter: a place is stored in the filters as "kind|name" ───
+export const placeKey = (p) => `${p.kind}|${p.name}`;
+export const placeName = (keyOrPlace) => (typeof keyOrPlace === "string" ? keyOrPlace.split("|").slice(1).join("|") : keyOrPlace.name).replace(/^Meeting point · /, "");
+export const findPlace = (city, key) => (key ? (PLACES[city] || []).find((p) => placeKey(p) === key) || null : null);
+
+// ─── How a client would get there, in words: walkable / short ride / need a car ───
+export function reach({ mode, min }) {
+  if (mode === "walk" && min <= 10) return { label: "Walkable", colour: "#027A48", bg: "#ECFDF3", tip: "10 min walk or less" };
+  if ((mode === "walk" && min <= 25) || (mode === "drive" && min <= 15)) return { label: "Short ride", colour: "#B54708", bg: "#FFFAEB", tip: "A short taxi / scooter ride (or a long walk)" };
+  return { label: "Need a car", colour: "#B42318", bg: "#FEF3F2", tip: "Plan a car or transfer" };
+}

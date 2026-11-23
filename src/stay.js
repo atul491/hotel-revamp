@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { UNIVERSAL_HOTELS, IB_SAVED_STAY, TRIP_STAYS, TRIP_PRICES } from "./data/ibHotels";
+import { findPlace, distanceKm, travel } from "./data/places";
 
 // One stay per city; the active tab decides which one is being edited.
 const stayOf = (i) => ({ ...TRIP_STAYS[i], adults: 2 });
@@ -14,7 +15,7 @@ const findRate = (h, rateId) => {
 };
 
 // nearTransit / nearMeeting: 0 = off, otherwise "within N metres" of the nearest stop / meeting point.
-export const EMPTY_FILTERS = { type: [], refund: [], stars: [], min: 0, max: 0, nearTransit: 0, nearMeeting: 0, q: "", sort: "best", byGuest: false };
+export const EMPTY_FILTERS = { type: [], refund: [], stars: [], min: 0, max: 0, nearTransit: 0, nearMeeting: 0, near: null, nearR: 0, q: "", sort: "best", byGuest: false };
 
 export function useStay(initialId = null) {
   const [openId, setOpenId] = useState(initialId);
@@ -59,7 +60,13 @@ export function useStay(initialId = null) {
   // Filtering works on the IB fields the left column offers.
   const list = useMemo(() => {
     const f = filters;
-    let out = cityHotels.filter((x) => {
+    // Near a place: every hotel gets its distance to it; the radius filters, "near" sorts.
+    const anchor = findPlace(STAY.city, f.near);
+    const withNear = anchor
+      ? cityHotels.map((x) => { if (!x.coords) return x; const km = distanceKm(anchor, x.coords); return { ...x, near: { km, ...travel(km), place: anchor } }; })
+      : cityHotels;
+    let out = withNear.filter((x) => {
+      if (anchor && f.nearR && !(x.near && x.near.km * 1000 <= f.nearR)) return false;
       const r0 = x.rooms[0].rates[0];
       const types = f.type;
       if (types.includes("Private") && x.ib.private_sic !== "Private" && !types.includes("SIC")) return false;
@@ -84,7 +91,9 @@ export function useStay(initialId = null) {
       low: (a, b) => a.ib.fromPrice - b.ib.fromPrice,
       high: (a, b) => b.ib.fromPrice - a.ib.fromPrice,
       rating: (a, b) => b.ratings.booking.score - a.ratings.booking.score,
+      near: (a, b) => (a.near?.km ?? 1e9) - (b.near?.km ?? 1e9),
     };
+    if (f.sort === "near" && !anchor) return [...out].sort(by.best);
     return [...out].sort(by[f.sort] || by.best);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters, wish, city]);
