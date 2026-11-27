@@ -23,7 +23,9 @@ export function useStay(initialId = null) {
   const [bookings, setBookings] = useState(SAVED);
   const [wish, setWish] = useState(["61022417"]);
   const [filters, setFilters] = useState(EMPTY_FILTERS);
-  const [city, setCity] = useState(0);
+  const [city, setCityRaw] = useState(0);
+  const [tripVersion, setTripVersion] = useState(0); // bumps when Hotel Details changes the trip
+  const setCity = (i) => setCityRaw(Math.max(0, Math.min(TRIP_STAYS.length - 1, i)));
   const STAY = stayOf(city);
   const cityHotels = UNIVERSAL_HOTELS.filter((x) => x.city === STAY.city);
 
@@ -96,7 +98,7 @@ export function useStay(initialId = null) {
     if (f.sort === "near" && !anchor) return [...out].sort(by.best);
     return [...out].sort(by[f.sort] || by.best);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, wish, city]);
+  }, [filters, wish, city, tripVersion]);
 
   const prices = cityHotels.map((x) => x.ib.fromPrice);
   const priceRange = [Math.min(...prices), Math.max(...prices)];
@@ -139,12 +141,15 @@ export function useStay(initialId = null) {
       open: setOpenId,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [h.id, sels, booking, baseNightly, city],
+    [h.id, sels, booking, baseNightly, city, tripVersion],
   );
 
   return {
     h, ctx, openId, setOpenId, hotels: UNIVERSAL_HOTELS, cityHotels, list, stays, bookings,
     booking, setBooking, booked, bookedRate, wish, setWish, filters, setFilters, priceRange,
     city, setCity, trip,
+    // Hotel Details setup: new trip rows plus which old stay each keeps its booking from.
+    applyTrip: (next) => { setBookings(next.bookings); setCityRaw((c) => Math.min(c, TRIP_STAYS.length - 1)); setTripVersion((v) => v + 1); },
+    tripVersion,
   };
 }

@@ -237,7 +237,7 @@ function IBRow({ h, ctx, active, onOpen, onOpenAt, wished, onWish, expanded, onT
           {show("perNight") && <div className="text-[12px] leading-4 text-[#334155] mt-1.5">{inr(r0.pricing.selling_price)}/Night</div>}
           {show("total") && (
             <div className="text-[16px] leading-[22px] font-bold text-[#181e4c]" title={picks.notice === "price" ? NOTE : undefined}>
-              {inr(r0.pricing.selling_price * ctx.nights)} ({ctx.nights} Nights){picks.notice === "price" && <span className="text-[10px] align-super text-sub ml-0.5 cursor-help">ⓘ</span>}
+              {inr(r0.pricing.selling_price * ctx.nights)} ({ctx.nights} {ctx.nights === 1 ? "Night" : "Nights"}){picks.notice === "price" && <span className="text-[10px] align-super text-sub ml-0.5 cursor-help">ⓘ</span>}
             </div>
           )}
           <div className="flex-1" />

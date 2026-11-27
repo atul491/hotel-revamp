@@ -71,7 +71,7 @@ export function TopBar({ v, city, setCity, stays, support, onBack, onContinue })
     mid = (
       <div className="flex gap-1.5">
         {TRIP_STAYS.map((s, i) => (
-          <button key={s.city} onClick={() => setCity(i)} className="px-3.5 py-1.5 text-[12.5px] border text-left leading-tight"
+          <button key={`${s.city}-${i}`} onClick={() => setCity(i)} className="px-3.5 py-1.5 text-[12.5px] border text-left leading-tight"
             style={{ borderRadius: "var(--rp)", background: city === i ? "var(--accent)" : "#fff", color: city === i ? "#fff" : "#181D27", borderColor: city === i ? "var(--accent)" : "#E9EAEB" }}>
             <b>{s.city} {s.nights}N</b> {done(i) && "✓"}<div className="text-[11px] opacity-80">{s.from} – {s.to}</div>
           </button>
@@ -82,7 +82,7 @@ export function TopBar({ v, city, setCity, stays, support, onBack, onContinue })
     mid = (
       <div className="flex items-start">
         {TRIP_STAYS.map((s, i) => (
-          <div key={s.city} className="flex items-start">
+          <div key={`${s.city}-${i}`} className="flex items-start">
             <button onClick={() => setCity(i)} className="flex flex-col items-center w-[110px]">
               <span className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold border-2"
                 style={{ background: done(i) ? "var(--accent)" : "#fff", borderColor: city === i || done(i) ? "var(--accent)" : "#D5D7DA", color: done(i) ? "#fff" : "var(--accent)" }}>
@@ -106,7 +106,7 @@ export function TopBar({ v, city, setCity, stays, support, onBack, onContinue })
           {TRIP_STAYS.map((s, i) => {
             const act = city === i;
             return (
-              <button key={s.city} onClick={() => setCity(i)} className="relative px-6 py-2 text-[13.5px] leading-tight text-center"
+              <button key={`${s.city}-${i}`} onClick={() => setCity(i)} className="relative px-6 py-2 text-[13.5px] leading-tight text-center"
                 style={{ background: act ? "var(--accent)" : "#fff", color: act ? "#fff" : "#181D27", clipPath: act ? "polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%)" : "none" }}>
                 <div>{s.city} <b>{s.nights}N</b></div>
                 <div className="text-[12.5px]">{s.from} - {s.to}</div>
@@ -136,7 +136,7 @@ function CompactCity({ city, setCity, done }) {
       {open && (
         <div className="absolute z-30 mt-1 bg-white border border-divider shadow-lg w-full" style={{ borderRadius: "var(--rw)" }}>
           {TRIP_STAYS.map((x, i) => (
-            <button key={x.city} onClick={() => { setCity(i); setOpen(false); }} className="w-full text-left px-3 py-2 text-[13px] hover:bg-surface flex justify-between">
+            <button key={`${x.city}-${i}`} onClick={() => { setCity(i); setOpen(false); }} className="w-full text-left px-3 py-2 text-[13px] hover:bg-surface flex justify-between">
               {x.city} · {x.nights}N {done(i) && <Check size={14} style={{ color: "var(--accent)" }} />}
             </button>
           ))}
@@ -380,7 +380,7 @@ export function Bookings({ v, stays, city, setCity }) {
       <div className="bg-white border border-divider p-3" style={{ borderRadius: "var(--r)" }}>
         <div className="text-[14px] font-bold mb-1.5">Hotel bookings <span className="text-[12px] font-normal text-sub">{n}/{items.length}</span></div>
         {items.map((x, i) => (
-          <button key={x.s.city} onClick={() => setCity(i)} className="w-full flex items-center gap-2 py-1.5 text-[12.5px] text-left">
+          <button key={`${x.s.city}-${i}`} onClick={() => setCity(i)} className="w-full flex items-center gap-2 py-1.5 text-[12.5px] text-left">
             <span className="w-4 h-4 rounded-full flex items-center justify-center shrink-0" style={{ background: x.done ? "var(--accent)" : "#E9EAEB" }}>{x.done && <Check size={10} color="#fff" strokeWidth={3} />}</span>
             <b className="w-[78px] shrink-0">{x.s.city}</b><span className={`truncate ${x.done ? "" : "italic text-inact"}`}>{x.done ? x.hotel : "No room selected"}</span>
           </button>
@@ -392,7 +392,7 @@ export function Bookings({ v, stays, city, setCity }) {
       <div className="text-[16px] font-bold mb-2">Hotel Bookings <span className="text-[12px] font-normal text-sub">({n} selected)</span></div>
       <div className="space-y-2">
         {items.map((x, i) => (
-          <button key={x.s.city} onClick={() => setCity(i)} className="w-full text-left border p-2.5 relative"
+          <button key={`${x.s.city}-${i}`} onClick={() => setCity(i)} className="w-full text-left border p-2.5 relative"
             style={{ borderRadius: "var(--rw)", borderColor: city === i && x.done ? "var(--accent)" : "#E9EAEB", borderWidth: city === i ? 2 : 1 }}>
             <span className="absolute top-2.5 right-2.5 w-[18px] h-[18px] rounded-full flex items-center justify-center" style={{ background: x.done ? "var(--accent)" : "#F2F4F7" }}>
               {x.done ? <Check size={11} color="#fff" strokeWidth={3} /> : <span className="w-1.5 h-1.5 rounded-full bg-[#D0D5DD]" />}

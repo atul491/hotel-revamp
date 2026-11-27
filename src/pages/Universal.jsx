@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Database, X } from "lucide-react";
 import Screen from "../Screen";
 import Itinerary from "../Itinerary";
+import HotelSetup from "../HotelSetup";
 import { TRIP_STAYS } from "../data/ibHotels";
 import { useStay } from "../stay";
 import { FIELD_SOURCES } from "../data/ibHotels";
@@ -13,6 +14,7 @@ export function Workspace({ title = "Seller screen", right }) {
   const [legend, setLegend] = useState(false);
   // First the itinerary's Hotel section; Select Hotel / Replace hotel open the hotel list.
   const [view, setView] = useState({ page: "itinerary", replace: null });
+  const [setup, setSetup] = useState(false);
   const openList = (i, replace) => { stay.setCity(i); stay.setFilters((f) => ({ ...f, byGuest: !!stay.bookings?.[i]?.byGuest, near: null, nearR: 0, q: "", sort: f.sort === "near" ? "best" : f.sort })); setView({ page: "hotels", replace: replace ? i : null }); };
   const backToItinerary = () => setView({ page: "itinerary", replace: null });
   const rep = view.replace != null && stay.city === view.replace ? TRIP_STAYS[view.replace] : null;
@@ -31,7 +33,7 @@ export function Workspace({ title = "Seller screen", right }) {
       <div className="flex-1 min-h-0 p-3">
         <div className="h-full rounded-lg overflow-hidden border border-gray-200 shadow-sm bg-white">
           {view.page === "itinerary" ? (
-            <Itinerary stay={stay} onSelect={(i) => openList(i, false)} onReplace={(i) => openList(i, true)} />
+            <Itinerary stay={stay} onSelect={(i) => openList(i, false)} onReplace={(i) => openList(i, true)} onSetup={() => setSetup(true)} />
           ) : (
             <Screen stay={stay} sources={sources} fixedSupport={false} onBack={backToItinerary} onContinue={backToItinerary}
               banner={rep && (
@@ -43,6 +45,7 @@ export function Workspace({ title = "Seller screen", right }) {
         </div>
       </div>
       {legend && <Legend onClose={() => setLegend(false)} />}
+      {setup && <HotelSetup stay={stay} onClose={() => setSetup(false)} onPickHotel={(i) => { setSetup(false); openList(i, false); }} />}
     </div>
   );
 }

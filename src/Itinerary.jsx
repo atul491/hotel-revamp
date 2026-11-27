@@ -21,7 +21,7 @@ const findRate = (h, rateId) => {
 };
 const money = (n) => `₹ ${n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-export default function Itinerary({ stay, onSelect, onReplace }) {
+export default function Itinerary({ stay, onSelect, onReplace, onSetup }) {
   return (
     <div className="h-full overflow-y-auto bg-white" style={{ fontFamily: "Geist, Inter, system-ui, sans-serif", color: NAVY }}>
       <div className="max-w-[1180px] mx-auto px-6 py-6">
@@ -30,7 +30,7 @@ export default function Itinerary({ stay, onSelect, onReplace }) {
           <Building2 size={26} color="#1570EF" />
           <h2 className="text-[24px] font-bold">Hotel</h2>
           <HelpCircle size={20} color="#FD014F" />
-          <button onClick={() => onSelect(0)} className="ml-auto h-10 px-5 rounded-full border-[1.5px] text-[15px] font-bold hover:bg-[#F5F6FA]" style={{ borderColor: NAVY }}>Setup Hotel Search</button>
+          <button onClick={onSetup} className="ml-auto h-10 px-5 rounded-full border-[1.5px] text-[15px] font-bold hover:bg-[#F5F6FA]" style={{ borderColor: NAVY }}>Setup Hotel Search</button>
         </div>
 
         <div className="space-y-3">
@@ -38,12 +38,12 @@ export default function Itinerary({ stay, onSelect, onReplace }) {
             const b = stay.bookings?.[i] || {};
             const h = UNIVERSAL_HOTELS.find((x) => x.id === b.hotelId);
             return (
-              <div key={s.city} className="flex gap-4 items-stretch">
+              <div key={s.id || s.city} className="flex gap-4 items-stretch">
                 <div className="w-[104px] shrink-0 self-start rounded-xl border border-[#E4E7EC] overflow-hidden text-center">
                   <div className="text-[14px] text-[#475467] py-1.5 bg-white">{s.city}</div>
                   <div className="bg-white pb-2">
                     <div className="text-[30px] font-bold leading-none">{s.nights}</div>
-                    <div className="text-[14px] text-[#475467] mt-1">Nights</div>
+                    <div className="text-[14px] text-[#475467] mt-1">{s.nights === 1 ? "Night" : "Nights"}</div>
                   </div>
                 </div>
                 {b.byGuest ? <GuestCard s={s} onReplace={() => onReplace(i)} />

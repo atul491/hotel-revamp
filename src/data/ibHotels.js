@@ -345,6 +345,34 @@ export const TRIP_STAYS = [
   { city: "Ubud", nights: 2, from: "23 Jun", to: "25 Jun", checkIn: "Tue, 23 Jun", checkOut: "Thu, 25 Jun", dayRange: "Day 4–6", saved: null },
   { city: "Nusa Penida", nights: 1, from: "25 Jun", to: "26 Jun", checkIn: "Thu, 25 Jun", checkOut: "Fri, 26 Jun", dayRange: "Day 6–7", saved: null },
 ];
+
+// ─── Editing the trip (Hotel Details setup) ───
+// TRIP_STAYS is read everywhere at render time, so it is updated in place and the screen re-renders.
+export const TRIP_START = "2026-06-20";
+export const STAY_CITIES = ["Seminyak", "Ubud", "Nusa Penida"]; // cities with hotels in this prototype
+const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+export const addDaysIso = (iso, n) => new Date(new Date(iso + "T00:00:00Z").getTime() + n * 86400000).toISOString().slice(0, 10);
+const d = (iso) => new Date(iso + "T00:00:00Z");
+export const fmtDay = (iso) => `${String(d(iso).getUTCDate()).padStart(2, "0")} ${MON[d(iso).getUTCMonth()]}`;
+export const fmtDate = (iso) => `${fmtDay(iso)} ${d(iso).getUTCFullYear()}`;
+export function buildStays(rows, start = TRIP_START) {
+  let at = start, day = 1;
+  return rows.map((r) => {
+    const out = addDaysIso(at, r.nights);
+    const s = {
+      id: r.id, city: r.city, nights: r.nights, rooms: r.rooms || 1, early: !!r.early, late: !!r.late, later: !!r.later,
+      in: at, out, from: fmtDay(at).replace(/^0/, ""), to: fmtDay(out).replace(/^0/, ""),
+      checkIn: `${DOW[d(at).getUTCDay()]}, ${fmtDay(at).replace(/^0/, "")}`, checkOut: `${DOW[d(out).getUTCDay()]}, ${fmtDay(out).replace(/^0/, "")}`,
+      dayRange: `Day ${day}–${day + r.nights}`, saved: null,
+    };
+    at = out; day += r.nights;
+    return s;
+  });
+}
+TRIP_STAYS.splice(0, TRIP_STAYS.length, ...buildStays(TRIP_STAYS.map((s, i) => ({ id: `s${i + 1}`, city: s.city, nights: s.nights }))));
+export function setTripStays(rows) { TRIP_STAYS.splice(0, TRIP_STAYS.length, ...buildStays(rows)); }
+
 export const TRIP_PRICES = { addOns: 0, flights: 105156, activities: 86016, gstRate: 0.05, tcsRate: 0.02 };
 
 // Where the map opens: the city centre (Trailix Region / legacy city centre).
