@@ -157,9 +157,9 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onSelec
     const map = mapRef.current;
     if (!map) return;
     Object.entries(placeLayers.current).forEach(([kind, g]) => {
-      if (show[kind] && !route) { if (!map.hasLayer(g)) g.addTo(map); } else if (map.hasLayer(g)) map.removeLayer(g);
+      if (show[kind] && !focus) { if (!map.hasLayer(g)) g.addTo(map); } else if (map.hasLayer(g)) map.removeLayer(g);
     });
-  }, [show, city, route]);
+  }, [show, city, route, focus]);
 
   // Route view: no streets, no labels, no city centre — just a plain canvas.
   useEffect(() => {
@@ -184,7 +184,9 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onSelec
       const total = lowest(h).pricing.selling_price * ctx.nights;
       const isFocus = h.id === focusId;
       const cls = isFocus ? "hr-pin-focus" : focusId ? "hr-pin-dim" : h.id === ctx.currentId ? "hr-pin-sel" : "";
-      const icon = isFocus && route
+      const icon = isFocus && !route
+        ? L.divIcon({ className: "", iconSize: null, iconAnchor: [0, 0], html: `<div class="hr-hotel"><span class="hr-hotel-ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10"/><path d="M2 17h20"/><path d="M6 8v9"/></svg></span><span class="hr-hotel-txt"><small>Your hotel</small><b>${h.name}</b></span></div>` })
+        : isFocus && route
         ? L.divIcon({ className: "", iconSize: null, iconAnchor: [0, 0], html: `<div class="hr-dest"><span class="hr-ring"></span><span class="hr-ring hr-ring2"></span><svg viewBox="0 0 24 24" width="34" height="34"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7z" fill="${NAVY}" stroke="#fff" stroke-width="1.5"/><circle cx="12" cy="9" r="2.6" fill="#fff"/></svg><b>${h.name}</b></div>` })
         : pin(isFocus ? `★ ${h.name}` : h.near && !focusId ? `${inr(total)}<span class="hr-pin-km">${fmtKm(h.near.km)}</span>` : inr(total), cls);
       L.marker([h.coords.lat, h.coords.lng], { icon, zIndexOffset: isFocus ? 2000 : h.id === ctx.currentId ? 1000 : 0 })
@@ -215,6 +217,37 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onSelec
     }
     const from = [focus.coords.lat, focus.coords.lng];
     const nameOf = (p) => p.name.replace(/^Meeting point · /, "");
+    // ─── Map screen: one pill per place (icon, name, distance · time), no lines ───
+    // Pills that would overlap a nearer one shrink to just their icon (hover still tells all);
+    // this is recomputed whenever the map zooms or moves.
+    function drawPills(list, target) {
+      const order = [...list].sort((a, b) => (target && placeKey(b) === placeKey(target)) - (target && placeKey(a) === placeKey(target)) || a.km - b.km);
+      const ms = order.map((p) => {
+        const on = !!target && placeKey(p) === placeKey(target);
+        const m = L.marker([p.lat, p.lng], {
+          zIndexOffset: on ? 1500 : 800 - Math.round(p.km * 10),
+          icon: L.divIcon({ className: "", iconSize: null, iconAnchor: [0, 0], html: `<div class="hr-pill${on ? " hr-pill-on" : ""}" style="--c:${KINDS[p.kind].colour}"><i>${glyph(p.kind, 15)}</i><span><b>${nameOf(p)}</b><em>${fmtKm(p.km)} · ${span(p)}</em></span></div>` }),
+        }).bindTooltip(tipHtml(p, p), { direction: "top", offset: [0, -16], className: "hr-tip" })
+          .on("click", () => setPicked(on ? null : placeKey(p))).addTo(layer);
+        return m;
+      });
+      const layout = () => {
+        const placed = [];
+        ms.forEach((m) => {
+          const el = m.getElement()?.firstElementChild;
+          if (!el) return;
+          el.classList.remove("hr-pill-mini");
+          const r = el.getBoundingClientRect();
+          const hit = placed.some((q) => !(r.right < q.left || r.left > q.right || r.bottom < q.top || r.top > q.bottom));
+          if (hit) { el.classList.add("hr-pill-mini"); placed.push(el.getBoundingClientRect()); } else placed.push(r);
+        });
+      };
+      map.on("zoomend moveend", layout);
+      setTimeout(layout, 150);
+      cleanups.push(() => map.off("zoomend moveend", layout));
+    }
+    const cleanups = [];
+
     // ─── Route view: a "route tree" ───
     // Roads that several trips share form the glowing main line; where a trip leaves it there is a
     // white junction dot, and the rest of the way is a dotted branch to the stop (pulse ring + bracket label).
@@ -302,15 +335,12 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onSelec
     const target = picked ? Object.values(around).flat().find((p) => placeKey(p) === picked) : null;
     // Activities first, then food, bus stands and meeting points on top (they share roads); the picked one last.
     if (route) drawTree(drawn, target);
-    else {
-      [...drawn].reverse().forEach((p) => { if (!target || placeKey(p) !== placeKey(target)) line(p, false); });
-      if (target) line(target, true);
-    }
+    else drawPills(drawn, target);
     // Frame everything drawn except the airport (it is far); a picked row frames just that pair.
     const near = drawn.filter((p) => p.kind !== "airport");
     const pts = [from, ...(target ? [[target.lat, target.lng]] : near.map((p) => [p.lat, p.lng]))];
     const tm = setTimeout(() => { map.invalidateSize(); map.fitBounds(pts, { paddingTopLeft: [padL, 60], paddingBottomRight: [200, 100], maxZoom: target ? 15 : 16 }); }, 80);
-    return () => clearTimeout(tm);
+    return () => { clearTimeout(tm); cleanups.forEach((f) => f()); };
   }, [focus, around, picked, hotels, centre, show, route, anchor, radius, nearList]);
 
   useEffect(() => {
@@ -380,6 +410,22 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onSelec
         .hr-brk em { font-style: normal; font-size: 10.5px; color: #667085; }
         .hr-brk:hover, .hr-brk-on { background: #fff; box-shadow: 0 2px 8px rgba(24,30,76,.15); }
         .hr-brk-on b { color: #3D5AFE; }
+        .hr-hotel { transform: translate(-22px, -22px); display: flex; align-items: center; gap: 8px; padding: 4px 14px 4px 4px; background: ${NAVY}; border-radius: 999px; border: 2.5px solid #fff; box-shadow: 0 0 0 4px rgba(24,30,76,.18), 0 4px 12px rgba(24,30,76,.45); white-space: nowrap; font-family: Figtree, Inter, system-ui, sans-serif; }
+        .hr-hotel-ico { width: 34px; height: 34px; border-radius: 50%; background: #FDB022; display: flex; align-items: center; justify-content: center; }
+        .hr-hotel-ico svg { stroke: ${NAVY}; }
+        .hr-hotel-txt { display: flex; flex-direction: column; line-height: 1.15; color: #fff; }
+        .hr-hotel-txt small { font-size: 9.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #FDB022; }
+        .hr-hotel-txt b { font-size: 13.5px; font-weight: 700; }
+        .hr-pill { transform: translate(-17px, -50%); display: flex; align-items: center; gap: 8px; padding: 3px 12px 3px 3px; background: #fff; border-radius: 999px; box-shadow: 0 2px 10px rgba(15,23,42,.18); white-space: nowrap; cursor: pointer; font-family: Figtree, Inter, system-ui, sans-serif; border: 1.5px solid transparent; transition: box-shadow .15s; }
+        .hr-pill i { width: 30px; height: 30px; flex: none; border-radius: 50%; background: var(--c); display: flex; align-items: center; justify-content: center; }
+        .hr-pill span { display: flex; flex-direction: column; line-height: 1.2; }
+        .hr-pill b { font-size: 12.5px; font-weight: 700; color: #181D27; max-width: 170px; overflow: hidden; text-overflow: ellipsis; }
+        .hr-pill em { font-style: normal; font-size: 11px; color: #667085; }
+        .hr-pill:hover { box-shadow: 0 4px 14px rgba(15,23,42,.28); z-index: 1; }
+        .hr-pill-on { border-color: var(--c); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 25%, transparent), 0 4px 14px rgba(15,23,42,.25); }
+        .hr-pill-mini { padding: 3px; gap: 0; }
+        .hr-pill-mini span { display: none; }
+        .hr-pill-mini i { width: 24px; height: 24px; }
         .hr-tipcard { display: flex; flex-direction: column; gap: 2px; width: 230px; white-space: normal; }
         .hr-tipkind { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; }
         .hr-tipabout { color: #475467; font-size: 12px; line-height: 1.35; }
