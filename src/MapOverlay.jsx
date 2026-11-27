@@ -184,7 +184,10 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onSelec
       const total = lowest(h).pricing.selling_price * ctx.nights;
       const isFocus = h.id === focusId;
       const cls = isFocus ? "hr-pin-focus" : focusId ? "hr-pin-dim" : h.id === ctx.currentId ? "hr-pin-sel" : "";
-      L.marker([h.coords.lat, h.coords.lng], { icon: pin(isFocus ? `★ ${h.name}` : h.near && !focusId ? `${inr(total)}<span class="hr-pin-km">${fmtKm(h.near.km)}</span>` : inr(total), cls), zIndexOffset: isFocus ? 2000 : h.id === ctx.currentId ? 1000 : 0 })
+      const icon = isFocus && route
+        ? L.divIcon({ className: "", iconSize: null, iconAnchor: [0, 0], html: `<div class="hr-dest"><span class="hr-ring"></span><span class="hr-ring hr-ring2"></span><svg viewBox="0 0 24 24" width="34" height="34"><path d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7z" fill="${NAVY}" stroke="#fff" stroke-width="1.5"/><circle cx="12" cy="9" r="2.6" fill="#fff"/></svg><b>${h.name}</b></div>` })
+        : pin(isFocus ? `★ ${h.name}` : h.near && !focusId ? `${inr(total)}<span class="hr-pin-km">${fmtKm(h.near.km)}</span>` : inr(total), cls);
+      L.marker([h.coords.lat, h.coords.lng], { icon, zIndexOffset: isFocus ? 2000 : h.id === ctx.currentId ? 1000 : 0 })
         .on("click", () => setFocusId(h.id))
         .addTo(layer);
     });
@@ -212,6 +215,53 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onSelec
     }
     const from = [focus.coords.lat, focus.coords.lng];
     const nameOf = (p) => p.name.replace(/^Meeting point · /, "");
+    // ─── Route view: a "route tree" ───
+    // Roads that several trips share form the glowing main line; where a trip leaves it there is a
+    // white junction dot, and the rest of the way is a dotted branch to the stop (pulse ring + bracket label).
+    function drawTree(list, target) {
+      const key = (q) => `${q[0].toFixed(5)},${q[1].toFixed(5)}`;
+      const items = list.map((p) => ({ p, legs: tripLegs(focus.coords, p) || [{ kind: "car", path: [from, [p.lat, p.lng]] }] }));
+      const uses = new Map();
+      items.forEach(({ legs }) => {
+        const seen = new Set();
+        legs.filter((l) => l.kind !== "boat").forEach((l) => l.path.forEach((q) => { const k = key(q); if (!seen.has(k)) { seen.add(k); uses.set(k, (uses.get(k) || 0) + 1); } }));
+      });
+      const glow = (path, strong) => {
+        L.polyline(path, { color: "#5B7CFF", weight: strong ? 16 : 12, opacity: 0.12, lineCap: "round", lineJoin: "round", interactive: false }).addTo(layer);
+        L.polyline(path, { color: "#3D5AFE", weight: strong ? 5 : 3.5, opacity: 1, lineCap: "round", lineJoin: "round", interactive: false }).addTo(layer);
+      };
+      const dotted = (path, colour = "#6172A8") => L.polyline(path, { color: colour, weight: 3, opacity: 0.95, dashArray: "1 7", lineCap: "round", interactive: false }).addTo(layer);
+      const junctions = new Set();
+      items.forEach(({ p, legs }) => {
+        const isT = !!target && placeKey(p) === placeKey(target);
+        legs.forEach((leg) => {
+          if (leg.path.length < 2) return;
+          if (leg.kind === "boat") { dotted(leg.path, "#1570EF"); return; }
+          const path = leg.path;
+          let j = 0;
+          for (let i = 0; i < path.length; i++) if ((uses.get(key(path[i])) || 0) > 1) j = i;
+          const solid = p.kind === "airport" || isT || j >= path.length - 2;
+          if (solid) { glow(path, isT); return; }
+          if (j > 0) glow(path.slice(0, j + 1), false);
+          dotted(path.slice(j));
+          if (j > 0) junctions.add(key(path[j]) + "|" + path[j][0] + "|" + path[j][1]);
+        });
+      });
+      junctions.forEach((v) => {
+        const [, lat, lng] = v.split("|");
+        L.marker([+lat, +lng], { interactive: false, zIndexOffset: 300, icon: L.divIcon({ className: "", iconSize: null, iconAnchor: [0, 0], html: '<div class="hr-junction"></div>' }) }).addTo(layer);
+      });
+      items.forEach(({ p }) => {
+        const isT = !!target && placeKey(p) === placeKey(target);
+        L.marker([p.lat, p.lng], { zIndexOffset: 400, icon: L.divIcon({ className: "", iconSize: null, iconAnchor: [0, 0], html: `<div class="hr-stop" style="--c:${KINDS[p.kind].colour}"><span class="hr-ring"></span><span class="hr-ring hr-ring2"></span><i>${glyph(p.kind, 11)}</i></div>` }) })
+          .bindTooltip(tipHtml(p, p), { direction: "top", offset: [0, -14], className: "hr-tip" })
+          .on("click", () => setPicked(placeKey(p))).addTo(layer);
+        L.marker([p.lat, p.lng], { zIndexOffset: isT ? 950 : 600, icon: L.divIcon({ className: "", iconSize: null, iconAnchor: [0, 0], html: `<div class="hr-brk${isT ? " hr-brk-on" : ""}"><small>${nameOf(p)}</small><b>${span(p)}</b><em>${fmtKm(p.km)} · ${p.mode === "walk" ? "walk" : p.mode === "boat + drive" ? "car + boat" : "drive"}</em></div>` }) })
+          .bindTooltip(tipHtml(p, p), { direction: "top", offset: [0, -10], className: "hr-tip" })
+          .on("click", () => setPicked(placeKey(p))).addTo(layer);
+      });
+    }
+
     // Both views draw the same road route and the same label (time · distance, at the same spot on the road);
     // Stops keeps the street map and a lighter dashed line, Route is the clean Strava-style view.
     const line = (p, strong) => {
@@ -251,8 +301,11 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onSelec
     const drawn = ORDER.flatMap((k) => around[k] || []).filter((p) => show[p.kind]);
     const target = picked ? Object.values(around).flat().find((p) => placeKey(p) === picked) : null;
     // Activities first, then food, bus stands and meeting points on top (they share roads); the picked one last.
-    [...drawn].reverse().forEach((p) => { if (!target || placeKey(p) !== placeKey(target)) line(p, false); });
-    if (target) line(target, true);
+    if (route) drawTree(drawn, target);
+    else {
+      [...drawn].reverse().forEach((p) => { if (!target || placeKey(p) !== placeKey(target)) line(p, false); });
+      if (target) line(target, true);
+    }
     // Frame everything drawn except the airport (it is far); a picked row frames just that pair.
     const near = drawn.filter((p) => p.kind !== "airport");
     const pts = [from, ...(target ? [[target.lat, target.lng]] : near.map((p) => [p.lat, p.lng]))];
@@ -310,6 +363,23 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onSelec
         .hr-pin-km { margin-left: 6px; padding-left: 6px; border-left: 1px solid rgba(255,255,255,.35); font-weight: 500; font-size: 11.5px; opacity: .9; }
         .hr-anchor { transform: translate(-13px, -13px); display: inline-flex; align-items: center; gap: 5px; color: #fff; font: 700 12px/1 Figtree, Inter, system-ui, sans-serif; padding: 6px 10px 6px 7px; border-radius: 999px; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(15,23,42,.35); white-space: nowrap; }
         .z-\\[70\\] .leaflet-bottom { bottom: 50px; }
+        .hr-dest { position: relative; transform: translate(-17px, -34px); display: flex; flex-direction: column; align-items: center; }
+        .hr-dest svg { position: relative; filter: drop-shadow(0 3px 4px rgba(24,30,76,.35)); }
+        .hr-dest b { margin-top: 2px; background: #fff; color: ${NAVY}; font: 700 11.5px/1.2 Figtree, Inter, system-ui, sans-serif; padding: 3px 8px; border-radius: 6px; white-space: nowrap; box-shadow: 0 1px 4px rgba(15,23,42,.2); }
+        .hr-dest .hr-ring { position: absolute; left: 50%; top: 30px; width: 44px; height: 18px; margin: -9px 0 0 -22px; border: 2px solid #3D5AFE; border-radius: 50%; opacity: .55; animation: hr-pulse 2.2s ease-out infinite; }
+        .hr-stop { position: relative; transform: translate(-50%, -50%); width: 22px; height: 22px; }
+        .hr-stop i { position: absolute; inset: 0; border-radius: 50%; background: var(--c); border: 2px solid #fff; box-shadow: 0 1px 4px rgba(15,23,42,.35); display: flex; align-items: center; justify-content: center; }
+        .hr-stop .hr-ring { position: absolute; left: 50%; top: 50%; width: 34px; height: 34px; margin: -17px 0 0 -17px; border: 2px solid var(--c); border-radius: 50%; opacity: .5; animation: hr-pulse 2.2s ease-out infinite; }
+        .hr-ring2 { animation-delay: 1.1s !important; }
+        @keyframes hr-pulse { 0% { transform: scale(.6); opacity: .6; } 100% { transform: scale(1.7); opacity: 0; } }
+        .hr-junction { transform: translate(-50%, -50%); width: 14px; height: 9px; border-radius: 50%; background: #fff; border: 1.5px solid #C7CEE8; box-shadow: 0 2px 3px rgba(24,30,76,.3); }
+        .hr-brk { position: relative; transform: translate(14px, calc(-100% - 10px)); padding: 4px 10px 5px; font-family: Figtree, Inter, system-ui, sans-serif; color: ${NAVY}; background: rgba(255,255,255,.82); white-space: nowrap; cursor: pointer; display: flex; flex-direction: column; line-height: 1.15; border-left: 1.5px solid #8A94B8; border-right: 1.5px solid #8A94B8; }
+        .hr-brk { border-image: linear-gradient(to bottom, #8A94B8 0 6px, transparent 6px calc(100% - 6px), #8A94B8 calc(100% - 6px)) 1; }
+        .hr-brk small { font-size: 9.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: #667085; max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
+        .hr-brk b { font-size: 15px; font-weight: 600; }
+        .hr-brk em { font-style: normal; font-size: 10.5px; color: #667085; }
+        .hr-brk:hover, .hr-brk-on { background: #fff; box-shadow: 0 2px 8px rgba(24,30,76,.15); }
+        .hr-brk-on b { color: #3D5AFE; }
         .hr-tipcard { display: flex; flex-direction: column; gap: 2px; width: 230px; white-space: normal; }
         .hr-tipkind { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; }
         .hr-tipabout { color: #475467; font-size: 12px; line-height: 1.35; }
