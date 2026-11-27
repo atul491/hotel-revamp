@@ -51,19 +51,19 @@ export function Tags({ h, v, className = "" }) {
 }
 
 // ─── Top bar with the city stepper ───
-export function TopBar({ v, city, setCity, stays, support }) {
+export function TopBar({ v, city, setCity, stays, support, onBack, onContinue }) {
   const done = (i) => !!stays?.[i]?.done;
   const btn = "px-4 py-1.5 text-[13.5px] font-bold border-[1.5px]";
   const left = (
     <div className="flex items-center gap-2">
-      <button className={btn} style={{ borderRadius: "var(--rp)", borderColor: "var(--accent)", color: "var(--accent)" }}>Back</button>
+      <button onClick={onBack} className={btn} style={{ borderRadius: "var(--rp)", borderColor: "var(--accent)", color: "var(--accent)" }}>Back</button>
     </div>
   );
   const right = (
     <div className="flex items-center gap-2">
       {support === "link" && <button className="text-[13px] font-semibold text-sub flex items-center gap-1 mr-1"><Headphones size={14} /> Need help?</button>}
       <button className={btn} style={{ borderRadius: "var(--rp)", borderColor: "#D5D7DA", color: "#A4A7AE" }}>Modify</button>
-      <button className={btn} style={{ borderRadius: "var(--rp)", borderColor: "var(--accent)", background: "var(--accent)", color: "#fff" }}>Continue</button>
+      <button onClick={onContinue} className={btn} style={{ borderRadius: "var(--rp)", borderColor: "var(--accent)", background: "var(--accent)", color: "#fff" }}>Continue</button>
     </div>
   );
   let mid;

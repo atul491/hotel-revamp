@@ -12,7 +12,7 @@ import { Slot, usePickedUser } from "./user";
 import { TRIP_STAYS, CITY_CENTRE } from "./data/ibHotels";
 
 // ─── The IB hotel selection screen, every part switchable from /options ───
-export default function Screen({ stay, onOpenHotel, sources = false, fixedSupport = true }) {
+export default function Screen({ stay, onOpenHotel, sources = false, fixedSupport = true, onBack, onContinue, banner }) {
   const { picks, vars } = useDesign();
   const { list, ctx, h, openId, setOpenId, filters, setFilters, priceRange, wish, setWish, booking, setBooking, stays, trip, city, setCity } = stay;
   const [expanded, setExpanded] = useState({});
@@ -157,7 +157,8 @@ export default function Screen({ stay, onOpenHotel, sources = false, fixedSuppor
   return (
     <ViewCtx.Provider value={{ mode: "seller", sources }}>
       <div className="relative h-full flex flex-col min-h-0" style={{ ...vars, background: "var(--page)" }}>
-        <Slot k="topBar" s={S}><TopBar v={picks.topBar} city={city} setCity={goCity} stays={stays} support={picks.support} /></Slot>
+        <Slot k="topBar" s={S}><TopBar v={picks.topBar} city={city} setCity={goCity} stays={stays} support={picks.support} onBack={onBack} onContinue={onContinue} />
+        {banner}</Slot>
         <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto">
           <div className="flex gap-4 p-4 items-start">
             {picks.filters === "column" && (
