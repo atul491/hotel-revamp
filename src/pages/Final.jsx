@@ -7,7 +7,7 @@ const O = FINAL.picks;
 
 // My recommended page: one pick per element, frozen, with the reason for each.
 export default function Final() {
-  const [why, setWhy] = useState(true);
+  const [why, setWhy] = useState(false); // design notes: open from the top bar, closed by default
   const right = (
     <>
       <button onClick={() => setWhy(!why)} className="font-semibold border border-white/25 rounded px-2.5 py-1 flex items-center gap-1"><ListChecks size={13} /> Why these picks</button>

@@ -216,7 +216,8 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onSelec
       return () => clearTimeout(t);
     }
     const from = [focus.coords.lat, focus.coords.lng];
-    const nameOf = (p) => p.name.replace(/^Meeting point · /, "");
+    // Meeting points keep their label, so "Sampalan Harbour" the bus stand and the meeting point never look alike.
+    const nameOf = (p) => (p.kind === "meeting" ? p.name : p.name.replace(/^Meeting point · /, ""));
     // ─── Map screen: one pill per place (icon, name, distance · time), no lines ───
     // Pills that would overlap a nearer one shrink to just their icon (hover still tells all);
     // this is recomputed whenever the map zooms or moves.

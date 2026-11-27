@@ -1,3 +1,5 @@
+import { nearest, placeName, fmtKm, tripText, span } from "../data/places";
+import { KindDot, ReachTag } from "./NearPlace";
 import { useState } from "react";
 import { ChevronDown, ChevronRight, MapPin, Sparkles, BadgeCheck, Navigation, Plane, Waves as WavesIco } from "lucide-react";
 import { H2, Ico, GoodBad, SourceLogo, SOURCE_NAME, Stars, DataSource, SellerNote } from "../kit";
@@ -199,9 +201,25 @@ export function Amenities({ h, v }) {
 
 // ─── Location ───
 export function Location({ h, v }) {
-  // Nearby tabs in the order sellers asked for; any extra group goes last.
+  // Nearby tabs, built from the same places and road distances as the map (this hotel's own city),
+  // so every time and distance here matches the map and the Route view.
   const ORDER = ["Transport", "Attractions", "Food and drink"];
+  const roadNearby = h.coords && h.city ? {
+    Transport: ["airport", "transit", "meeting"].flatMap((k) => nearest(h.city, k, h.coords, 99)),
+    Attractions: nearest(h.city, "activity", h.coords, 99),
+    "Food and drink": nearest(h.city, "food", h.coords, 99),
+  } : null;
+  const nearbyAll = roadNearby
+    ? Object.fromEntries(Object.entries(roadNearby).filter(([, l]) => l.length).map(([g, l]) => [g, l.map((p) => ({
+        name: p.kind === "meeting" ? `Meeting point · ${placeName(p)}` : placeName(p),
+        kind: p.kind, about: p.about, trip: p,
+        distance: fmtKm(p.km), time: tripText(p),
+        tags: [/indian/i.test(p.name) && "indian", /pure veg/i.test(p.name) && "pureveg"].filter(Boolean),
+      }))]))
+    : h.nearby;
+  h = { ...h, nearby: nearbyAll };
   const groups = [...ORDER.filter((k) => h.nearby[k]), ...Object.keys(h.nearby).filter((k) => !ORDER.includes(k))];
+  const airport = roadNearby?.Transport.find((p) => p.kind === "airport");
   const [tab, setTab] = useState(groups[0]);
   const m = h.ib?.master || {};
   const title = <H2>Where you'll be<DataSource s="both" /></H2>;
@@ -219,7 +237,7 @@ export function Location({ h, v }) {
     return (
       <section>{title}{address}
         <div className="flex flex-wrap gap-1.5 mt-3">
-          {[[Navigation, `${h.distanceFromCenter} km to centre`], [WavesIco, `${m.distance_from_beach_km ?? 0.2} km to the beach`], [Plane, "40 min to airport"]].map(([I, t]) => (
+          {[[Navigation, `${h.distanceFromCenter} km to centre`], [WavesIco, `${m.distance_from_beach_km ?? 0.2} km to the beach`], [Plane, airport ? `${span(airport)} to airport` : "Airport: —"]].map(([I, t]) => (
             <span key={t} className="inline-flex items-center gap-1 border border-divider px-2.5 py-1 text-[12px]" style={{ borderRadius: "var(--rp)" }}><I size={13} /> {t}</span>
           ))}
         </div>{seller}
@@ -248,12 +266,12 @@ export function Location({ h, v }) {
         ))}
       </div>
       <div className="divide-y divide-divider">
-        {h.nearby[tab].slice(0, 4).map((n) => (
-          <div key={n.name} className="flex gap-2.5 py-2.5 items-center">
-            <img src={n.image} className="w-[58px] h-[58px] object-cover shrink-0" style={{ borderRadius: "var(--rw)" }} />
-            <div className="text-[12.5px] min-w-0">
+        {(h.nearby[tab] || []).map((n) => (
+          <div key={n.name} className="flex gap-2.5 py-2.5 items-center" title={n.about || undefined}>
+            {n.kind ? <KindDot kind={n.kind} size={36} /> : <img src={n.image} className="w-[58px] h-[58px] object-cover shrink-0" style={{ borderRadius: "var(--rw)" }} />}
+            <div className="text-[12.5px] min-w-0 flex-1">
               <div className="font-bold text-[13px] truncate">{n.name}</div>
-              <div className="text-sub">★ {n.rating} ({n.count?.toLocaleString("en-IN")}) · {n.distance} · {n.time}</div>
+              <div className="text-sub flex items-center gap-1.5 flex-wrap">{n.rating ? <>★ {n.rating} ({n.count?.toLocaleString("en-IN")}) · </> : null}{n.time} · {n.distance}{n.trip && <ReachTag d={n.trip} />}</div>
               <div className="flex gap-1 mt-0.5">
                 {n.tags?.includes("indian") && <span className="text-[10.5px] font-bold px-1.5 rounded bg-[#FFF4E0] text-[#B54708]">Indian</span>}
                 {n.tags?.includes("pureveg") && <span className="text-[10.5px] font-bold px-1.5 rounded bg-[#ECFDF3] text-[#027A48]">Pure veg</span>}
