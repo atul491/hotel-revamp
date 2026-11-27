@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { X, ChevronDown, ChevronLeft, Check, ExternalLink, Search, MapPin, Route as RouteIco } from "lucide-react";
+import { X, ChevronDown, ChevronLeft, Check, ExternalLink, Search, MapPin } from "lucide-react";
 import { inr, Ico, amenityIcon } from "./kit";
 import { PLACES, KINDS, nearest, fmtKm, findPlace, placeName, span, tripText, trip } from "./data/places";
 import { PlacePicker, ReachTag, clearNear } from "./blocks/NearPlace";
@@ -53,6 +53,17 @@ function tipHtml(p, d) {
     + (p.about ? `<span class="hr-tipabout">${p.about}</span>` : "")
     + (d && d.km != null ? `<span class="hr-tipdist">${fmtKm(d.km)} · ${tripText(d)} from the hotel${d.via ? ` (fast boat from ${d.via})` : ""}${d.road ? "" : " · straight line"}</span>` : "")
     + `</div>`;
+}
+
+// Strava-style route icon: a winding path from a hollow start dot to a solid finish dot.
+function RouteIco({ size = 16 }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M5.5 18.5c2.5 0 3-2.2 4.4-4.6 1.3-2.2 2.7-1.7 3.8-.2 1.2 1.6 2.6 1.6 3.4-.6.8-2.1-.4-3.4-2.1-4.2-1.6-.8-1.9-2.4-.6-3.4" />
+      <circle cx="4.2" cy="18.6" r="2" fill="none" />
+      <circle cx="15.4" cy="4.6" r="2.1" fill="currentColor" stroke="none" />
+    </svg>
+  );
 }
 
 const TYPE_OPTS = ["Private", "SIC", "Gold", "Silver", "Bronze"];
@@ -511,7 +522,7 @@ function FilterBar({ f, set, range, count, show, setShow, route, canRoute, toggl
           title={canRoute ? (route ? "Back to the street map" : "Show only the routes from this hotel on a plain map") : "Pick a hotel first to see its routes"}
           className={`flex items-center gap-1.5 h-7 px-3 rounded-full border text-[12.5px] font-bold whitespace-nowrap transition-colors ${canRoute ? "" : "opacity-40 cursor-not-allowed"}`}
           style={route && canRoute ? { background: NAVY, borderColor: NAVY, color: "#fff" } : { borderColor: NAVY, color: NAVY, background: "#fff" }}>
-          {route && canRoute ? <Check size={13} strokeWidth={3} /> : <RouteIco size={13} />} Route
+          <RouteIco size={16} /> Route{route && canRoute && <Check size={12} strokeWidth={3} />}
         </button>
       )}
       {active > 0 && (
