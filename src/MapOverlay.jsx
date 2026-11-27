@@ -51,7 +51,7 @@ function tipHtml(p, d) {
   return `<div class="hr-tipcard"><b>${p.name.replace(/^Meeting point · /, "")}</b>`
     + `<span class="hr-tipkind" style="color:${k.colour}">${k.label.replace(/s$/, "")}${p.trailix ? " · Trailix activity" : ""}</span>`
     + (p.about ? `<span class="hr-tipabout">${p.about}</span>` : "")
-    + (d && d.km != null ? `<span class="hr-tipdist">${fmtKm(d.km)} · ${tripText(d)} from the hotel${d.via ? ` (fast boat from ${d.via})` : ""}${d.road ? "" : " · straight line"}</span>` : "")
+    + (d && d.km != null ? `<span class="hr-tipdist">${tripText(d)} · ${fmtKm(d.km)} from the hotel${d.via ? ` (fast boat from ${d.via})` : ""}${d.road ? "" : " · straight line"}</span>` : "")
     + `</div>`;
 }
 
@@ -212,41 +212,36 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onSelec
     }
     const from = [focus.coords.lat, focus.coords.lng];
     const nameOf = (p) => p.name.replace(/^Meeting point · /, "");
+    // Both views draw the same road route and the same label (time · distance, at the same spot on the road);
+    // Stops keeps the street map and a lighter dashed line, Route is the clean Strava-style view.
     const line = (p, strong) => {
       const c = KINDS[p.kind].colour;
+      const legs = tripLegs(focus.coords, p) || [{ kind: "car", path: [from, [p.lat, p.lng]] }];
+      legs.forEach((leg) => {
+        if (leg.path.length < 2) return;
+        const boat = leg.kind === "boat";
+        L.polyline(leg.path, route
+          ? { color: boat ? "#1570EF" : c, weight: strong ? 5 : 3.5, opacity: strong ? 1 : 0.9, dashArray: boat ? "8 7" : leg.kind === "foot" ? "1 7" : null, lineCap: "round", lineJoin: "round", interactive: false }
+          : { color: boat ? "#1570EF" : c, weight: strong ? 4.5 : 2.5, opacity: strong ? 0.95 : 0.75, dashArray: strong && !boat ? null : "6 6", lineCap: "round", lineJoin: "round", interactive: false },
+        ).addTo(layer);
+      });
+      const along = legs.reduce((a, b) => (b.path.length > a.path.length ? b : a)).path;
       if (route) {
-        // Strava-style: the actual road (or footpath) from the hotel, one clean line; fast boat dashed over the sea.
-        const legs = tripLegs(focus.coords, p) || [{ kind: "car", path: [from, [p.lat, p.lng]] }];
-        legs.forEach((leg) => {
-          if (leg.path.length < 2) return;
-          L.polyline(leg.path, {
-            color: leg.kind === "boat" ? "#1570EF" : c, weight: strong ? 5 : 3.5, opacity: strong ? 1 : 0.9,
-            dashArray: leg.kind === "boat" ? "8 7" : leg.kind === "foot" ? "1 7" : null, lineCap: "round", lineJoin: "round", interactive: false,
-          }).addTo(layer);
-        });
-        const along = legs.reduce((a, b) => (b.path.length > a.path.length ? b : a)).path;
         L.marker([p.lat, p.lng], { icon: placeIcon(p.kind), zIndexOffset: 400 })
           .bindTooltip(tipHtml(p, p), { direction: "top", offset: [0, -12], className: "hr-tip" })
           .on("click", () => setPicked(placeKey(p)))
           .addTo(layer);
         L.marker([p.lat, p.lng], { interactive: false, icon: L.divIcon({ className: "", iconSize: null, iconAnchor: [0, 0], html: `<div class="hr-rname">${nameOf(p)}</div>` }) }).addTo(layer);
-        const t = p.kind === "airport" ? Math.min(0.5, 1.1 / p.km) : 0.5;
-        const at = along.length > 2 ? along[Math.min(along.length - 1, Math.round((along.length - 1) * t))] : [from[0] + (p.lat - from[0]) * t, from[1] + (p.lng - from[1]) * t];
-        L.marker(at, {
-          zIndexOffset: strong ? 900 : 500,
-          icon: L.divIcon({ className: "", iconSize: null, iconAnchor: [0, 0], html: `<div class="hr-dist hr-dist-route${strong ? " hr-dist-strong" : ""}">${glyph(p.kind, 11, c)}${span(p)} · ${fmtKm(p.km)}</div>` }),
-        }).bindTooltip(tipHtml(p, p), { direction: "top", offset: [0, -10], className: "hr-tip" })
-          .on("click", () => setPicked(placeKey(p))).addTo(layer);
-        return;
       }
-      L.polyline([from, [p.lat, p.lng]], { color: c, weight: strong ? 4 : 2, opacity: strong ? 0.95 : 0.7, dashArray: strong ? null : "5 6", interactive: false }).addTo(layer);
-      // Label sits next to the place it measures (so labels spread out with the places);
-      // the airport is far, so its label stays about 1 km out from the hotel, in view.
-      const t = p.kind === "airport" ? Math.min(0.5, 1.1 / p.km) : 0.82;
-      const at = [from[0] + (p.lat - from[0]) * t, from[1] + (p.lng - from[1]) * t];
+      // Label halfway along the road; the airport's stays about 1 km out from the hotel so it is in view.
+      const t = p.kind === "airport" ? Math.min(0.5, 1.1 / p.km) : 0.5;
+      const at = along.length > 2 ? along[Math.min(along.length - 1, Math.round((along.length - 1) * t))] : [from[0] + (p.lat - from[0]) * t, from[1] + (p.lng - from[1]) * t];
+      const text = `${glyph(p.kind, 11, route ? c : c)}${span(p)} · ${fmtKm(p.km)}`;
       L.marker(at, {
         zIndexOffset: strong ? 900 : 500,
-        icon: L.divIcon({ className: "", iconSize: null, iconAnchor: [0, 0], html: `<div class="hr-dist${strong ? " hr-dist-strong" : ""}" style="border-color:${c};color:${c}">${glyph(p.kind, 11, c)}${fmtKm(p.km)} · ${span(p)}</div>` }),
+        icon: L.divIcon({ className: "", iconSize: null, iconAnchor: [0, 0], html: route
+          ? `<div class="hr-dist hr-dist-route${strong ? " hr-dist-strong" : ""}">${text}</div>`
+          : `<div class="hr-dist${strong ? " hr-dist-strong" : ""}" style="border-color:${c};color:${c}">${text}</div>` }),
       })
         .bindTooltip(tipHtml(p, p), { direction: "top", offset: [0, -10], className: "hr-tip" })
         .on("click", () => setPicked(placeKey(p)))
@@ -368,7 +363,7 @@ function HotelList({ hotels, ctx, onPick, city, anchor, f, set }) {
                   <span className="truncate">{h.neighbourhood}</span>
                 </div>
                 {h.near ? (
-                  <div className="flex items-center gap-1.5 min-w-0"><span className="text-[11.5px] font-semibold truncate" style={{ color: KINDS[h.near.place.kind].colour }}>{fmtKm(h.near.km)} · {tripText(h.near)} to {name(h.near.place)}</span><ReachTag d={h.near} /></div>
+                  <div className="flex items-center gap-1.5 min-w-0"><span className="text-[11.5px] font-semibold truncate" style={{ color: KINDS[h.near.place.kind].colour }}>{tripText(h.near)} · {fmtKm(h.near.km)} to {name(h.near.place)}</span><ReachTag d={h.near} /></div>
                 ) : near && <div className="flex items-center gap-1.5 min-w-0"><span className="text-[11.5px] text-sub truncate">📍 {fmtKm(near.km)} to meeting point</span><ReachTag d={near} /></div>}
                 <div className="text-[13px] font-extrabold" style={{ color: NAVY }}>{inr(r.pricing.selling_price * ctx.nights)} <span className="text-[11px] font-medium text-sub">({ctx.nights} nights)</span></div>
               </div>
@@ -437,7 +432,7 @@ function FocusPanel({ h, ctx, around, picked, setPicked, onBack, onOpenDetails, 
                     <span className="flex-1 min-w-0">
                       <span className="block truncate">{p.name.replace(/^Meeting point · /, "")}{i === 0 && <span className="ml-1 text-[10px] font-bold uppercase" style={{ color: k.colour }}>nearest</span>}</span>
                     </span>
-                    <span className="text-right shrink-0 text-sub whitespace-nowrap flex flex-col items-end gap-0.5"><span><b className="text-head">{fmtKm(p.km)}</b> · {tripText(p)}</span><ReachTag d={p} /></span>
+                    <span className="text-right shrink-0 text-sub whitespace-nowrap flex flex-col items-end gap-0.5"><span>{tripText(p)} · <b className="text-head">{fmtKm(p.km)}</b></span><ReachTag d={p} /></span>
                   </button>
                 );
               })}
