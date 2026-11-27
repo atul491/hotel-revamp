@@ -108,6 +108,34 @@ export function span(t) {
   return `${fmtMin(t.min)} – ${fmtMin(t.max)}`;
 }
 export const tripText = (t) => `${span(t)} ${t.mode === "walk" ? "walk" : t.mode === "boat + drive" ? "by car + boat" : "drive"}`;
+// Google-encoded polyline → [[lat, lng], …]
+export function decodeLine(str) {
+  if (!str) return [];
+  const pts = [];
+  let i = 0, lat = 0, lng = 0;
+  while (i < str.length) {
+    for (const which of [0, 1]) {
+      let b, shift = 0, out = 0;
+      do { b = str.charCodeAt(i++) - 63; out |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
+      const d = out & 1 ? ~(out >> 1) : out >> 1;
+      if (which === 0) lat += d; else lng += d;
+    }
+    pts.push([lat / 1e5, lng / 1e5]);
+  }
+  return pts;
+}
+// The road shape(s) for a trip: [{ kind: "car" | "foot" | "boat", path }]
+export function tripLegs(from, p) {
+  const r = from && ROAD[`${from.lat},${from.lng}|${p.name}`];
+  if (!r || !r.car) return null;
+  if (r.foot && r.foot.km <= 2) return [{ kind: "foot", path: decodeLine(r.foot.geo) }];
+  if (r.car.boat) return [
+    { kind: "car", path: decodeLine(r.car.geo) },
+    { kind: "boat", path: [r.car.harbour, r.car.sanur] },
+    { kind: "car", path: decodeLine(r.car.geo2) },
+  ];
+  return [{ kind: "car", path: decodeLine(r.car.geo) }];
+}
 export function roadTrip(from, p) {
   const r = from && ROAD[`${from.lat},${from.lng}|${p.name}`];
   if (!r || !r.car) return null;

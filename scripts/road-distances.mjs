@@ -1,7 +1,7 @@
 // Road distance and drive / walk time from every hotel to every place in its city.
 // Uses OpenStreetMap routing (routing.openstreetmap.de). Re-run when hotels or places change:
 //   node scripts/road-distances.mjs
-// Writes src/data/roadDistances.js. Times are free-flow; the app widens drives into a traffic range.
+// Writes src/data/roadDistances.js (geo = Google-encoded polyline of the road, precision 5). Times are free-flow; the app widens drives into a traffic range.
 import { readFileSync, writeFileSync } from "node:fs";
 import { PLACES } from "../src/data/places.js";
 
@@ -12,14 +12,14 @@ for (let m; (m = re.exec(src)); ) hotels.push({ id: m[1], city: m[2], lat: +m[3]
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 async function route(profile, a, b) {
-  const url = `https://routing.openstreetmap.de/routed-${profile}/route/v1/driving/${a.lng},${a.lat};${b.lng},${b.lat}?overview=false`;
+  const url = `https://routing.openstreetmap.de/routed-${profile}/route/v1/driving/${a.lng},${a.lat};${b.lng},${b.lat}?overview=full&geometries=polyline`;
   for (let t = 0; t < 5; t++) {
     const r = await fetch(url, { headers: { "User-Agent": "hotel-map-prototype" } });
     if (r.status === 429) { await sleep(1500 * (t + 1)); continue; }
     const d = await r.json();
     const x = d.routes?.[0];
     await sleep(250);
-    return x ? { km: +(x.distance / 1000).toFixed(2), min: Math.max(1, Math.round(x.duration / 60)) } : null;
+    return x ? { km: +(x.distance / 1000).toFixed(2), min: Math.max(1, Math.round(x.duration / 60)), geo: x.geometry } : null;
   }
   return null;
 }
@@ -37,7 +37,7 @@ for (const h of hotels) {
       const harbour = (PLACES[h.city] || []).filter((x) => x.kind === "transit" && /harbour/i.test(x.name))
         .map((x) => ({ ...x, d: Math.hypot(x.lat - h.lat, x.lng - h.lng) })).sort((a, b) => a.d - b.d)[0];
       const [a, b] = [await route("car", h, harbour), await route("car", SANUR, p)];
-      if (a && b) car = { km: +(a.km + b.km).toFixed(2), min: a.min + b.min, boat: 45, via: harbour.name };
+      if (a && b) car = { km: +(a.km + b.km).toFixed(2), min: a.min + b.min, boat: 45, via: harbour.name, geo: a.geo, geo2: b.geo, harbour: [harbour.lat, harbour.lng], sanur: [SANUR.lat, SANUR.lng] };
     } else car = await route("car", h, p);
     const foot = car && car.km < 3 && !p.fixed ? await route("foot", h, p) : null;
     out[key] = { car, foot };

@@ -3,7 +3,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { X, ChevronDown, ChevronLeft, Check, ExternalLink, Search, MapPin } from "lucide-react";
 import { inr, Ico, amenityIcon } from "./kit";
-import { PLACES, KINDS, nearest, fmtKm, findPlace, placeName, span, tripText, trip } from "./data/places";
+import { PLACES, KINDS, nearest, fmtKm, findPlace, placeName, span, tripText, trip, tripLegs } from "./data/places";
 import { PlacePicker, ReachTag, clearNear } from "./blocks/NearPlace";
 import { DistanceRows, fmtM } from "./blocks/screen";
 
@@ -215,16 +215,23 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onSelec
     const line = (p, strong) => {
       const c = KINDS[p.kind].colour;
       if (route) {
-        // Solid line, the place itself, its name, and distance · time on the line.
-        L.polyline([from, [p.lat, p.lng]], { color: "#fff", weight: strong ? 9 : 6, opacity: 0.9, interactive: false }).addTo(layer);
-        L.polyline([from, [p.lat, p.lng]], { color: c, weight: strong ? 6 : 3.5, opacity: strong ? 1 : 0.85, interactive: false }).addTo(layer);
+        // Strava-style: the actual road (or footpath) from the hotel, one clean line; fast boat dashed over the sea.
+        const legs = tripLegs(focus.coords, p) || [{ kind: "car", path: [from, [p.lat, p.lng]] }];
+        legs.forEach((leg) => {
+          if (leg.path.length < 2) return;
+          L.polyline(leg.path, {
+            color: leg.kind === "boat" ? "#1570EF" : c, weight: strong ? 5 : 3.5, opacity: strong ? 1 : 0.9,
+            dashArray: leg.kind === "boat" ? "8 7" : leg.kind === "foot" ? "1 7" : null, lineCap: "round", lineJoin: "round", interactive: false,
+          }).addTo(layer);
+        });
+        const along = legs.reduce((a, b) => (b.path.length > a.path.length ? b : a)).path;
         L.marker([p.lat, p.lng], { icon: placeIcon(p.kind), zIndexOffset: 400 })
           .bindTooltip(tipHtml(p, p), { direction: "top", offset: [0, -12], className: "hr-tip" })
           .on("click", () => setPicked(placeKey(p)))
           .addTo(layer);
         L.marker([p.lat, p.lng], { interactive: false, icon: L.divIcon({ className: "", iconSize: null, iconAnchor: [0, 0], html: `<div class="hr-rname">${nameOf(p)}</div>` }) }).addTo(layer);
         const t = p.kind === "airport" ? Math.min(0.5, 1.1 / p.km) : 0.5;
-        const at = [from[0] + (p.lat - from[0]) * t, from[1] + (p.lng - from[1]) * t];
+        const at = along.length > 2 ? along[Math.min(along.length - 1, Math.round((along.length - 1) * t))] : [from[0] + (p.lat - from[0]) * t, from[1] + (p.lng - from[1]) * t];
         L.marker(at, {
           zIndexOffset: strong ? 900 : 500,
           icon: L.divIcon({ className: "", iconSize: null, iconAnchor: [0, 0], html: `<div class="hr-dist hr-dist-route${strong ? " hr-dist-strong" : ""}">${glyph(p.kind, 11, c)}${span(p)} · ${fmtKm(p.km)}</div>` }),
@@ -248,7 +255,8 @@ export default function MapOverlay({ city, centre, hotels, ctx, onClose, onSelec
     // Every place of each kind that is switched on in the bottom bar.
     const drawn = ORDER.flatMap((k) => around[k] || []).filter((p) => show[p.kind]);
     const target = picked ? Object.values(around).flat().find((p) => placeKey(p) === picked) : null;
-    drawn.forEach((p) => { if (!target || placeKey(p) !== placeKey(target)) line(p, false); });
+    // Activities first, then food, bus stands and meeting points on top (they share roads); the picked one last.
+    [...drawn].reverse().forEach((p) => { if (!target || placeKey(p) !== placeKey(target)) line(p, false); });
     if (target) line(target, true);
     // Frame everything drawn except the airport (it is far); a picked row frames just that pair.
     const near = drawn.filter((p) => p.kind !== "airport");
