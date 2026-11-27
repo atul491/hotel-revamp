@@ -702,9 +702,9 @@ export function MapCard({ city, centre, hotels, onOpen }) {
     <button onClick={onOpen} title={`See ${city} hotels on a map`} className="group relative block w-full h-[132px] rounded-xl overflow-hidden border border-divider bg-white text-left">
       <div ref={box} className="absolute inset-0 pointer-events-none" />
       <div className="absolute inset-0 bg-white/10 group-hover:bg-transparent transition-colors" />
-      <span className="absolute left-3 right-3 bottom-3 z-[500] flex items-center justify-center gap-1.5 h-9 rounded-lg bg-white border-2 text-[13px] font-extrabold tracking-wide shadow-sm group-hover:shadow-md transition-shadow"
-        style={{ borderColor: NAVY, color: NAVY }}>
-        <MapPin size={15} /> EXPLORE ON MAP
+      <span className="absolute left-1/2 -translate-x-1/2 bottom-3 z-[500] inline-flex items-center gap-1.5 h-8 px-3.5 bg-white border-[1.5px] text-[13px] font-semibold whitespace-nowrap shadow-sm transition-colors group-hover:bg-[#FFF1F3]"
+        style={{ borderRadius: "var(--rp)", borderColor: "var(--accent)", color: "var(--accent)" }}>
+        <MapPin size={14} /> Show on map
       </span>
     </button>
   );
